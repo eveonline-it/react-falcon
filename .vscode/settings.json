@@ -1,0 +1,9 @@
+{
+  "cSpell.words": ["chartjs", "getformatter"],
+  "editor.formatOnSave": true,
+  "scss.format.enable": true,
+  "scss.format.newlineBetweenRules": true,
+  "scss.format.newlineBetweenSelectors": true,
+  "scss.format.preserveNewLines": true,
+  "scss.format.spaceAroundSelectorSeparator": false
+}
