@@ -3,6 +3,7 @@ import { Navigate, useSearchParams, useLocation } from 'react-router';
 import { processEveAuthResponse } from 'utils/authUtils';
 import { useAuthStore } from 'stores/authStore';
 import { Spinner, Alert, Card } from 'react-bootstrap';
+import { useAuthStatus } from 'hooks/useAuth';
 
 /**
  * EVE Online Authentication Callback Handler

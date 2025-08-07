@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { checkAuthStatus } from 'utils/auth';
+import React, { createContext, useContext, useEffect } from 'react';
+import { useAuthStatus, useCurrentUser } from 'hooks/useAuth';
 
 const AuthContext = createContext();
 AuthContext.displayName = 'AuthContext';
@@ -13,85 +13,48 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
-  const [charId, setCharId] = useState(null)
-  const [isLoading, setIsLoading] = useState(true);
-  const [lastCheck, setLastCheck] = useState(Date.now());
+  // Use TanStack Query for auth status management
+  const {
+    user: authData,
+    isAuthenticated,
+    isLoading,
+    error,
+    refetch: verifyAuth,
+  } = useCurrentUser({
+    refetchInterval: 1000 * 10, // Check every 10 seconds
+    refetchIntervalInBackground: false, // Only when tab is active
+    refetchOnWindowFocus: true, // Check when window gains focus
+  });
 
-  const verifyAuth = async () => {
-    try {
-      const {
-        authenticated,
-        user_id,
-        character_id,
-        character_name,
-        characters,
-      } = await checkAuthStatus();
-      setIsAuthenticated(authenticated);
-      setUser(user_id);
-      setCharId(character_id);
-      setLastCheck(Date.now());
-      
-      if (!authenticated) {
-        console.log('Authentication expired');
-        setUser(null);
-        // Only redirect if not already on login page
-        if (window.location.pathname !== '/login') {
-          console.log('Redirecting to login...');
-          window.location.href = '/login';
-        }
-      }
-    } catch (error) {
-      console.error('Auth verification failed:', error);
-      setIsAuthenticated(false);
-      setUser(null);
+  // Handle authentication failures and redirects
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && !error) {
+      console.log('Authentication expired');
       // Only redirect if not already on login page
       if (window.location.pathname !== '/login') {
+        console.log('Redirecting to login...');
         window.location.href = '/login';
       }
     }
-  };
+  }, [isLoading, isAuthenticated, error]);
 
+  // Handle auth verification errors
   useEffect(() => {
-    // Initial auth check
-    const initialCheck = async () => {
-      await verifyAuth();
-      setIsLoading(false);
-    };
-    
-    initialCheck();
-
-    // Set up periodic auth check every 10 seconds
-    const interval = setInterval(() => {
-      if (!document.hidden) { // Only check if tab is active
-        verifyAuth();
-      }
-    }, 10000); // 10 seconds
-
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
-  }, []);
-
-  // Check auth when tab becomes visible again
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && Date.now() - lastCheck > 5000) {
-        // Check auth if tab becomes visible and last check was > 5 seconds ago
-        verifyAuth();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [lastCheck]);
+    if (error && window.location.pathname !== '/login') {
+      console.error('Auth verification failed:', error);
+      window.location.href = '/login';
+    }
+  }, [error]);
 
   const value = {
     isAuthenticated,
-    user,
-    charId,
+    user: authData?.user_id || null,
+    charId: authData?.character_id || null,
+    characterName: authData?.character_name || null,
+    characters: authData?.characters || [],
     isLoading,
     verifyAuth,
+    error,
   };
 
   return (
