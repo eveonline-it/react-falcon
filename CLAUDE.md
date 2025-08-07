@@ -180,6 +180,33 @@ import PricingDefault from 'pages/pricing/pricing-default/PricingDefault';
 - **ChatProvider** - Chat application state
 - **EmailProvider** - Email client state
 
+### State Management Guidelines
+**📖 Complete guide available:** `docs/STATE_MANAGEMENT_GUIDE.md`  
+**🔧 DevTools debugging:** `docs/ZUSTAND_DEVTOOLS_GUIDE.md`
+
+**Key Principles:**
+1. **Use React Context for Dependency Injection, Not State Management**
+   - Context provides access to state management tools
+   - Avoid putting complex state directly in Context (performance issues)
+
+2. **Choose the Right Tool:**
+   - **Local State** (`useState`) - Simple component-level state, form inputs, toggles
+   - **Context Providers** - Global configuration, dependency injection, feature-scoped state
+   - **Consider Zustand** - Performance-critical or very complex state scenarios
+
+3. **Feature Boundaries:**
+   - Keep state scoped to feature boundaries
+   - Each major feature has its own provider for isolated state management
+
+4. **Decision Tree:**
+   - Local to single component? → `useState`
+   - Shared between 2-3 components? → Prop drilling or lift state up
+   - Global setting/configuration? → Extend existing Context provider
+   - Complex feature state? → Create feature-specific Context provider
+   - Performance-critical/very complex? → Consider Zustand with Context injection
+
+**Current Architecture:** Context-based approach with feature-specific providers works well. Use Context for dependency injection and keep state management scoped appropriately.
+
 ### Configuration (src/config.js)
 ```javascript
 export const settings = {
@@ -221,10 +248,13 @@ export const settings = {
 5. Follow accessibility best practices
 
 ### State Management
-1. Use Context API for feature-specific state
-2. Keep global state minimal
-3. Use reducers for complex state logic
-4. Implement proper error boundaries
+1. **Follow the State Management Guide** (`docs/STATE_MANAGEMENT_GUIDE.md`)
+2. Use Context for dependency injection, not complex state management
+3. Start with local state (`useState`) and lift up only when necessary
+4. Keep state scoped to feature boundaries
+5. Use reducers for complex state logic within features
+6. Consider Zustand only for performance-critical scenarios
+7. Implement proper error boundaries
 
 ### Styling
 1. Use SCSS modules when possible

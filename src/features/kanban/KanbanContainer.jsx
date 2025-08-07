@@ -13,10 +13,11 @@ import { arrayMove } from '@dnd-kit/sortable';
 import TaskCard from './TaskCard';
 
 const KanbanContainer = () => {
-  const {
-    kanbanState: { kanbanItems, kanbanModal },
-    kanbanDispatch
-  } = useKanbanContext();
+  const kanbanItems = useKanbanContext(state => state.kanbanItems || []);
+  const kanbanModal = useKanbanContext(state => state.kanbanModal || { show: false });
+  const addKanbanColumn = useKanbanContext(state => state.addKanbanColumn);
+  const updateSingleColumn = useKanbanContext(state => state.updateSingleColumn);
+  const updateDualColumn = useKanbanContext(state => state.updateDualColumn);
 
   const [showForm, setShowForm] = useState(false);
   const containerRef = useRef(null);
@@ -35,10 +36,7 @@ const KanbanContainer = () => {
     const isEmpty = !Object.keys(listData).length;
 
     if (!isEmpty) {
-      kanbanDispatch({
-        type: 'ADD_KANBAN_COLUMN',
-        payload: newList
-      });
+      addKanbanColumn(newList);
       setShowForm(false);
     }
   };
@@ -98,19 +96,16 @@ const KanbanContainer = () => {
 
       const newIndex = overIndex >= 0 ? overIndex + 1 : overItems.length;
 
-      kanbanDispatch({
-        type: 'UPDATE_DUAL_COLUMN',
-        payload: {
-          sourceColumn: activeColumn,
-          updatedSourceItems: activeItems.filter(item => item.id !== activeId),
-          destColumn: overColumn,
-          updatedDestItems: [
-            ...overItems.slice(0, newIndex),
-            activeItems[activeIndex],
-            ...overItems.slice(newIndex)
-          ]
-        }
-      });
+      updateDualColumn(
+        activeColumn,
+        overColumn,
+        activeItems.filter(item => item.id !== activeId),
+        [
+          ...overItems.slice(0, newIndex),
+          activeItems[activeIndex],
+          ...overItems.slice(newIndex)
+        ]
+      );
     }
   };
   const handleDragEnd = ({ active, over }) => {
@@ -130,10 +125,7 @@ const KanbanContainer = () => {
 
       const reorderedItems = arrayMove(column.items, oldIndex, newIndex);
 
-      kanbanDispatch({
-        type: 'UPDATE_SINGLE_COLUMN',
-        payload: { column, reorderedItems }
-      });
+      updateSingleColumn(column, reorderedItems);
     } else {
       const sourceColumn = kanbanItems.find(col => col.id === activeColumnId);
       const destColumn = kanbanItems.find(col => col.id === overColumnId);
@@ -146,15 +138,12 @@ const KanbanContainer = () => {
       );
       const updatedDestItems = [...destColumn.items, activeTask];
 
-      kanbanDispatch({
-        type: 'UPDATE_DUAL_COLUMN',
-        payload: {
-          sourceColumn,
-          updatedSourceItems,
-          destColumn,
-          updatedDestItems
-        }
-      });
+      updateDualColumn(
+        sourceColumn,
+        destColumn,
+        updatedSourceItems,
+        updatedDestItems
+      );
     }
 
     setActiveTask(null);

@@ -10,17 +10,14 @@ import { useAppContext } from 'providers/AppProvider';
 import { CSS } from '@dnd-kit/utilities';
 
 const TaskDropMenu = ({ id }) => {
-  const { kanbanDispatch } = useKanbanContext();
+  const removeTaskCard = useKanbanContext(state => state.removeTaskCard);
 
   const {
     config: { isRTL }
   } = useAppContext();
 
   const handleRemoveTaskCard = () => {
-    kanbanDispatch({
-      type: 'REMOVE_TASK_CARD',
-      payload: { id }
-    });
+    removeTaskCard(id);
   };
 
   return (
@@ -51,14 +48,16 @@ const TaskDropMenu = ({ id }) => {
 };
 
 const TaskCard = ({ task, columnId, cursor, rotate }) => {
-  const { kanbanDispatch, currentUser, setCardHeight, cardHeight } =
-    useKanbanContext();
+  const openKanbanModal = useKanbanContext(state => state.openKanbanModal);
+  const currentUser = useKanbanContext(state => state.currentUser || {});
+  const setCardHeight = useKanbanContext(state => state.setCardHeight);
+  const cardHeight = useKanbanContext(state => state.cardHeight || 0);
   const cardRef = useRef(null);
   const image =
     task.attachments && task.attachments.find(item => item.type === 'image');
 
   const handleModalOpen = () => {
-    kanbanDispatch({ type: 'OPEN_KANBAN_MODAL', payload: { image: image } });
+    openKanbanModal(image);
   };
 
   const { active, setNodeRef, listeners, isDragging, transform, transition } =

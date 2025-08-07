@@ -9,6 +9,11 @@ import 'react-datepicker/dist/react-datepicker.css';
 import 'react-toastify/dist/ReactToastify.css';
 import 'simplebar-react/dist/simplebar.min.css';
 
+// Load development helpers in development mode
+if (process.env.NODE_ENV === 'development') {
+  import('stores');
+}
+
 ChartJS.register(...registerables);
 
 const App = () => {

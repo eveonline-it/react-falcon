@@ -14,13 +14,11 @@ import { useKanbanContext } from 'providers/KanbanProvider';
 import ModalSidebar from './ModalSidebar';
 
 const KanbanModal = () => {
-  const {
-    kanbanState: { kanbanModal },
-    kanbanDispatch
-  } = useKanbanContext();
+  const kanbanModal = useKanbanContext(state => state.kanbanModal || { show: false });
+  const toggleKanbanModal = useKanbanContext(state => state.toggleKanbanModal);
 
   const handleClose = () => {
-    kanbanDispatch({ type: 'TOGGLE_KANBAN_MODAL' });
+    toggleKanbanModal();
   };
 
   return (

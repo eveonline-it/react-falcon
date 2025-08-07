@@ -1,59 +1,26 @@
-import React, { createContext, use, useReducer, useState } from 'react';
-import currentUserAvatar from 'assets/img/team/3.jpg';
-import {
-  members,
-  labels,
-  attachments,
-  kanbanItems,
-  comments,
-  activities
-} from 'data/kanban';
-import { kanbanReducer } from 'reducers/kanbanReducer';
+import React, { createContext, use, useState } from 'react';
+import { useKanbanStore } from 'stores/kanbanStore';
 
-export const KanbanContext = createContext({
-  KanbanColumns: [],
-  kanbanTasks: []
-});
+export const KanbanContext = createContext(null);
 
-const KanbanProvider = ({ children }) => {
-  const initData = {
-    members: members,
-    labels: labels,
-    attachments: attachments,
-    kanbanItems: kanbanItems,
-    comments: comments,
-    activities: activities,
-    kanbanModal: {
-      show: false,
-      modalContent: {}
-    }
-  };
-
-  const currentUser = {
-    name: 'Emma',
-    avatarSrc: currentUserAvatar,
-    profileLink: '/user/profile',
-    institutionLink: '#!'
-  };
-
-  const [kanbanState, kanbanDispatch] = useReducer(kanbanReducer, initData);
-  const [cardHeight, setCardHeight] = useState(0);
-
+const KanbanProvider = ({ children, initialData = null }) => {
+  // Simply provide the Zustand hook through Context
   return (
-    <KanbanContext
-      value={{
-        kanbanState,
-        kanbanDispatch,
-        currentUser,
-        cardHeight,
-        setCardHeight
-      }}
-    >
+    <KanbanContext.Provider value={useKanbanStore}>
       {children}
-    </KanbanContext>
+    </KanbanContext.Provider>
   );
 };
 
-export const useKanbanContext = () => use(KanbanContext);
+export const useKanbanContext = (selector) => {
+  const store = use(KanbanContext);
+  if (!store) {
+    throw new Error('useKanbanContext must be used within KanbanProvider');
+  }
+  return store(selector);
+};
+
+// Alternative hook that uses the store directly (for components outside provider)
+export const useKanban = () => useKanbanStore();
 
 export default KanbanProvider;
