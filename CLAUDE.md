@@ -43,6 +43,7 @@ npm run preview
 
 ### Key Libraries
 - **State Management**: Context API with custom providers
+- **Data Fetching**: TanStack Query (React Query) for server state management
 - **Forms**: React Hook Form + Yup validation
 - **Charts**: ECharts, Chart.js, D3.js
 - **Maps**: Google Maps API, Leaflet
@@ -206,6 +207,185 @@ import PricingDefault from 'pages/pricing/pricing-default/PricingDefault';
    - Performance-critical/very complex? → Consider Zustand with Context injection
 
 **Current Architecture:** Context-based approach with feature-specific providers works well. Use Context for dependency injection and keep state management scoped appropriately.
+
+## Data Fetching with TanStack Query
+
+### Overview
+TanStack Query (React Query) v5 is integrated for efficient server state management, providing powerful caching, synchronization, and background updates for API calls.
+
+### Core Features
+- **Intelligent Caching** - Automatic caching with configurable stale times
+- **Background Updates** - Keep data fresh with background refetching
+- **Optimistic Updates** - Update UI immediately, rollback on failure
+- **Infinite Queries** - Built-in infinite scrolling support
+- **DevTools Integration** - Debugging tools for development
+- **Error Handling** - Robust error handling and retry logic
+
+### Configuration (src/providers/QueryProvider.jsx)
+```jsx
+import QueryProvider from 'providers/QueryProvider';
+
+// QueryClient configured with:
+- 5-minute stale time for queries
+- 10-minute garbage collection time
+- Smart retry logic (no retry on 4xx errors)
+- Background refetch disabled for better UX
+- DevTools enabled in development
+```
+
+### Available Query Hooks
+
+#### User Management (src/hooks/useUserProfile.js)
+```jsx
+import { useUserProfile, useUpdateUserProfile } from 'hooks/useUserProfile';
+
+// Fetch user profile
+const { data, isLoading, error } = useUserProfile(userId);
+
+// Update user profile with optimistic updates
+const updateMutation = useUpdateUserProfile({
+  onSuccess: (data) => console.log('Updated!', data)
+});
+```
+
+#### Analytics Data (src/hooks/useAnalytics.js)
+```jsx
+import { useAnalyticsOverview, useRevenueData, useAnalyticsDashboard } from 'hooks/useAnalytics';
+
+// Individual analytics queries
+const { data: overview } = useAnalyticsOverview();
+const { data: revenue } = useRevenueData('30d');
+
+// Multiple queries at once
+const queries = useAnalyticsDashboard('30d'); // [overview, revenue, traffic, products]
+```
+
+#### Infinite Scrolling (src/hooks/useInfiniteData.js)
+```jsx
+import { useInfiniteProducts, useFlattenedInfiniteData } from 'hooks/useInfiniteData';
+
+// Infinite query with pagination
+const infiniteQuery = useInfiniteProducts({ category: 'electronics' });
+const { flatData, hasNextPage, fetchNextPage } = useFlattenedInfiniteData(infiniteQuery);
+```
+
+### Usage Patterns
+
+#### Basic Query Pattern
+```jsx
+const MyComponent = () => {
+  const { data, isLoading, error, refetch } = useMyQuery(params);
+  
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+  
+  return <DataDisplay data={data} onRefresh={refetch} />;
+};
+```
+
+#### Mutation Pattern
+```jsx
+const MyComponent = () => {
+  const mutation = useMyMutation({
+    onSuccess: () => toast.success('Updated successfully!'),
+    onError: (error) => toast.error(`Failed: ${error.message}`)
+  });
+  
+  const handleSubmit = (formData) => {
+    mutation.mutate(formData);
+  };
+  
+  return (
+    <form onSubmit={handleSubmit}>
+      <button disabled={mutation.isPending}>
+        {mutation.isPending ? 'Saving...' : 'Save'}
+      </button>
+    </form>
+  );
+};
+```
+
+#### Infinite Query Pattern
+```jsx
+const InfiniteList = () => {
+  const infiniteQuery = useInfiniteData('products');
+  const { flatData, hasNextPage, fetchNextPage, isFetchingNextPage } = 
+    useFlattenedInfiniteData(infiniteQuery);
+  
+  return (
+    <div>
+      {flatData.map(item => <Item key={item.id} data={item} />)}
+      {hasNextPage && (
+        <button onClick={fetchNextPage} disabled={isFetchingNextPage}>
+          {isFetchingNextPage ? 'Loading...' : 'Load More'}
+        </button>
+      )}
+    </div>
+  );
+};
+```
+
+### Best Practices
+
+1. **Query Keys**: Use structured, hierarchical keys
+   ```jsx
+   ['user', 'profile', userId]           // User profile
+   ['analytics', 'revenue', timeRange]   // Analytics data
+   ['infinite', 'products', filters]     // Infinite lists
+   ```
+
+2. **Stale Time Configuration**: Match your data's freshness requirements
+   - User profiles: 5 minutes
+   - Analytics: 15 minutes
+   - Static content: 30+ minutes
+
+3. **Error Handling**: Implement proper error boundaries and user feedback
+   ```jsx
+   const { error } = useQuery({
+     queryKey: ['data'],
+     queryFn: fetchData,
+     throwOnError: false, // Handle errors in component
+   });
+   ```
+
+4. **Optimistic Updates**: Use for better UX in mutations
+   ```jsx
+   const mutation = useMutation({
+     mutationFn: updateData,
+     onMutate: async (newData) => {
+       // Cancel outgoing refetches
+       await queryClient.cancelQueries(['data']);
+       
+       // Snapshot previous value
+       const previous = queryClient.getQueryData(['data']);
+       
+       // Optimistically update
+       queryClient.setQueryData(['data'], newData);
+       
+       return { previous };
+     },
+     onError: (err, newData, context) => {
+       // Rollback on error
+       queryClient.setQueryData(['data'], context.previous);
+     },
+   });
+   ```
+
+### Integration Points
+
+- **Authentication**: Queries automatically handle auth tokens via interceptors
+- **Error Handling**: Global error handling for 401/403 responses
+- **Loading States**: Integrated with existing loading UI patterns
+- **Cache Management**: Automatic invalidation on route changes and user actions
+
+### Development Tools
+
+- **React Query DevTools**: Available in development mode (bottom-right corner)
+- **Query Inspection**: View cache, network requests, and query states
+- **Performance Monitoring**: Track query performance and cache hit rates
+
+### Example Implementation
+See `src/docs/components/TanStackQueryExample.jsx` for a comprehensive example demonstrating all features including queries, mutations, infinite scrolling, and error handling.
 
 ### Configuration (src/config.js)
 ```javascript

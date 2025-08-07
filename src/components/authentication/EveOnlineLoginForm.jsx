@@ -3,18 +3,20 @@ import { Button, Form } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSpaceShuttle } from '@fortawesome/free-solid-svg-icons';
 import { initiateEveLogin } from 'utils/eveSsoUtils';
+import { useAuthStore } from 'stores/authStore';
 import EveSsoErrorHandler from './EveSsoErrorHandler';
 
 const EveOnlineLoginForm = ({ 
   backendUrl = import.meta.env.VITE_EVE_BACKEND_URL,
   onError 
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [localError, setLocalError] = useState('');
+  const { setLoading, setError, clearError, isLoading, error } = useAuthStore();
 
   const handleEveLogin = async () => {
-    setIsLoading(true);
-    setError('');
+    setLoading(true);
+    clearError();
+    setLocalError('');
     
     try {
       // Call backend to get auth URL and redirect
@@ -22,20 +24,22 @@ const EveOnlineLoginForm = ({
       // Note: This won't execute as initiateEveLogin redirects the page
       
     } catch (err) {
-      setError(err.message || 'Failed to initiate EVE Online login');
-      setIsLoading(false);
+      const errorMessage = err.message || 'Failed to initiate EVE Online login';
+      setError(errorMessage);
+      setLocalError(errorMessage);
       if (onError) onError(err);
     }
   };
 
   return (
     <Form>
-      {error && (
+      {(error || localError) && (
         <div className="mb-3">
           <EveSsoErrorHandler 
-            error={error}
+            error={error || localError}
             onRetry={() => {
-              setError('');
+              clearError();
+              setLocalError('');
               handleEveLogin();
             }}
           />

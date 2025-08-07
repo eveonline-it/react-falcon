@@ -5,16 +5,27 @@
 
 // Check if Redux DevTools Extension is available
 export const isDevToolsAvailable = () => {
-  return (
+  const isAvailable = (
     typeof window !== 'undefined' &&
     window.__REDUX_DEVTOOLS_EXTENSION__
   );
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 Redux DevTools Extension available:', isAvailable);
+    if (!isAvailable) {
+      console.warn('❌ Redux DevTools Extension not found. Install the Redux DevTools browser extension.');
+    }
+  }
+  
+  return isAvailable;
 };
 
 // Enhanced devtools configuration
 export const createDevToolsConfig = (storeName) => ({
   name: storeName,
   enabled: process.env.NODE_ENV === 'development' && isDevToolsAvailable(),
+  trace: true,
+  traceLimit: 25,
   
   // Serialization options for complex objects
   serialize: {
