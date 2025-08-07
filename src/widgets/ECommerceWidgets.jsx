@@ -1,8 +1,8 @@
 import React from 'react';
 // E-commerce components are not available
-// import BillingCard from 'components/app/e-commerce/billing/BillingCard';
-// import ShoppingCart from 'components/app/e-commerce/cart/ShoppingCart';
-// import OrderSummary from 'components/app/e-commerce/checkout/OrderSummary';
+// import BillingCard from 'features/e-commerce/billing/BillingCard';
+// import ShoppingCart from 'features/e-commerce/cart/ShoppingCart';
+// import OrderSummary from 'features/e-commerce/checkout/OrderSummary';
 // import BestSellingProducts from 'components/dashboards/e-commerce/BestSellingProducts';
 import { Card, Col, Row } from 'react-bootstrap';
 import WidgetSectionTitle from './WidgetSectionTitle';

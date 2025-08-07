@@ -55,23 +55,95 @@ npm run preview
 
 ```
 src/
-├── components/           # Component library
-│   ├── common/          # Reusable UI components
-│   ├── dashboards/      # Dashboard-specific components
-│   ├── app/            # Feature-specific components
-│   ├── authentication/ # Auth components & layouts
-│   └── doc-components/ # Documentation examples
-├── layouts/            # Layout components (9 different layouts)
-├── providers/          # Context providers for state management
-├── routes/            # Routing configuration
-├── data/              # Static data and mock APIs
-├── hooks/             # Custom React hooks
-├── helpers/           # Utility functions
-├── assets/            # Images, icons, SCSS files
-└── reducers/          # State reducers
+├── components/           # 🎯 Reusable UI Components ONLY
+│   ├── authentication/ # Auth components & layouts (with barrel export)
+│   ├── common/         # Reusable UI component library (with barrel export)
+│   ├── dashboards/     # Dashboard widget components (with barrel export)
+│   ├── navbar/         # Navigation components
+│   ├── wizard/         # Form wizard components
+│   ├── errors/         # Error page components
+│   └── notification/   # Notification components
+├── features/           # 🚀 Complete Application Modules
+│   ├── chat/          # Full chat application
+│   ├── email/         # Complete email client
+│   ├── kanban/        # Kanban board system
+│   ├── events/        # Event management system
+│   ├── social/        # Social media features
+│   ├── support-desk/  # Help desk application
+│   └── calendar/      # Calendar application
+├── demos/             # 🚀 Complete Dashboard Demos
+│   └── dashboards/    # Full dashboard layout examples
+│       ├── DefaultDashboard.jsx
+│       ├── AnalyticsDashboard.jsx
+│       ├── CrmDashboard.jsx
+│       └── [others...]
+├── pages/             # 📄 Page-Level Components
+│   ├── faq/          # FAQ pages
+│   ├── pricing/      # Pricing pages
+│   ├── user/         # User profile pages
+│   ├── landing/      # Landing pages
+│   └── miscellaneous/ # Other page components
+├── docs/              # 📚 Documentation & Examples
+│   ├── components/   # Component documentation & examples
+│   ├── documentation/ # Development guides & docs
+│   └── utilities/    # Bootstrap utility class examples
+├── layouts/          # Layout components (9 different layouts)
+├── providers/        # Context providers for state management
+├── routes/          # Routing configuration
+├── data/            # Static data and mock APIs
+├── hooks/           # Custom React hooks
+├── helpers/         # Utility functions
+├── assets/          # Images, icons, SCSS files
+└── reducers/        # State reducers
 ```
 
 ## Component Organization
+
+### Perfect Separation of Concerns
+The project now maintains crystal clear boundaries between different types of code:
+
+#### 🎯 Reusable UI Components (`src/components/`)
+**Only truly reusable UI components belong here:**
+- **`common/`** - Core UI component library (Avatar, Button, Card, etc.) with barrel export
+- **`authentication/`** - Auth-specific components (login forms, protected routes) with barrel export  
+- **`dashboards/`** - Reusable dashboard widgets (WeeklySales, ActiveUsers, etc.) with barrel export
+- **`navbar/`** - Navigation components (top nav, vertical nav, dropdowns)
+- **`wizard/`** - Form wizard components
+- **`errors/`** - Error page components (404, 500)
+- **`notification/`** - Notification system components
+
+#### 🚀 Complete Application Features (`src/features/`)
+**Full-featured application modules with their own state and business logic:**
+- **`chat/`** - Complete real-time messaging system
+- **`email/`** - Full email client (inbox, compose, detail views)
+- **`kanban/`** - Project management boards with drag & drop
+- **`events/`** - Event management system (create, list, detail)
+- **`social/`** - Social media features (feed, followers, activity log)  
+- **`support-desk/`** - Help desk system (tickets, contacts, reports)
+- **`calendar/`** - Calendar application with scheduling
+
+#### 🚀 Dashboard Demos (`src/demos/dashboards/`)
+**Complete dashboard layouts showing how to compose components:**
+- **`DefaultDashboard.jsx`** - General business metrics layout
+- **`AnalyticsDashboard.jsx`** - Web analytics dashboard
+- **`CrmDashboard.jsx`** - CRM and sales dashboard
+- **`ProjectManagementDashboard.jsx`** - Team collaboration dashboard
+- **`SaasDashboard.jsx`** - SaaS metrics dashboard
+- **`SupportDeskDashboard.jsx`** - Support desk dashboard
+
+#### 📄 Page Components (`src/pages/`)
+**Page-level components for routing:**
+- **`faq/`** - FAQ pages (basic, accordion, alt layouts)
+- **`pricing/`** - Pricing pages (default, alternative layouts)
+- **`user/`** - User profile and settings pages
+- **`landing/`** - Marketing and landing pages
+- **`miscellaneous/`** - Other standalone pages
+
+#### 📚 Documentation (`src/docs/`)
+**Documentation, examples, and guides separate from application code:**
+- **`components/`** - Component documentation with interactive examples
+- **`documentation/`** - Development guides, setup docs, changelogs
+- **`utilities/`** - Bootstrap utility class examples and demonstrations
 
 ### Layout System
 - **MainLayout** - Primary dashboard layout
@@ -80,23 +152,24 @@ src/
 - **ComboNavLayout** - Combined top + sidebar
 - **Auth Layouts** - Simple, Card, Split, Wizard variations
 
-### Dashboard Components
-Located in `src/components/dashboards/`:
-- `default/` - General business dashboard
-- `analytics/` - Web analytics dashboard  
-- `crm/` - CRM and sales dashboard
-- `e-commerce/` - E-commerce metrics
-- `project-management/` - Team collaboration
-- `saas/` - SaaS metrics and analytics
-- `support-desk/` - Help desk and tickets
+### Import Patterns
+**Clean imports with barrel exports:**
+```jsx
+// Reusable components
+import { Avatar, Button, Card } from 'components/common';
+import { WeeklySales, TotalOrder } from 'components/dashboards'; 
+import { EveOnlineLoginForm } from 'components/authentication';
 
-### Common Components
-Located in `src/components/common/`:
-- `AdvanceTable/` - Feature-rich data tables
-- `FalconEditor` - TinyMCE wrapper
-- `ReactEchart` - ECharts wrapper
-- `Calendar` - FullCalendar integration
-- `Avatar`, `Badge`, `Button` components
+// Complete features
+import Chat from 'features/chat/Chat';
+import Inbox from 'features/email/inbox/Inbox';
+
+// Dashboard demos
+import DefaultDashboard from 'demos/dashboards/DefaultDashboard';
+
+// Pages
+import PricingDefault from 'pages/pricing/pricing-default/PricingDefault';
+```
 
 ## State Management
 
@@ -160,10 +233,11 @@ export const settings = {
 4. Support both RTL and LTR layouts
 
 ### File Organization
-1. Group related components in folders
-2. Use index.js for clean imports
-3. Separate data and logic from presentation
-4. Keep components focused and reusable
+1. **Perfect separation**: Components, features, pages, demos, and docs in distinct directories
+2. **Barrel exports**: Use index.js files for clean component imports
+3. **Clear boundaries**: Reusable components vs complete applications vs documentation
+4. **Focused responsibility**: Each directory has a single, well-defined purpose
+5. **Scalable structure**: Easy to find, modify, and extend components and features
 
 ## Available Features
 
@@ -177,22 +251,39 @@ export const settings = {
 7. **Support Desk** - Ticket management
 
 ### Application Modules
-- **Chat** - Real-time messaging system
-- **Email** - Full email client
-- **Calendar** - Event scheduling
-- **Kanban** - Project management boards
-- **E-commerce** - Product catalog and orders
-- **Social** - Activity feeds and profiles
-- **Support Desk** - Help desk system
-- **EVE Online SSO** - EVE Online character authentication
+Located in `src/features/` - Complete, self-contained applications:
+- **Chat** (`features/chat/`) - Real-time messaging system with threads and contacts
+- **Email** (`features/email/`) - Full email client with inbox, compose, and detail views
+- **Calendar** (`features/calendar/`) - Event scheduling with modals and calendar integration
+- **Kanban** (`features/kanban/`) - Project management boards with drag & drop functionality
+- **Events** (`features/events/`) - Event management system (create, list, detail views)
+- **Social** (`features/social/`) - Social media features (feeds, followers, activity logs)
+- **Support Desk** (`features/support-desk/`) - Complete help desk system with tickets and contacts
+
+### Dashboard Demos
+Located in `src/demos/dashboards/` - Complete dashboard examples:
+- **Default Dashboard** - General business metrics and KPIs
+- **Analytics Dashboard** - Web analytics with traffic and user data
+- **CRM Dashboard** - Sales pipeline and customer relationship management
+- **Project Management Dashboard** - Team collaboration and project tracking
+- **SaaS Dashboard** - Subscription metrics and user analytics
+- **Support Desk Dashboard** - Help desk metrics and ticket management
+
+### Authentication
+- **EVE Online SSO** - EVE Online character authentication with secure backend integration
 
 ## Customization
 
 ### Adding New Components
-1. Create component in appropriate directory
-2. Follow existing patterns and conventions
-3. Add to documentation if reusable
-4. Update relevant provider if stateful
+1. **Determine the right location**:
+   - `src/components/common/` - For reusable UI components
+   - `src/components/dashboards/` - For dashboard-specific widgets
+   - `src/features/[feature]/` - For feature-specific components
+   - `src/pages/` - For page-level components
+2. **Follow existing patterns and conventions**
+3. **Add to barrel exports** (`index.js`) for reusable components
+4. **Update relevant provider** if component needs state management
+5. **Add documentation** if creating reusable components
 
 ### Theme Customization
 1. Modify `_user-variables.scss` for color changes

@@ -13,8 +13,8 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import AddScheduleModal from 'components/app/calendar/AddScheduleModal';
-import CalendarEventModal from 'components/app/calendar/CalendarEventModal';
+import AddScheduleModal from 'features/calendar/AddScheduleModal';
+import CalendarEventModal from 'features/calendar/CalendarEventModal';
 import Flex from 'components/common/Flex';
 import { useAppContext } from 'providers/AppProvider';
 
