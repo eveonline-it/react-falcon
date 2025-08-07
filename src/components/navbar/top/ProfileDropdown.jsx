@@ -38,12 +38,12 @@ const ProfileDropdown = () => {
               <Dropdown.Divider />
             </>
           )}
-          <Dropdown.Item className="fw-bold text-warning" href="#!">
+          {/* <Dropdown.Item className="fw-bold text-warning" href="#!">
             <FontAwesomeIcon icon="crown" className="me-1" />
             <span>Go Pro</span>
-          </Dropdown.Item>
+          </Dropdown.Item> */}
           <Dropdown.Divider />
-          <Dropdown.Item href="#!">Set status</Dropdown.Item>
+          <Dropdown.Item href="#!">Characters</Dropdown.Item>
           <Dropdown.Item as={Link} to={paths.userProfile}>
             Profile &amp; account
           </Dropdown.Item>
