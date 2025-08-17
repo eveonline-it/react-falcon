@@ -571,11 +571,15 @@ Complete EVE Online Single Sign-On (SSO) integration following official EVE Onli
 
 ### Configuration
 
-#### Environment Variables (.env)
+⚠️ **IMPORTANT**: See `SECURITY_SETUP.md` for complete environment configuration including API keys.
+
+#### Environment Variables
+Copy `.env.example` to `.env` and configure with your actual values:
 ```env
-# EVE Online SSO Configuration
-# Backend handles all EVE SSO configuration and OAuth flow
-VITE_EVE_BACKEND_URL=https://go.eveonline.it
+# Example configuration - replace with your actual values
+VITE_EVE_BACKEND_URL=https://your-backend-domain.com
+VITE_REACT_APP_TINYMCE_APIKEY=your_tinymce_api_key
+VITE_REACT_APP_GOOGLE_API_KEY=your_google_api_key
 ```
 
 The backend handles all EVE Online SSO configuration including:
