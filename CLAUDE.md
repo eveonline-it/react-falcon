@@ -213,6 +213,12 @@ import PricingDefault from 'pages/pricing/pricing-default/PricingDefault';
 ### Overview
 TanStack Query (React Query) v5 is integrated for efficient server state management, providing powerful caching, synchronization, and background updates for API calls.
 
+### Backend API Specification
+All API queries and mutations must respect the backend OpenAPI specification:
+- **OpenAPI Spec URL**: https://raw.githubusercontent.com/eveonline-it/go-falcon/refs/heads/main/falcon-openapi.json
+- **Compliance Required**: All data fetching operations must follow the defined endpoints, request/response schemas, and authentication requirements
+- **Schema Validation**: Ensure request payloads and response handling match the OpenAPI definitions
+
 ### Core Features
 - **Intelligent Caching** - Automatic caching with configurable stale times
 - **Background Updates** - Keep data fresh with background refetching
