@@ -6,10 +6,15 @@
 /**
  * Get authorization URL from backend and redirect user
  * @param {string} backendUrl - Backend API URL
+ * @param {string} loginType - Type of login: 'login' | 'register'
  * @returns {Promise<void>} Redirects to EVE Online SSO
  */
-export const initiateEveLogin = async (backendUrl = import.meta.env.VITE_EVE_BACKEND_URL) => {
-  const response = await fetch(`${backendUrl}/auth/eve/login`, {
+export const initiateEveLogin = async (
+  backendUrl = import.meta.env.VITE_EVE_BACKEND_URL,
+  loginType = 'login'
+) => {
+  const endpoint = loginType === 'register' ? '/auth/eve/register' : '/auth/eve/login';
+  const response = await fetch(`${backendUrl}${endpoint}`, {
     method: 'GET',
     credentials: 'include', // Include cookies for session management
     headers: {

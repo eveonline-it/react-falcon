@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSpaceShuttle } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 import { initiateEveLogin } from 'utils/eveSsoUtils';
 import { useAuthStore } from 'stores/authStore';
 import EveSsoErrorHandler from './EveSsoErrorHandler';
@@ -13,21 +13,23 @@ const EveOnlineLoginForm = ({
   const [localError, setLocalError] = useState('');
   const { setLoading, setError, clearError, isLoading, error } = useAuthStore();
 
-  const handleEveLogin = async () => {
+  const handleEveLogin = async (loginType = 'login') => {
     setLoading(true);
     clearError();
     setLocalError('');
     
     try {
       // Call backend to get auth URL and redirect
-      await initiateEveLogin(backendUrl);
+      await initiateEveLogin(backendUrl, loginType);
       // Note: This won't execute as initiateEveLogin redirects the page
       
     } catch (err) {
-      const errorMessage = err.message || 'Failed to initiate EVE Online login';
+      const errorMessage = err.message || 'Failed to initiate login';
       setError(errorMessage);
       setLocalError(errorMessage);
       if (onError) onError(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -46,28 +48,38 @@ const EveOnlineLoginForm = ({
         </div>
       )}
       
-      <Form.Group className="mb-0">
+      <Form.Group className="mb-3">
         <Button
-          onClick={handleEveLogin}
+          onClick={() => handleEveLogin('login')}
           disabled={isLoading}
-          className="w-100 btn-eve-online"
-          style={{
-            backgroundColor: '#f39c12',
-            borderColor: '#f39c12',
-            color: '#fff'
-          }}
+          variant="primary"
+          className="w-100 mb-2"
         >
           <FontAwesomeIcon
-            icon={faSpaceShuttle}
+            icon={faUser}
             className="me-2"
           />
-          {isLoading ? 'Connecting...' : 'Login with EVE Online'}
+          Login with EVE Online
+        </Button>
+        
+        <Button
+          onClick={() => handleEveLogin('register')}
+          disabled={isLoading}
+          variant="outline-primary"
+          className="w-100"
+        >
+          <FontAwesomeIcon
+            icon={faUserPlus}
+            className="me-2"
+          />
+          Register with Full ESI Scopes
         </Button>
       </Form.Group>
       
       <div className="text-center mt-3">
         <small className="text-muted">
-          Login using your EVE Online character
+          <strong>Login:</strong> Basic authentication without ESI scopes<br/>
+          <strong>Register:</strong> Full ESI access for advanced features
         </small>
       </div>
     </Form>
