@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect } from 'react';
 import { useAuthStatus, useCurrentUser } from 'hooks/useAuth';
+import { useAuthStore } from 'stores/authStore';
+import { processEveAuthResponse } from 'utils/authUtils';
 
 const AuthContext = createContext();
 AuthContext.displayName = 'AuthContext';
@@ -13,41 +15,70 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
+  const authStore = useAuthStore();
+  
   // Use TanStack Query for auth status management
   const {
     user: authData,
-    isAuthenticated,
+    isAuthenticated: cookieAuth,
     isLoading,
     error,
     refetch: verifyAuth,
   } = useCurrentUser({
-    refetchInterval: 1000 * 10, // Check every 10 seconds
+    refetchInterval: 1000 * 30, // Check every 30 seconds
     refetchIntervalInBackground: false, // Only when tab is active
     refetchOnWindowFocus: true, // Check when window gains focus
   });
 
+  // Sync cookie auth with Zustand store
+  useEffect(() => {
+    if (!isLoading && cookieAuth && authData) {
+      console.log('🍪 Cookie auth detected, syncing with store...');
+      
+      // Only sync if store is not already authenticated or has different user
+      if (!authStore.isAuthenticated || authStore.user?.characterId !== authData.character_id) {
+        console.log('🔄 Syncing auth data from cookie to store');
+        processEveAuthResponse({
+          authenticated: true,
+          character_id: authData.character_id,
+          character_name: authData.character_name,
+          characters: authData.characters || [],
+          permissions: authData.permissions || [],
+          user_id: authData.user_id
+        });
+      }
+    }
+  }, [isLoading, cookieAuth, authData, authStore.isAuthenticated, authStore.user]);
+
   // Handle authentication failures and redirects
   useEffect(() => {
-    if (!isLoading && !isAuthenticated && !error) {
-      console.log('Authentication expired');
+    if (!isLoading && !cookieAuth && !error) {
+      console.log('❌ Cookie authentication expired');
+      // Clear store if cookie auth is gone
+      if (authStore.isAuthenticated) {
+        console.log('🧹 Clearing store auth state');
+        authStore.logout();
+      }
+      
       // Only redirect if not already on login page
       if (window.location.pathname !== '/login') {
-        console.log('Redirecting to login...');
+        console.log('➡️ Redirecting to login...');
         window.location.href = '/login';
       }
     }
-  }, [isLoading, isAuthenticated, error]);
+  }, [isLoading, cookieAuth, error, authStore]);
 
   // Handle auth verification errors
   useEffect(() => {
     if (error && window.location.pathname !== '/login') {
-      console.error('Auth verification failed:', error);
+      console.error('❌ Auth verification failed:', error);
+      authStore.logout();
       window.location.href = '/login';
     }
-  }, [error]);
+  }, [error, authStore]);
 
   const value = {
-    isAuthenticated,
+    isAuthenticated: cookieAuth || authStore.isAuthenticated,
     user: authData?.user_id || null,
     charId: authData?.character_id || null,
     characterName: authData?.character_name || null,
@@ -55,6 +86,7 @@ export const AuthProvider = ({ children }) => {
     isLoading,
     verifyAuth,
     error,
+    authStore, // Provide access to Zustand store
   };
 
   return (
