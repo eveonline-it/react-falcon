@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Col, Row, Button, Table, Badge, Modal, Form, Alert } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faEdit, faTrash, faUsers, faKey } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTrash, faUsers, faKey } from '@fortawesome/free-solid-svg-icons';
 import { useGroups, usePermissions, useCreatePermissionAssignment, useDeletePermissionAssignment } from 'hooks/auth/useGroups';
 
 const GroupsManagement = () => {
@@ -11,16 +11,22 @@ const GroupsManagement = () => {
   const [formData, setFormData] = useState({
     subjectType: 'group',
     subjectId: '',
-    permission: '',
+    permission: '', // This maps to 'action' in API
+    service: 'default',
     resource: '',
-    resourceId: ''
+    reason: '',
+    expiresAt: ''
   });
 
   const { data: groupsData, isLoading: groupsLoading } = useGroups();
-  const groups = groupsData?.subjects || [];
-  const groupsCount = groupsData?.count || 0;
+  // Handle different possible response structures from the API
+  const groups = groupsData?.subjects || groupsData?.data || groupsData || [];
+  const groupsCount = groupsData?.count || groupsData?.total || groups.length;
   const { data: permissionsData, isLoading: permissionsLoading } = usePermissions();
-  const permissions = Array.isArray(permissionsData) ? permissionsData : (permissionsData?.assignments || []);
+  // Handle different possible response structures for permissions
+  const permissions = Array.isArray(permissionsData) 
+    ? permissionsData 
+    : (permissionsData?.assignments || permissionsData?.data || []);
   const createMutation = useCreatePermissionAssignment();
   const deleteMutation = useDeletePermissionAssignment();
 
@@ -32,8 +38,10 @@ const GroupsManagement = () => {
           subjectType: 'group',
           subjectId: '',
           permission: '',
+          service: 'default',
           resource: '',
-          resourceId: ''
+          reason: '',
+          expiresAt: ''
         });
       }
     });
@@ -259,45 +267,72 @@ const GroupsManagement = () => {
                 </Form.Group>
               </Col>
             </Row>
-            <Form.Group className="mb-3">
-              <Form.Label>Permission</Form.Label>
-              <Form.Control
-                type="text"
-                value={formData.permission}
-                onChange={(e) => setFormData({ ...formData, permission: e.target.value })}
-                placeholder="e.g., read, write, admin"
-              />
-            </Form.Group>
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Resource Type (Optional)</Form.Label>
+                  <Form.Label>Service</Form.Label>
                   <Form.Control
                     type="text"
-                    value={formData.resource}
-                    onChange={(e) => setFormData({ ...formData, resource: e.target.value })}
-                    placeholder="e.g., dashboard, user, report"
+                    value={formData.service}
+                    onChange={(e) => setFormData({ ...formData, service: e.target.value })}
+                    placeholder="e.g., falcon, auth, admin"
                   />
                   <Form.Text className="text-muted">
-                    Leave empty for global permissions
+                    Service name (required)
                   </Form.Text>
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Resource ID (Optional)</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={formData.resourceId}
-                    onChange={(e) => setFormData({ ...formData, resourceId: e.target.value })}
-                    placeholder="Specific resource ID"
-                  />
-                  <Form.Text className="text-muted">
-                    Only if resource type is specified
-                  </Form.Text>
+                  <Form.Label>Action</Form.Label>
+                  <Form.Select
+                    value={formData.permission}
+                    onChange={(e) => setFormData({ ...formData, permission: e.target.value })}
+                  >
+                    <option value="">Select action...</option>
+                    <option value="read">Read</option>
+                    <option value="write">Write</option>
+                    <option value="delete">Delete</option>
+                    <option value="admin">Admin</option>
+                  </Form.Select>
                 </Form.Group>
               </Col>
             </Row>
+            <Form.Group className="mb-3">
+              <Form.Label>Resource</Form.Label>
+              <Form.Control
+                type="text"
+                value={formData.resource}
+                onChange={(e) => setFormData({ ...formData, resource: e.target.value })}
+                placeholder="e.g., dashboard, user, report"
+              />
+              <Form.Text className="text-muted">
+                Resource type (required)
+              </Form.Text>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Reason</Form.Label>
+              <Form.Control
+                type="text"
+                value={formData.reason}
+                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                placeholder="Reason for granting this permission"
+              />
+              <Form.Text className="text-muted">
+                Explanation for this permission assignment (required)
+              </Form.Text>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Expires At (Optional)</Form.Label>
+              <Form.Control
+                type="datetime-local"
+                value={formData.expiresAt}
+                onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
+              />
+              <Form.Text className="text-muted">
+                Leave empty for permanent permission
+              </Form.Text>
+            </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
@@ -307,7 +342,7 @@ const GroupsManagement = () => {
           <Button
             variant="primary"
             onClick={handleCreateAssignment}
-            disabled={createMutation.isPending || !formData.subjectId || !formData.permission}
+            disabled={createMutation.isPending || !formData.subjectId || !formData.permission || !formData.service || !formData.resource || !formData.reason}
           >
             {createMutation.isPending ? (
               <>

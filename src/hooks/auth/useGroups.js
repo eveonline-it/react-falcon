@@ -2,14 +2,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const API_BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'http://localhost:8080';
 
+// Helper function to get auth headers
+const getAuthHeaders = () => {
+  // For now, keep using cookies as per CLAUDE.md instructions
+  // The backend should handle the authentication method internally
+  return {
+    'Content-Type': 'application/json',
+  };
+};
+
 // API functions following the OpenAPI specification
 const fetchGroups = async () => {
   const response = await fetch(`${API_BASE_URL}/admin/permissions/subjects/groups`, {
     method: 'GET',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    credentials: 'include', // Keep cookie auth as per CLAUDE.md
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -17,15 +24,28 @@ const fetchGroups = async () => {
     throw new Error(error.message || 'Failed to fetch groups');
   }
 
-  return response.json();
+  const data = await response.json();
+  // Handle different possible response structures
+  return data;
 };
 
 const fetchPermissionAssignments = async (filters = {}) => {
   const queryParams = new URLSearchParams();
   
-  // Add filters if provided
+  // Add filters if provided - map to OpenAPI spec parameters
   Object.entries(filters).forEach(([key, value]) => {
-    if (value) queryParams.append(key, value);
+    if (value) {
+      // Map frontend filter names to API parameter names
+      const paramMap = {
+        subjectType: 'subjectType',
+        subjectId: 'subjectID',
+        permission: 'permission',
+        resource: 'resource',
+        resourceId: 'resourceID'
+      };
+      const apiKey = paramMap[key] || key;
+      queryParams.append(apiKey, value);
+    }
   });
 
   const url = `${API_BASE_URL}/admin/permissions/assignments${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
@@ -33,9 +53,7 @@ const fetchPermissionAssignments = async (filters = {}) => {
   const response = await fetch(url, {
     method: 'GET',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -43,30 +61,31 @@ const fetchPermissionAssignments = async (filters = {}) => {
     throw new Error(error.message || 'Failed to fetch permission assignments');
   }
 
-  return response.json();
+  const data = await response.json();
+  // Handle different possible response structures
+  return data;
 };
 
 const createPermissionAssignment = async (assignmentData) => {
-  // Map frontend field names to API field names
+  // Map frontend field names to OpenAPI spec field names
   const apiData = {
-    subjectType: assignmentData.subjectType,
-    subjectID: assignmentData.subjectId || assignmentData.subjectID,
-    permission: assignmentData.permission,
-    resource: assignmentData.resource || undefined,
-    resourceID: assignmentData.resourceId || assignmentData.resourceID || undefined,
+    service: assignmentData.service || 'default', // Required field
+    resource: assignmentData.resource || '', // Required field  
+    action: assignmentData.permission || assignmentData.action, // 'permission' maps to 'action'
+    subject_type: assignmentData.subjectType, // Snake case in API
+    subject_id: assignmentData.subjectId || assignmentData.subjectID, // Snake case in API
+    reason: assignmentData.reason || 'Permission granted via admin interface', // Required field
   };
-  
-  // Remove undefined fields
-  Object.keys(apiData).forEach(key => 
-    apiData[key] === undefined && delete apiData[key]
-  );
+
+  // Add optional fields
+  if (assignmentData.expires_at || assignmentData.expiresAt) {
+    apiData.expires_at = assignmentData.expires_at || assignmentData.expiresAt;
+  }
   
   const response = await fetch(`${API_BASE_URL}/admin/permissions/assignments`, {
     method: 'POST',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(apiData),
   });
 
@@ -75,17 +94,33 @@ const createPermissionAssignment = async (assignmentData) => {
     throw new Error(error.message || 'Failed to create permission assignment');
   }
 
-  return response.json();
+  const data = await response.json();
+  return data;
 };
 
 const createBulkPermissionAssignments = async (assignmentsData) => {
+  // Transform each assignment to match OpenAPI spec
+  const assignments = Array.isArray(assignmentsData) ? assignmentsData : assignmentsData.assignments || [];
+  
+  const transformedAssignments = assignments.map(assignment => ({
+    service: assignment.service || 'default',
+    resource: assignment.resource || '',
+    action: assignment.permission || assignment.action,
+    subject_type: assignment.subjectType,
+    subject_id: assignment.subjectId || assignment.subjectID,
+    reason: assignment.reason || 'Bulk permission granted via admin interface',
+    ...(assignment.expires_at || assignment.expiresAt ? { expires_at: assignment.expires_at || assignment.expiresAt } : {})
+  }));
+
+  const bulkData = {
+    assignments: transformedAssignments
+  };
+
   const response = await fetch(`${API_BASE_URL}/admin/permissions/assignments/bulk`, {
     method: 'POST',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(assignmentsData),
+    headers: getAuthHeaders(),
+    body: JSON.stringify(bulkData),
   });
 
   if (!response.ok) {
@@ -93,16 +128,16 @@ const createBulkPermissionAssignments = async (assignmentsData) => {
     throw new Error(error.message || 'Failed to create bulk permission assignments');
   }
 
-  return response.json();
+  const data = await response.json();
+  return data;
 };
 
 const deletePermissionAssignment = async (assignmentId) => {
+  // Use assignmentID parameter as per OpenAPI spec
   const response = await fetch(`${API_BASE_URL}/admin/permissions/assignments/${assignmentId}`, {
     method: 'DELETE',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -110,27 +145,122 @@ const deletePermissionAssignment = async (assignmentId) => {
     throw new Error(error.message || 'Failed to delete permission assignment');
   }
 
-  return response.ok;
+  // Return success indicator
+  return { success: true };
 };
 
 const validatePermissionSubjects = async (subjectData) => {
   const queryParams = new URLSearchParams();
   
+  // Map to OpenAPI spec parameters
   Object.entries(subjectData).forEach(([key, value]) => {
-    if (value) queryParams.append(key, value);
+    if (value) {
+      const paramMap = {
+        subjectType: 'subjectType',
+        subjectId: 'subjectID',
+        subjectIds: 'subjectIDs'
+      };
+      const apiKey = paramMap[key] || key;
+      queryParams.append(apiKey, value);
+    }
   });
 
   const response = await fetch(`${API_BASE_URL}/admin/permissions/subjects/validate?${queryParams.toString()}`, {
     method: 'GET',
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Failed to validate permission subjects' }));
     throw new Error(error.message || 'Failed to validate permission subjects');
+  }
+
+  const data = await response.json();
+  return data;
+};
+
+// New API functions for additional endpoints from OpenAPI spec
+const fetchPermissionServices = async () => {
+  const response = await fetch(`${API_BASE_URL}/admin/permissions/services`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Failed to fetch permission services' }));
+    throw new Error(error.message || 'Failed to fetch permission services');
+  }
+
+  return response.json();
+};
+
+const checkPermissions = async (checkData) => {
+  const response = await fetch(`${API_BASE_URL}/admin/permissions/check`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(checkData),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Failed to check permissions' }));
+    throw new Error(error.message || 'Failed to check permissions');
+  }
+
+  return response.json();
+};
+
+const fetchUserPermissions = async (characterID) => {
+  const response = await fetch(`${API_BASE_URL}/admin/permissions/check/user/${characterID}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Failed to fetch user permissions' }));
+    throw new Error(error.message || 'Failed to fetch user permissions');
+  }
+
+  return response.json();
+};
+
+const fetchServicePermissions = async (serviceName) => {
+  const response = await fetch(`${API_BASE_URL}/admin/permissions/check/service/${serviceName}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Failed to fetch service permissions' }));
+    throw new Error(error.message || 'Failed to fetch service permissions');
+  }
+
+  return response.json();
+};
+
+// Audit endpoint
+const fetchPermissionAudit = async (filters = {}) => {
+  const queryParams = new URLSearchParams();
+  
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) queryParams.append(key, value);
+  });
+
+  const url = `${API_BASE_URL}/admin/permissions/audit${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    credentials: 'include',
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Failed to fetch permission audit' }));
+    throw new Error(error.message || 'Failed to fetch permission audit');
   }
 
   return response.json();
@@ -217,7 +347,68 @@ export const useValidatePermissionSubjects = () => {
   });
 };
 
-// Filtered permission hooks for convenience
+// New React Query hooks for additional endpoints
+export const usePermissionServices = () => {
+  return useQuery({
+    queryKey: ['permissions', 'services'],
+    queryFn: fetchPermissionServices,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: (failureCount, error) => {
+      if (error?.message?.includes('40')) return false;
+      return failureCount < 3;
+    },
+  });
+};
+
+export const useCheckPermissions = () => {
+  return useMutation({
+    mutationFn: checkPermissions,
+    onError: (error) => {
+      console.error('Failed to check permissions:', error);
+    },
+  });
+};
+
+export const useUserPermissionsSummary = (characterID) => {
+  return useQuery({
+    queryKey: ['permissions', 'user', characterID],
+    queryFn: () => fetchUserPermissions(characterID),
+    enabled: !!characterID,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      if (error?.message?.includes('40')) return false;
+      return failureCount < 3;
+    },
+  });
+};
+
+export const useServicePermissions = (serviceName) => {
+  return useQuery({
+    queryKey: ['permissions', 'service', serviceName],
+    queryFn: () => fetchServicePermissions(serviceName),
+    enabled: !!serviceName,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: (failureCount, error) => {
+      if (error?.message?.includes('40')) return false;
+      return failureCount < 3;
+    },
+  });
+};
+
+// Audit hook
+export const usePermissionAudit = (filters = {}) => {
+  return useQuery({
+    queryKey: ['permissions', 'audit', filters],
+    queryFn: () => fetchPermissionAudit(filters),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    retry: (failureCount, error) => {
+      if (error?.message?.includes('40')) return false;
+      return failureCount < 3;
+    },
+  });
+};
+
+// Filtered permission hooks for convenience (updated to use new naming)
 export const useGroupPermissions = (groupId) => {
   return usePermissions({ subjectType: 'group', subjectId: groupId });
 };
