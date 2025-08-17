@@ -166,6 +166,7 @@ import TopNavLayout from 'layouts/TopNavLayout';
 import ComboNavLayout from 'layouts/ComboNavLayout';
 import DoubleTopNavLayout from 'layouts/DoubleTopNavLayout';
 import FalconLoader from 'components/common/FalconLoader';
+import GroupsManagement from 'pages/groups/GroupsManagement';
 
 const routes = [
   {
@@ -360,6 +361,15 @@ const routes = [
               {
                 path: paths.reports,
                 element: <Reports />
+              }
+            ]
+          },
+          {
+            path: rootPaths.groupsRoot,
+            children: [
+              {
+                path: paths.groupsManagement,
+                element: <GroupsManagement />
               }
             ]
           },

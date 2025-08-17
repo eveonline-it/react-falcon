@@ -15,10 +15,10 @@ import {
 import { Link } from 'react-router';
 import classNames from 'classnames';
 import InboxRow from './InboxRow';
-import useBulkSelect from 'hooks/useBulkSelect';
+import useBulkSelect from 'hooks/ui/useBulkSelect';
 import InboxFilterDropdown from './InboxFilterDropdown';
 import InboxFooter from './InboxFooter';
-import usePagination from 'hooks/usePagination';
+import usePagination from 'hooks/ui/usePagination';
 import paths from 'routes/paths';
 import EmailProvider, { useEmailContext } from 'providers/EmailProvider';
 

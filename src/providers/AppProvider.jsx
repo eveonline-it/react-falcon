@@ -1,7 +1,7 @@
 import React, { createContext, use, useEffect, useReducer } from 'react';
 import { settings } from 'config';
 import { getColor, getItemFromStore } from 'helpers/utils';
-import useToggleStyle from 'hooks/useToggleStyle';
+import useToggleStyle from 'hooks/ui/useToggleStyle';
 import { configReducer } from 'reducers/configReducer';
 
 export const AppContext = createContext(settings);

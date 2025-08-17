@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Col, Row, Spinner } from 'react-bootstrap';
 import PricingAltHeader from './PricingAltHeader';
 import { Link } from 'react-router';
-import useFakeFetch from 'hooks/useFakeFetch';
+import useFakeFetch from 'hooks/ui/useFakeFetch';
 import PricingAltCard from './PricingAltCard';
 import FaqAlt from 'pages/faq/faq-alt/FaqAlt';
 import { pricingAltData as pricingData } from 'data/pricing';

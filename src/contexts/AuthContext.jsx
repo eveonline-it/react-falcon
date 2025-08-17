@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect } from 'react';
-import { useAuthStatus, useCurrentUser } from 'hooks/useAuth';
+import { useAuthStatus, useCurrentUser } from 'hooks/auth/useAuth';
 import { useAuthStore } from 'stores/authStore';
 import { processEveAuthResponse } from 'utils/authUtils';
 

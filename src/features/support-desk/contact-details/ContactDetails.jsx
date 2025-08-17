@@ -7,7 +7,7 @@ import Timeline from './Timeline';
 import Tickets from './Tickets';
 import Notes from './Notes';
 import ContactProfile from './ContactProfile';
-import { useBreakpoints } from 'hooks/useBreakpoints';
+import { useBreakpoints } from 'hooks/ui/useBreakpoints';
 import ToDoList from './ToDoList';
 import IconButton from 'components/common/IconButton';
 

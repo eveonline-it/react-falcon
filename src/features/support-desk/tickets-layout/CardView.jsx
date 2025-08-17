@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Card, Col, Offcanvas, Row } from 'react-bootstrap';
 import AllTicketsHeader from './AllTicketsHeader';
 import TicketFilteringForm from './TicketFilteringForm';
-import { useBreakpoints } from 'hooks/useBreakpoints';
+import { useBreakpoints } from 'hooks/ui/useBreakpoints';
 import AdvanceTableProvider from 'providers/AdvanceTableProvider';
 import AdvanceTablePagination from 'components/common/advance-table/AdvanceTablePagination';
-import useSupportDeskTable from 'hooks/useSupportDeskTable';
+import useSupportDeskTable from 'hooks/ui/useSupportDeskTable';
 import CardLayout from './CardLayout';
 
 const CardView = () => {

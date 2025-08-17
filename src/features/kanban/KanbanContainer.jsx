@@ -7,7 +7,7 @@ import Bowser from 'bowser';
 import { useKanbanContext } from 'providers/KanbanProvider';
 import { DndContext, closestCorners, DragOverlay } from '@dnd-kit/core';
 
-import { useGetDndSensor } from 'hooks/useGetDndSensor';
+import { useGetDndSensor } from 'hooks/ui/useGetDndSensor';
 
 import { arrayMove } from '@dnd-kit/sortable';
 import TaskCard from './TaskCard';

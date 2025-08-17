@@ -10,7 +10,7 @@ import Flex from 'components/common/Flex';
 import IconItem from 'components/common/icon/IconItem';
 import SubtleBadge from 'components/common/SubtleBadge';
 import { recentLeadsTableData } from 'data/dashboard/crm';
-import useAdvanceTable from 'hooks/useAdvanceTable';
+import useAdvanceTable from 'hooks/ui/useAdvanceTable';
 import AdvanceTableProvider from 'providers/AdvanceTableProvider';
 
 const columns = [

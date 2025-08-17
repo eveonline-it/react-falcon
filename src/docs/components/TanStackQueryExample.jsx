@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Card, Row, Col, Button, Spinner, Alert, Form } from 'react-bootstrap';
-import { useUserProfile, useUpdateUserProfile } from 'hooks/useUserProfile';
-import { useAnalyticsOverview, useRevenueData } from 'hooks/useAnalytics';
-import { useInfiniteProducts, useFlattenedInfiniteData } from 'hooks/useInfiniteData';
+import { useUserProfile, useUpdateUserProfile } from 'hooks/auth/useUserProfile';
+import { useAnalyticsOverview, useRevenueData } from 'hooks/analytics/useAnalytics';
+import { useInfiniteProducts, useFlattenedInfiniteData } from 'hooks/data/useInfiniteData';
 
 const TanStackQueryExample = () => {
   const [selectedUserId, setSelectedUserId] = useState('1');

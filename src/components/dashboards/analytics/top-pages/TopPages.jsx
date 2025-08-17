@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import AdvanceTable from 'components/common/advance-table/AdvanceTable';
 import AdvanceTableSearchBox from 'components/common/advance-table/AdvanceTableSearchBox';
 import AdvanceTableFooter from 'components/common/advance-table/AdvanceTableFooter';
-import useAdvanceTable from 'hooks/useAdvanceTable';
+import useAdvanceTable from 'hooks/ui/useAdvanceTable';
 import AdvanceTableProvider from 'providers/AdvanceTableProvider';
 
 const columns = [

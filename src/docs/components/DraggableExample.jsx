@@ -13,7 +13,7 @@ import {
   arrayMove
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useGetDndSensor } from 'hooks/useGetDndSensor';
+import { useGetDndSensor } from 'hooks/ui/useGetDndSensor';
 
 const data = [
   {

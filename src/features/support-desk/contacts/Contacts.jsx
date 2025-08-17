@@ -10,9 +10,9 @@ import AdvanceTablePagination from 'components/common/advance-table/AdvanceTable
 import { contacts } from 'data/support-desk/contactsData';
 import ContactsHeader from './ContactsHeader';
 import ContactsFilteringForm from './ContactsFilteringForm';
-import { useBreakpoints } from 'hooks/useBreakpoints';
+import { useBreakpoints } from 'hooks/ui/useBreakpoints';
 import AdvanceTableProvider from 'providers/AdvanceTableProvider';
-import useAdvanceTable from 'hooks/useAdvanceTable';
+import useAdvanceTable from 'hooks/ui/useAdvanceTable';
 
 const columns = [
   {

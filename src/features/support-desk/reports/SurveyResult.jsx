@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import AdvanceTable from 'components/common/advance-table/AdvanceTable';
 import { Button, Card, Col, Form, ProgressBar, Row } from 'react-bootstrap';
 import AdvanceTablePagination from 'components/common/advance-table/AdvanceTablePagination';
-import useAdvanceTable from 'hooks/useAdvanceTable';
+import useAdvanceTable from 'hooks/ui/useAdvanceTable';
 import AdvanceTableProvider, {
   useAdvanceTableContext
 } from 'providers/AdvanceTableProvider';

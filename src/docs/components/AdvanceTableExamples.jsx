@@ -8,7 +8,7 @@ import AdvanceTable from 'components/common/advance-table/AdvanceTable';
 import AdvanceTableFooter from 'components/common/advance-table/AdvanceTableFooter';
 import AdvanceTableSearchBox from 'components/common/advance-table/AdvanceTableSearchBox';
 import AdvanceTablePagination from 'components/common/advance-table/AdvanceTablePagination';
-import useAdvanceTable from 'hooks/useAdvanceTable';
+import useAdvanceTable from 'hooks/ui/useAdvanceTable';
 import AdvanceTableProvider, {
   useAdvanceTableContext
 } from 'providers/AdvanceTableProvider';

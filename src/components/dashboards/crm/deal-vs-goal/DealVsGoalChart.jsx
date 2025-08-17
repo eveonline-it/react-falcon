@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import * as echarts from 'echarts/core';
 import { getPosition, tooltipFormatter } from 'helpers/echart-utils';
 import { getPastDates, rgbaColor } from 'helpers/utils';
-import { useBreakpoints } from 'hooks/useBreakpoints';
+import { useBreakpoints } from 'hooks/ui/useBreakpoints';
 import { useAppContext } from 'providers/AppProvider';
 import ReactEchart from 'components/common/ReactEchart';
 

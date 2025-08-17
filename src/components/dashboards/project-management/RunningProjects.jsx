@@ -6,7 +6,7 @@ import { Link } from 'react-router';
 import FalconCardFooterLink from 'components/common/FalconCardFooterLink';
 import FalconCardHeader from 'components/common/FalconCardHeader';
 import AdvanceTable from 'components/common/advance-table/AdvanceTable';
-import useAdvanceTable from 'hooks/useAdvanceTable';
+import useAdvanceTable from 'hooks/ui/useAdvanceTable';
 import AdvanceTableProvider from 'providers/AdvanceTableProvider';
 
 const columns = [
