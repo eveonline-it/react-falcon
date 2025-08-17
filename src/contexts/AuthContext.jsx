@@ -62,18 +62,26 @@ export const AuthProvider = ({ children }) => {
       
       // Only redirect if not already on login page
       if (window.location.pathname !== '/login') {
-        console.log('➡️ Redirecting to login...');
+        console.log('➡️ User not authenticated, redirecting to login...');
         window.location.href = '/login';
       }
     }
   }, [isLoading, cookieAuth, error, authStore]);
 
-  // Handle auth verification errors
+  // Handle auth verification errors with different redirect logic
   useEffect(() => {
-    if (error && window.location.pathname !== '/login') {
+    if (error && window.location.pathname !== '/login' && window.location.pathname !== '/') {
       console.error('❌ Auth verification failed:', error);
       authStore.logout();
-      window.location.href = '/login';
+      
+      // Check if this is specifically an /auth/status endpoint failure
+      if (error?.isAuthStatusFailure) {
+        console.log('🔗 Auth status endpoint failed, redirecting to login...');
+        window.location.href = '/login';
+      } else {
+        console.log('🏠 Other auth error, redirecting to homepage...');
+        window.location.href = '/';
+      }
     }
   }, [error, authStore]);
 

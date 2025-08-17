@@ -10,7 +10,6 @@ import { useAuth } from 'contexts/AuthContext';
 
 const ProfileDropdown = () => {
   const { user, charId } = useAuth();
-  console.log(useAuth())
   return (
     <Dropdown navbar={true} as="li">
       <Dropdown.Toggle

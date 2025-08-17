@@ -24,13 +24,27 @@ const checkAuthStatus = async () => {
         user_id: data.user_id || null,
         character_id: data.character_id || null,
         character_name: data.character_name || null,
-        characters: data.characters || []
+        characters: data.characters || [],
+        _source: 'auth_status_success'
       };
     }
-    return { authenticated: false, user_id: null, character_id: null, character_name: null, characters: [] };
+    
+    // Auth status endpoint responded but user not authenticated
+    return { 
+      authenticated: false, 
+      user_id: null, 
+      character_id: null, 
+      character_name: null, 
+      characters: [],
+      _source: 'auth_status_unauthenticated'
+    };
   } catch (error) {
     console.error('Auth status check failed:', error);
-    return { authenticated: false, user_id: null, character_id: null, character_name: null, characters: [] };
+    // This is a network/server error, not an auth failure
+    const authError = new Error('Auth status endpoint failed');
+    authError.isAuthStatusFailure = true;
+    authError.originalError = error;
+    throw authError;
   }
 };
 
