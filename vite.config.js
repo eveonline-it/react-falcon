@@ -1,28 +1,28 @@
 import { defineConfig, loadEnv } from 'vite';
 import fs from 'fs/promises';
 import react from '@vitejs/plugin-react';
-import jsconfigPaths from 'vite-jsconfig-paths';
+import tsconfigPaths from 'vite-tsconfig-paths';
 import compileSCSS from './compile-scss';
 
 export default ({ mode }) => {
   process.env = { ...process.env, ...loadEnv(mode, process.cwd()) };
 
   return defineConfig({
-    plugins: [react(), jsconfigPaths(), compileSCSS()],
+    plugins: [react(), tsconfigPaths(), compileSCSS()],
     base: process.env.VITE_PUBLIC_URL || '/',
     esbuild: {
-      loader: 'jsx',
-      include: /src\/.*\.jsx?$/,
+      loader: 'tsx',
+      include: /src\/.*\.[jt]sx?$/,
       exclude: []
     },
     optimizeDeps: {
       esbuildOptions: {
         plugins: [
           {
-            name: 'load-js-files-as-jsx',
+            name: 'load-js-files-as-tsx',
             setup(build) {
-              build.onLoad({ filter: /src\/.*\.js$/ }, async args => ({
-                loader: 'jsx',
+              build.onLoad({ filter: /src\/.*\.[jt]s$/ }, async args => ({
+                loader: 'tsx',
                 contents: await fs.readFile(args.path, 'utf8')
               }));
             }
