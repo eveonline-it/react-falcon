@@ -215,7 +215,7 @@ TanStack Query (React Query) v5 is integrated for efficient server state managem
 
 ### Backend API Specification
 All API queries and mutations must respect the backend OpenAPI specification:
-- **OpenAPI Spec URL**: https://raw.githubusercontent.com/eveonline-it/go-falcon/refs/heads/main/falcon-openapi.json
+- **OpenAPI Spec URL**: https://go.eveonline.it/openapi.json
 - **Compliance Required**: All data fetching operations must follow the defined endpoints, request/response schemas, and authentication requirements
 - **Schema Validation**: Ensure request payloads and response handling match the OpenAPI definitions
 - **Authentication Method**: All API calls use cookie-based authentication with `credentials: 'include'` (NOT Bearer tokens)
