@@ -56,7 +56,7 @@ type AuthStore = AuthState & AuthActions;
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
-  isLoading: true, // Start with loading true to prevent premature redirects
+  isLoading: true, // Start with loading true to prevent premature redirects during session check
   error: null,
   token: null,
   refreshToken: null,

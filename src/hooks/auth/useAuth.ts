@@ -66,17 +66,29 @@ const checkAuthStatus = async (): Promise<AuthStatus> => {
       };
     }
     
-    // Auth status endpoint responded but user not authenticated
-    return { 
-      authenticated: false, 
-      user_id: null, 
-      character_id: null, 
-      character_name: null, 
-      characters: [],
-      _source: 'auth_status_unauthenticated'
-    };
+    // Handle non-200 responses (like 401 Unauthorized when no valid cookie)
+    if (response.status === 401 || response.status === 403) {
+      // User not authenticated - this is expected, not an error
+      console.log('🔐 No valid session cookie found (401/403 response)');
+      return { 
+        authenticated: false, 
+        user_id: null, 
+        character_id: null, 
+        character_name: null, 
+        characters: [],
+        _source: 'auth_status_unauthenticated'
+      };
+    }
+    
+    // Other non-200 responses are actual errors
+    throw new Error(`Auth status check failed with status ${response.status}`);
   } catch (error) {
-    console.error('Auth status check failed:', error);
+    // Re-throw HTTP status errors (these are handled above)
+    if (error instanceof Error && error.message.includes('Auth status check failed with status')) {
+      throw error;
+    }
+    
+    console.error('Auth status network/server error:', error);
     // This is a network/server error, not an auth failure
     const authError = new Error('Auth status endpoint failed') as AuthError;
     authError.isAuthStatusFailure = true;
@@ -115,6 +127,8 @@ export const useAuthStatus = (options: Omit<UseQueryOptions<AuthStatus, Error>, 
       // Don't retry on auth failures
       return failureCount < 2;
     },
+    // Add network timeout
+    networkMode: 'online',
     ...options,
   });
 };

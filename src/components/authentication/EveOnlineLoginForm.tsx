@@ -13,6 +13,9 @@ const EveOnlineLoginForm = ({
 }: EveOnlineLoginFormProps) => {
   const [localError, setLocalError] = useState('');
   const { setLoading, setError, clearError, isLoading, error } = useAuthStore();
+  
+  // Debug logging
+  console.log('🔧 EveOnlineLoginForm render:', { isLoading, error, localError });
 
   const handleEveLogin = async (loginType: EveLoginType = 'login') => {
     setLoading(true);
@@ -52,7 +55,7 @@ const EveOnlineLoginForm = ({
       <Form.Group className="mb-3">
         <Button
           onClick={() => handleEveLogin('login')}
-          disabled={isLoading}
+          disabled={false}
           variant="primary"
           className="w-100 mb-2"
         >
@@ -65,7 +68,7 @@ const EveOnlineLoginForm = ({
         
         <Button
           onClick={() => handleEveLogin('register')}
-          disabled={isLoading}
+          disabled={false}
           variant="outline-primary"
           className="w-100"
         >
