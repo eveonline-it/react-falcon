@@ -168,6 +168,8 @@ import DoubleTopNavLayout from 'layouts/DoubleTopNavLayout';
 import FalconLoader from 'components/common/FalconLoader';
 
 const SchedulerAdmin = lazy(() => import('pages/admin/SchedulerAdmin'));
+const CasbinAdmin = lazy(() => import('pages/admin/CasbinAdmin'));
+const CasbinAdminTest = lazy(() => import('pages/admin/CasbinAdminTest'));
 
 const routes: RouteObject[] = [
   {
@@ -1029,6 +1031,22 @@ const routes: RouteObject[] = [
                 element: (
                   <Suspense key="scheduler-admin" fallback={<FalconLoader />}>
                     <SchedulerAdmin />
+                  </Suspense>
+                )
+              },
+              {
+                path: paths.casbinAdmin,
+                element: (
+                  <Suspense key="casbin-admin" fallback={<FalconLoader />}>
+                    <CasbinAdmin />
+                  </Suspense>
+                )
+              },
+              {
+                path: paths.casbinAdminTest,
+                element: (
+                  <Suspense key="casbin-admin-test" fallback={<FalconLoader />}>
+                    <CasbinAdminTest />
                   </Suspense>
                 )
               }

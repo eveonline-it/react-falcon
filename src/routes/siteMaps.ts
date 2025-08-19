@@ -1048,6 +1048,18 @@ export const adminRoutes: RouteGroup = {
       icon: 'clock',
       to: paths.schedulerAdmin,
       active: true
+    },
+    {
+      name: 'Casbin Admin',
+      icon: 'shield-alt',
+      to: paths.casbinAdmin,
+      active: true
+    },
+    {
+      name: 'Casbin Test',
+      icon: 'vial',
+      to: paths.casbinAdminTest,
+      active: true
     }
   ]
 };

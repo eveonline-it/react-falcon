@@ -14,7 +14,7 @@ export interface AppSettings {
   navbarStyle: NavbarStyle;
 }
 
-export const version: string = '5.0.0';
+export const version: string = '0.0.1';
 export const navbarBreakPoint: string = 'xl'; // Vertical navbar breakpoint
 export const topNavbarBreakpoint: string = 'lg';
 export const themeVariants: readonly ThemeVariant[] = ['light', 'dark', 'auto'] as const;
