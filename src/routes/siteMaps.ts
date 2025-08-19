@@ -1040,6 +1040,18 @@ export const modulesRoutes: RouteGroup = {
   ]
 };
 
+export const adminRoutes: RouteGroup = {
+  label: 'Administration',
+  children: [
+    {
+      name: 'Scheduler',
+      icon: 'clock',
+      to: paths.schedulerAdmin,
+      active: true
+    }
+  ]
+};
+
 export const documentationRoutes: RouteGroup = {
   label: 'documentation',
   children: [
@@ -1112,6 +1124,7 @@ const routeGroups: RouteGroup[] = [
   appRoutes,
   pagesRoutes,
   modulesRoutes,
+  adminRoutes,
   documentationRoutes
 ];
 

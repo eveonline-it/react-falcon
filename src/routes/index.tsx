@@ -166,7 +166,8 @@ import TopNavLayout from 'layouts/TopNavLayout';
 import ComboNavLayout from 'layouts/ComboNavLayout';
 import DoubleTopNavLayout from 'layouts/DoubleTopNavLayout';
 import FalconLoader from 'components/common/FalconLoader';
-import GroupsManagement from 'pages/groups/GroupsManagement';
+
+const SchedulerAdmin = lazy(() => import('pages/admin/SchedulerAdmin'));
 
 const routes: RouteObject[] = [
   {
@@ -361,15 +362,6 @@ const routes: RouteObject[] = [
               {
                 path: paths.reports,
                 element: <Reports />
-              }
-            ]
-          },
-          {
-            path: rootPaths.groupsRoot,
-            children: [
-              {
-                path: paths.groupsManagement,
-                element: <GroupsManagement />
               }
             ]
           },
@@ -1028,6 +1020,19 @@ const routes: RouteObject[] = [
           {
             path: paths.migration,
             element: <Migration />
+          },
+          {
+            path: rootPaths.adminRoot,
+            children: [
+              {
+                path: paths.schedulerAdmin,
+                element: (
+                  <Suspense key="scheduler-admin" fallback={<FalconLoader />}>
+                    <SchedulerAdmin />
+                  </Suspense>
+                )
+              }
+            ]
           }
         ]
       },

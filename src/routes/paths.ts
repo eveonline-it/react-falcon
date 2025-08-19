@@ -6,7 +6,6 @@ export interface RootPaths {
   eventsRoot: string;
   socialRoot: string;
   supportDeskRoot: string;
-  groupsRoot: string;
   componentsRoot: string;
   pagesRoot: string;
   authRoot: string;
@@ -31,6 +30,7 @@ export interface RootPaths {
   utilitiesRoot: string;
   docRoot: string;
   layoutRoot: string;
+  adminRoot: string;
 }
 
 export const rootPaths: RootPaths = {
@@ -41,7 +41,6 @@ export const rootPaths: RootPaths = {
   eventsRoot: 'events',
   socialRoot: 'social',
   supportDeskRoot: 'support-desk',
-  groupsRoot: 'groups',
   componentsRoot: 'components',
   pagesRoot: 'pages',
   authRoot: 'authentication',
@@ -65,7 +64,8 @@ export const rootPaths: RootPaths = {
   videosRoot: 'videos',
   utilitiesRoot: 'utilities',
   docRoot: 'documentation',
-  layoutRoot: 'layouts'
+  layoutRoot: 'layouts',
+  adminRoot: 'admin'
 };
 
 export interface AppPaths {
@@ -103,7 +103,6 @@ export interface AppPaths {
   ticketsPreview: string;
   quickLinks: string;
   reports: string;
-  groupsManagement: string;
   userProfile: string;
   userSettings: string;
   pricingDefault: string;
@@ -221,6 +220,7 @@ export interface AppPaths {
   plugin: string;
   faq: string;
   designFile: string;
+  schedulerAdmin: string;
 }
 
 const paths: AppPaths = {
@@ -258,7 +258,6 @@ const paths: AppPaths = {
   ticketsPreview: `/${rootPaths.supportDeskRoot}/tickets-preview`,
   quickLinks: `/${rootPaths.supportDeskRoot}/quick-links`,
   reports: `/${rootPaths.supportDeskRoot}/reports`,
-  groupsManagement: `/${rootPaths.groupsRoot}/management`,
   userProfile: `/${rootPaths.userRoot}/profile`,
   userSettings: `/${rootPaths.userRoot}/settings`,
   pricingDefault: `/${rootPaths.pricingRoot}/pricing-default`,
@@ -375,7 +374,8 @@ const paths: AppPaths = {
   darkMode: `/${rootPaths.docRoot}/dark-mode`,
   plugin: `/${rootPaths.docRoot}/plugin`,
   faq: `/${rootPaths.docRoot}/faq`,
-  designFile: `/${rootPaths.docRoot}/design-file`
+  designFile: `/${rootPaths.docRoot}/design-file`,
+  schedulerAdmin: `/${rootPaths.adminRoot}/scheduler`
 };
 
 export default paths;

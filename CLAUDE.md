@@ -508,7 +508,6 @@ Located in `src/demos/dashboards/` - Complete dashboard examples:
 
 ### Authentication & Authorization
 - **EVE Online SSO** - EVE Online character authentication with secure backend integration
-- **Groups Management** - Permission-based group management system for admin users
 
 ## Customization
 
@@ -688,81 +687,3 @@ const LoginPage = () => (
 ### Documentation
 Complete setup guide available in `EVE_SSO_SETUP.md`
 
-## Groups Management System
-
-### Overview
-Comprehensive permission-based groups management system for super admin users. Provides granular control over permission assignments for groups and users following the backend OpenAPI specification.
-
-### Features
-- ✅ View available groups with member counts
-- ✅ Create permission assignments for groups and users
-- ✅ Delete existing permission assignments
-- ✅ Bulk permission assignment support
-- ✅ Subject validation for permissions
-- ✅ Resource-specific permission control
-- ✅ Real-time updates with TanStack Query
-- ✅ Cookie-based authentication
-
-### Access & Permissions
-- **Route**: `/groups/management`
-- **Required Role**: Super Admin
-- **Authentication**: Cookie-based session authentication
-
-### Components & Hooks
-
-#### Page Component
-- **GroupsManagement** (`src/pages/groups/GroupsManagement.jsx`)
-  - Main groups management interface
-  - Two-column responsive layout
-  - Modal forms for permission operations
-
-#### API Hooks
-- **useGroups** (`src/hooks/auth/useGroups.js`)
-  - `useGroups()` - Fetch available groups
-  - `usePermissions(filters)` - Fetch permission assignments
-  - `useCreatePermissionAssignment()` - Create single permission
-  - `useCreateBulkPermissionAssignments()` - Create multiple permissions
-  - `useDeletePermissionAssignment()` - Delete permission
-  - `useValidatePermissionSubjects()` - Validate subjects
-  - `useGroupPermissions(groupId)` - Group-specific permissions
-  - `useUserPermissions(userId)` - User-specific permissions
-
-### API Endpoints
-All endpoints require super admin privileges and use cookie-based authentication:
-- `GET /admin/permissions/assignments` - List permission assignments
-- `POST /admin/permissions/assignments` - Create permission assignment
-- `POST /admin/permissions/assignments/bulk` - Bulk create permissions
-- `DELETE /admin/permissions/assignments/{id}` - Delete permission
-- `GET /admin/permissions/subjects/groups` - List available groups
-- `GET /admin/permissions/subjects/validate` - Validate subjects
-
-### Usage Example
-```jsx
-import { useGroups, useCreatePermissionAssignment } from 'hooks/auth/useGroups';
-
-const MyComponent = () => {
-  const { data: groups, isLoading } = useGroups();
-  const createMutation = useCreatePermissionAssignment();
-  
-  const handleAssignPermission = (data) => {
-    createMutation.mutate({
-      subjectType: 'group',
-      subjectId: data.groupId,
-      permission: 'read',
-      resource: 'dashboard',
-      resourceId: data.dashboardId
-    });
-  };
-  
-  return (
-    // Component UI
-  );
-};
-```
-
-### Important Notes
-- All API requests use `credentials: 'include'` for cookie-based authentication
-- Do NOT use Bearer tokens or localStorage for authentication
-- Permission assignments are cached for 2 minutes with TanStack Query
-- Groups data is cached for 5 minutes
-- Mutations automatically invalidate related queries

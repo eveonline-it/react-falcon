@@ -1,5 +1,6 @@
 import React, { createContext, use, useEffect, ReactNode } from 'react';
 import { useAuthStore } from 'stores/authStore';
+import { useAuthStatus } from 'hooks/auth/useAuth';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -11,41 +12,63 @@ export const AuthContext = createContext<AuthStoreType | null>(null);
 
 const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const authStore = useAuthStore();
+  
+  // Use cookie-based backend session validation
+  const { data: authStatus, isLoading, error } = useAuthStatus({
+    retry: (failureCount, error: any) => {
+      // Don't retry on auth failures, but retry on network errors
+      if (error?.isAuthStatusFailure) {
+        return failureCount < 2;
+      }
+      return false;
+    }
+  });
 
-  // Check for auth data on app initialization
+  // Sync backend auth status with frontend auth store
   useEffect(() => {
-    const checkAuthStatus = () => {
-      // Check if session is still valid
-      if (authStore.isAuthenticated) {
-        const isValid = authStore.checkSessionExpiry();
-        if (!isValid) {
-          console.log('🔐 Session expired, logging out user');
-        }
+    if (isLoading) {
+      authStore.setLoading(true);
+      return;
+    }
+
+    authStore.setLoading(false);
+
+    // Handle auth status errors (network/server errors)
+    if (error) {
+      const authError = error as any;
+      if (authError.isAuthStatusFailure) {
+        console.warn('🔐 Auth status check failed:', authError.originalError);
+        authStore.setError('Unable to verify authentication status');
+        return;
       }
+      // Other errors should not occur with current retry policy
+      return;
+    }
 
-      // Look for auth tokens in localStorage (if using token-based auth)
-      const token = localStorage.getItem('auth-token');
-      const refreshToken = localStorage.getItem('refresh-token');
-      
-      if (token && !authStore.isAuthenticated) {
-        // Attempt to restore session with stored token
-        authStore.updateTokens(token, refreshToken);
-        // In a real app, you'd validate the token with your backend
-        console.log('🔐 Found stored auth tokens, attempting to restore session');
+    // Sync successful auth status response with store
+    if (authStatus) {
+      if (authStatus.authenticated && !authStore.isAuthenticated) {
+        // User has valid session but frontend state isn't initialized
+        console.log('🔐 Found valid backend session, initializing frontend auth state');
+        
+        const userData = {
+          userId: authStatus.user_id || undefined,
+          characterId: authStatus.character_id || undefined,
+          characterName: authStatus.character_name || undefined,
+          displayName: authStatus.character_name || undefined,
+          permissions: [] // Permissions should be fetched separately if needed
+        };
+
+        authStore.login(userData, undefined, undefined, 'eve-online');
+        authStore.clearError(); // Clear any previous auth errors
+        
+      } else if (!authStatus.authenticated && authStore.isAuthenticated) {
+        // Backend session is invalid but frontend thinks user is authenticated
+        console.log('🔐 Backend session invalid, logging out user');
+        authStore.logout();
       }
-    };
-
-    checkAuthStatus();
-
-    // Set up periodic session checks (every 5 minutes)
-    const sessionCheckInterval = setInterval(() => {
-      if (authStore.isAuthenticated) {
-        authStore.checkSessionExpiry();
-      }
-    }, 5 * 60 * 1000); // 5 minutes
-
-    return () => clearInterval(sessionCheckInterval);
-  }, [authStore]);
+    }
+  }, [authStatus, isLoading, error, authStore]);
 
   // Log auth state changes in development
   useEffect(() => {
