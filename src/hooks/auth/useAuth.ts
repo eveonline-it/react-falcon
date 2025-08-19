@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient, UseQueryOptions, UseMutationOptions } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
 
 /**
  * Authentication-related query hooks using TanStack Query
@@ -137,13 +138,21 @@ export const useLogout = (options: Omit<UseMutationOptions<LogoutResponse, Error
         _source: 'auth_status_unauthenticated' as const
       });
       
-      // Redirect to login
-      window.location.href = '/login';
+      console.log('✅ Logout successful');
+      toast.success('Logged out successfully', {
+        toastId: 'logout-success',
+        autoClose: 3000,
+      });
+      
+      // Only redirect if explicitly needed by the caller
+      // Allow the application to handle navigation
     },
     onError: (error: Error) => {
       console.error('Logout failed:', error);
-      // Still redirect even if logout request fails
-      window.location.href = '/login';
+      toast.error('Logout failed. Please try again.', {
+        toastId: 'logout-error',
+        autoClose: 5000,
+      });
     },
     ...options,
   });

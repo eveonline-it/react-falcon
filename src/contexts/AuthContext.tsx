@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode, useRef } from 'react';
+import { toast } from 'react-toastify';
 import { useCurrentUser } from 'hooks/auth/useAuth';
 import { useAuthStore } from 'stores/authStore';
 import { processEveAuthResponse } from 'utils/authUtils';
@@ -33,6 +34,7 @@ export const useAuth = (): AuthContextValue => {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const authStore = useAuthStore();
+  const hasShownErrorToast = useRef(false);
   
   // Use TanStack Query for auth status management
   const currentUserQuery = useCurrentUser({
@@ -54,6 +56,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('Auth verification requested');
   };
 
+  // Reset error toast flag when authentication succeeds
+  useEffect(() => {
+    if (cookieAuth && authData) {
+      hasShownErrorToast.current = false;
+    }
+  }, [cookieAuth, authData]);
+
   // Sync cookie auth with Zustand store
   useEffect(() => {
     if (!isLoading && cookieAuth && authData) {
@@ -74,37 +83,49 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [isLoading, cookieAuth, authData, authStore.isAuthenticated, authStore.user]);
 
-  // Handle authentication failures and redirects
+  // Handle authentication failures without redirects
   useEffect(() => {
     if (!isLoading && !cookieAuth && !error) {
-      console.log('❌ Cookie authentication expired');
+      console.log('❌ Cookie authentication expired or not authenticated');
       // Clear store if cookie auth is gone
       if (authStore.isAuthenticated) {
         console.log('🧹 Clearing store auth state');
         authStore.logout();
       }
       
-      // Only redirect if not already on login page
-      if (window.location.pathname !== '/login') {
-        console.log('➡️ User not authenticated, redirecting to login...');
-        window.location.href = '/login';
+      // Show toast only once per session
+      if (!hasShownErrorToast.current && window.location.pathname !== '/login') {
+        toast.warning('Authentication required. Please log in to continue.', {
+          toastId: 'auth-required',
+          autoClose: 5000,
+        });
+        hasShownErrorToast.current = true;
       }
     }
   }, [isLoading, cookieAuth, error, authStore]);
 
-  // Handle auth verification errors with different redirect logic
+  // Handle auth verification errors without redirects
   useEffect(() => {
     if (error && window.location.pathname !== '/login' && window.location.pathname !== '/') {
       console.error('❌ Auth verification failed:', error);
       authStore.logout();
       
-      // Check if this is specifically an /auth/status endpoint failure
-      if ((error as any)?.isAuthStatusFailure) {
-        console.log('🔗 Auth status endpoint failed, redirecting to login...');
-        window.location.href = '/login';
-      } else {
-        console.log('🏠 Other auth error, redirecting to homepage...');
-        window.location.href = '/';
+      // Show toast only once per session for auth errors
+      if (!hasShownErrorToast.current) {
+        if ((error as any)?.isAuthStatusFailure) {
+          console.log('🔗 Auth status endpoint failed');
+          toast.error('Unable to verify authentication status. Please check your connection.', {
+            toastId: 'auth-status-failed',
+            autoClose: 5000,
+          });
+        } else {
+          console.log('⚠️ Authentication error occurred');
+          toast.warning('Authentication issue detected. Please log in again if needed.', {
+            toastId: 'auth-error',
+            autoClose: 5000,
+          });
+        }
+        hasShownErrorToast.current = true;
       }
     }
   }, [error, authStore]);
