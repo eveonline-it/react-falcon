@@ -56,7 +56,7 @@ type AuthStore = AuthState & AuthActions;
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true, // Start with loading true to prevent premature redirects
   error: null,
   token: null,
   refreshToken: null,
@@ -118,9 +118,8 @@ export const useAuthStore = create<AuthStore>()(
             'logout'
           );
 
-          // Clear any stored auth data
-          localStorage.removeItem('auth-token');
-          localStorage.removeItem('refresh-token');
+          // Note: No need to clear localStorage tokens since we use cookie-based auth
+          // The backend logout endpoint (/auth/logout) handles cookie invalidation
 
           performanceTracker.end('logout');
           actionLogger('logout', prevState, get());
@@ -282,13 +281,11 @@ export const useAuthStore = create<AuthStore>()(
       }),
       {
         name: 'falcon-auth-storage',
-        // Only persist essential auth data, not sensitive tokens
+        // Only persist essential auth data, not sensitive tokens or session info
+        // Note: With cookie-based auth, we rely on backend session validation
         partialize: (state) => ({
-          user: state.user,
-          isAuthenticated: state.isAuthenticated,
-          loginMethod: state.loginMethod,
-          permissions: state.permissions,
           preferences: state.preferences
+          // Don't persist auth state - it's validated against backend session on load
         })
       }
     ),

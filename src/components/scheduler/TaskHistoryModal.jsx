@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Table, Badge, Button, Form, Alert, Pagination } from 'react-bootstrap';
+import { Modal, Table, Badge, Button, Form, Alert, Pagination, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faSpinner, faCheck, faTimes, faExclamationTriangle, 
@@ -201,16 +201,26 @@ const TaskHistoryModal = ({
             <div className="col-md-3">
               <Form.Label>&nbsp;</Form.Label>
               <div className="d-flex gap-2">
-                <Button variant="outline-secondary" onClick={() => refetch()}>
-                  <FontAwesomeIcon icon={faRefresh} />
-                </Button>
-                <Button 
-                  variant="outline-primary"
-                  onClick={exportHistory}
-                  disabled={!history?.executions?.length}
+                <OverlayTrigger
+                  placement="top"
+                  overlay={<Tooltip>Refresh execution history</Tooltip>}
                 >
-                  <FontAwesomeIcon icon={faDownload} />
-                </Button>
+                  <Button variant="outline-secondary" onClick={() => refetch()}>
+                    <FontAwesomeIcon icon={faRefresh} />
+                  </Button>
+                </OverlayTrigger>
+                <OverlayTrigger
+                  placement="top"
+                  overlay={<Tooltip>Export history to CSV file</Tooltip>}
+                >
+                  <Button 
+                    variant="outline-primary"
+                    onClick={exportHistory}
+                    disabled={!history?.executions?.length}
+                  >
+                    <FontAwesomeIcon icon={faDownload} />
+                  </Button>
+                </OverlayTrigger>
               </div>
             </div>
           </div>
@@ -288,16 +298,21 @@ const TaskHistoryModal = ({
                           )}
                         </td>
                         <td>
-                          <Button
-                            size="sm"
-                            variant="outline-info"
-                            onClick={() => {
-                              // Show execution details in a modal or expand row
-                              console.log('View execution details:', execution);
-                            }}
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip>View execution details</Tooltip>}
                           >
-                            <FontAwesomeIcon icon={faEye} />
-                          </Button>
+                            <Button
+                              size="sm"
+                              variant="outline-info"
+                              onClick={() => {
+                                // Show execution details in a modal or expand row
+                                console.log('View execution details:', execution);
+                              }}
+                            >
+                              <FontAwesomeIcon icon={faEye} />
+                            </Button>
+                          </OverlayTrigger>
                         </td>
                       </tr>
                     ))

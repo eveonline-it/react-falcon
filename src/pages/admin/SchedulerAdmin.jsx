@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Dropdown, Alert, Modal, Form } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Badge, Dropdown, Alert, Modal, Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faPlay, faPause, faStop, faTrash, faEdit, faPlus, faDownload, 
@@ -189,21 +189,31 @@ const SchedulerAdmin = () => {
           <div className="d-flex justify-content-between align-items-center">
             <h1>Scheduler Administration</h1>
             <div>
-              <Button 
-                variant="primary" 
-                className="me-2"
-                onClick={() => {
-                  setEditingTask(null);
-                  setShowTaskModal(true);
-                }}
+              <OverlayTrigger
+                placement="bottom"
+                overlay={<Tooltip>Create a new scheduled task</Tooltip>}
               >
-                <FontAwesomeIcon icon={faPlus} className="me-2" />
-                New Task
-              </Button>
-              <Button variant="outline-secondary" onClick={() => refetchTasks()}>
-                <FontAwesomeIcon icon={faCog} className="me-2" />
-                Refresh
-              </Button>
+                <Button 
+                  variant="primary" 
+                  className="me-2"
+                  onClick={() => {
+                    setEditingTask(null);
+                    setShowTaskModal(true);
+                  }}
+                >
+                  <FontAwesomeIcon icon={faPlus} className="me-2" />
+                  New Task
+                </Button>
+              </OverlayTrigger>
+              <OverlayTrigger
+                placement="bottom"
+                overlay={<Tooltip>Refresh task list and status</Tooltip>}
+              >
+                <Button variant="outline-secondary" onClick={() => refetchTasks()}>
+                  <FontAwesomeIcon icon={faCog} className="me-2" />
+                  Refresh
+                </Button>
+              </OverlayTrigger>
             </div>
           </div>
         </Col>
@@ -243,11 +253,11 @@ const SchedulerAdmin = () => {
               <div className="d-flex align-items-center">
                 <FontAwesomeIcon icon={faTasks} size="2x" className="text-success me-3" />
                 <div>
-                  <h6 className="mb-0">Active Tasks</h6>
+                  <h6 className="mb-0">Running Tasks</h6>
                   {statsLoading ? (
                     <FontAwesomeIcon icon={faSpinner} spin />
                   ) : (
-                    <h4 className="mb-0">{stats?.active_tasks || 0}</h4>
+                    <h4 className="mb-0">{stats?.running_tasks || 0}</h4>
                   )}
                 </div>
               </div>
@@ -260,11 +270,11 @@ const SchedulerAdmin = () => {
               <div className="d-flex align-items-center">
                 <FontAwesomeIcon icon={faChartLine} size="2x" className="text-info me-3" />
                 <div>
-                  <h6 className="mb-0">Total Executions</h6>
+                  <h6 className="mb-0">Completed Today</h6>
                   {statsLoading ? (
                     <FontAwesomeIcon icon={faSpinner} spin />
                   ) : (
-                    <h4 className="mb-0">{stats?.total_executions || 0}</h4>
+                    <h4 className="mb-0">{stats?.completed_today || 0}</h4>
                   )}
                 </div>
               </div>
@@ -275,13 +285,85 @@ const SchedulerAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faExclamationTriangle} size="2x" className="text-warning me-3" />
+                <FontAwesomeIcon icon={faTimes} size="2x" className="text-danger me-3" />
                 <div>
-                  <h6 className="mb-0">Failed Tasks</h6>
+                  <h6 className="mb-0">Failed Today</h6>
                   {statsLoading ? (
                     <FontAwesomeIcon icon={faSpinner} spin />
                   ) : (
-                    <h4 className="mb-0">{stats?.failed_tasks || 0}</h4>
+                    <h4 className="mb-0">{stats?.failed_today || 0}</h4>
+                  )}
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Additional Stats Row */}
+      <Row className="mb-4">
+        <Col md={3}>
+          <Card>
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <FontAwesomeIcon icon={faTasks} size="2x" className="text-primary me-3" />
+                <div>
+                  <h6 className="mb-0">Total Tasks</h6>
+                  {statsLoading ? (
+                    <FontAwesomeIcon icon={faSpinner} spin />
+                  ) : (
+                    <h4 className="mb-0">{stats?.total_tasks || 0}</h4>
+                  )}
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3}>
+          <Card>
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <FontAwesomeIcon icon={faCheck} size="2x" className="text-success me-3" />
+                <div>
+                  <h6 className="mb-0">Enabled Tasks</h6>
+                  {statsLoading ? (
+                    <FontAwesomeIcon icon={faSpinner} spin />
+                  ) : (
+                    <h4 className="mb-0">{stats?.enabled_tasks || 0}</h4>
+                  )}
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3}>
+          <Card>
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <FontAwesomeIcon icon={faServer} size="2x" className="text-info me-3" />
+                <div>
+                  <h6 className="mb-0">Workers</h6>
+                  {statsLoading ? (
+                    <FontAwesomeIcon icon={faSpinner} spin />
+                  ) : (
+                    <h4 className="mb-0">{stats?.worker_count || 0}</h4>
+                  )}
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={3}>
+          <Card>
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <FontAwesomeIcon icon={faCog} size="2x" className="text-secondary me-3" />
+                <div>
+                  <h6 className="mb-0">Queue Size</h6>
+                  {statsLoading ? (
+                    <FontAwesomeIcon icon={faSpinner} spin />
+                  ) : (
+                    <h4 className="mb-0">{stats?.queue_size || 0}</h4>
                   )}
                 </div>
               </div>
@@ -299,10 +381,14 @@ const SchedulerAdmin = () => {
                 <h5 className="mb-0">Tasks</h5>
                 <div className="d-flex gap-2">
                   {selectedTasks.length > 0 && (
-                    <Dropdown>
-                      <Dropdown.Toggle variant="outline-primary" size="sm">
-                        Bulk Actions ({selectedTasks.length})
-                      </Dropdown.Toggle>
+                    <OverlayTrigger
+                      placement="bottom"
+                      overlay={<Tooltip>Perform actions on {selectedTasks.length} selected task{selectedTasks.length !== 1 ? 's' : ''}</Tooltip>}
+                    >
+                      <Dropdown>
+                        <Dropdown.Toggle variant="outline-primary" size="sm">
+                          Bulk Actions ({selectedTasks.length})
+                        </Dropdown.Toggle>
                       <Dropdown.Menu>
                         <Dropdown.Item onClick={() => handleBulkOperation('enable')}>
                           <FontAwesomeIcon icon={faPlay} className="me-2" />
@@ -325,26 +411,37 @@ const SchedulerAdmin = () => {
                           Delete Selected
                         </Dropdown.Item>
                       </Dropdown.Menu>
-                    </Dropdown>
+                      </Dropdown>
+                    </OverlayTrigger>
                   )}
-                  <Form.Control
-                    type="text"
-                    placeholder="Search tasks..."
-                    value={taskFilters.search}
-                    onChange={(e) => setTaskFilters(prev => ({ ...prev, search: e.target.value }))}
-                    style={{ width: '200px' }}
-                  />
-                  <Form.Select
-                    value={taskFilters.status}
-                    onChange={(e) => setTaskFilters(prev => ({ ...prev, status: e.target.value }))}
-                    style={{ width: '150px' }}
+                  <OverlayTrigger
+                    placement="bottom"
+                    overlay={<Tooltip>Search tasks by name or description</Tooltip>}
                   >
-                    <option value="">All Statuses</option>
-                    <option value="running">Running</option>
-                    <option value="paused">Paused</option>
-                    <option value="disabled">Disabled</option>
-                    <option value="failed">Failed</option>
-                  </Form.Select>
+                    <Form.Control
+                      type="text"
+                      placeholder="Search tasks..."
+                      value={taskFilters.search}
+                      onChange={(e) => setTaskFilters(prev => ({ ...prev, search: e.target.value }))}
+                      style={{ width: '200px' }}
+                    />
+                  </OverlayTrigger>
+                  <OverlayTrigger
+                    placement="bottom"
+                    overlay={<Tooltip>Filter tasks by status</Tooltip>}
+                  >
+                    <Form.Select
+                      value={taskFilters.status}
+                      onChange={(e) => setTaskFilters(prev => ({ ...prev, status: e.target.value }))}
+                      style={{ width: '150px' }}
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="running">Running</option>
+                      <option value="paused">Paused</option>
+                      <option value="disabled">Disabled</option>
+                      <option value="failed">Failed</option>
+                    </Form.Select>
+                  </OverlayTrigger>
                 </div>
               </div>
             </Card.Header>
@@ -423,60 +520,90 @@ const SchedulerAdmin = () => {
                           <td>
                             <div className="d-flex gap-1">
                               {task.status === 'running' ? (
-                                <Button
-                                  size="sm"
-                                  variant="outline-warning"
-                                  onClick={() => handleTaskControl('pause', task.id)}
-                                  disabled={taskControlMutation.isPending}
+                                <OverlayTrigger
+                                  placement="top"
+                                  overlay={<Tooltip>Pause this task</Tooltip>}
                                 >
-                                  <FontAwesomeIcon icon={faPause} />
-                                </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline-warning"
+                                    onClick={() => handleTaskControl('pause', task.id)}
+                                    disabled={taskControlMutation.isPending}
+                                  >
+                                    <FontAwesomeIcon icon={faPause} />
+                                  </Button>
+                                </OverlayTrigger>
                               ) : (
+                                <OverlayTrigger
+                                  placement="top"
+                                  overlay={<Tooltip>{task.status === 'paused' ? 'Resume this task' : 'Enable this task'}</Tooltip>}
+                                >
+                                  <Button
+                                    size="sm"
+                                    variant="outline-success"
+                                    onClick={() => handleTaskControl(task.status === 'paused' ? 'resume' : 'enable', task.id)}
+                                    disabled={taskControlMutation.isPending}
+                                  >
+                                    <FontAwesomeIcon icon={faPlay} />
+                                  </Button>
+                                </OverlayTrigger>
+                              )}
+                              <OverlayTrigger
+                                placement="top"
+                                overlay={<Tooltip>Execute task manually now</Tooltip>}
+                              >
                                 <Button
                                   size="sm"
-                                  variant="outline-success"
-                                  onClick={() => handleTaskControl(task.status === 'paused' ? 'resume' : 'enable', task.id)}
+                                  variant="outline-primary"
+                                  onClick={() => handleTaskControl('execute', task.id)}
                                   disabled={taskControlMutation.isPending}
                                 >
                                   <FontAwesomeIcon icon={faPlay} />
                                 </Button>
-                              )}
-                              <Button
-                                size="sm"
-                                variant="outline-primary"
-                                onClick={() => handleTaskControl('execute', task.id)}
-                                disabled={taskControlMutation.isPending}
+                              </OverlayTrigger>
+                              <OverlayTrigger
+                                placement="top"
+                                overlay={<Tooltip>View task execution history</Tooltip>}
                               >
-                                <FontAwesomeIcon icon={faPlay} />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline-info"
-                                onClick={() => {
-                                  setSelectedTaskForHistory(task.id);
-                                  setShowHistoryModal(true);
-                                }}
+                                <Button
+                                  size="sm"
+                                  variant="outline-info"
+                                  onClick={() => {
+                                    setSelectedTaskForHistory(task.id);
+                                    setShowHistoryModal(true);
+                                  }}
+                                >
+                                  <FontAwesomeIcon icon={faHistory} />
+                                </Button>
+                              </OverlayTrigger>
+                              <OverlayTrigger
+                                placement="top"
+                                overlay={<Tooltip>Edit task settings</Tooltip>}
                               >
-                                <FontAwesomeIcon icon={faHistory} />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline-secondary"
-                                onClick={() => {
-                                  setEditingTask(task);
-                                  setShowTaskModal(true);
-                                }}
+                                <Button
+                                  size="sm"
+                                  variant="outline-secondary"
+                                  onClick={() => {
+                                    setEditingTask(task);
+                                    setShowTaskModal(true);
+                                  }}
+                                >
+                                  <FontAwesomeIcon icon={faEdit} />
+                                </Button>
+                              </OverlayTrigger>
+                              <OverlayTrigger
+                                placement="top"
+                                overlay={<Tooltip>Delete this task permanently</Tooltip>}
                               >
-                                <FontAwesomeIcon icon={faEdit} />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline-danger"
-                                onClick={() => handleDeleteTask(task.id)}
-                                disabled={deleteTaskMutation.isPending}
-                              >
-                                <FontAwesomeIcon icon={faTrash} />
-                              </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline-danger"
+                                  onClick={() => handleDeleteTask(task.id)}
+                                  disabled={deleteTaskMutation.isPending}
+                                >
+                                  <FontAwesomeIcon icon={faTrash} />
+                                </Button>
+                              </OverlayTrigger>
                             </div>
                           </td>
                         </tr>

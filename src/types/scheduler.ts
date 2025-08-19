@@ -22,14 +22,15 @@ export interface SchedulerStatusResponse {
 
 // Scheduler Stats Response
 export interface SchedulerStatsResponse {
-  active_tasks: number;
   total_tasks: number;
-  total_executions: number;
-  failed_tasks: number;
-  successful_executions: number;
-  failed_executions: number;
-  avg_execution_time?: number;
-  last_execution?: string;
+  enabled_tasks: number;
+  running_tasks: number;
+  completed_today: number;
+  failed_today: number;
+  average_runtime: string;
+  worker_count: number;
+  queue_size: number;
+  $schema?: string;
 }
 
 // Task Response Schema
@@ -94,6 +95,20 @@ export interface TaskListResponse {
 export interface TaskControlRequest {
   action: 'enable' | 'disable' | 'pause' | 'resume' | 'execute';
   parameters?: Record<string, any>;
+}
+
+// Manual Execution Request
+export interface ManualExecutionRequest {
+  parameters?: Record<string, any>;
+  priority?: string;
+}
+
+// Task Execution Response
+export interface TaskExecutionResponse {
+  execution_id: string;
+  status: string;
+  message: string;
+  started_at: string;
 }
 
 // Execution Response

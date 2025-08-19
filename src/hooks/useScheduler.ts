@@ -13,7 +13,9 @@ import type {
   ImportTasksResponse,
   TaskQueryParams,
   ExecutionQueryParams,
-  TaskControlAction
+  TaskControlAction,
+  ManualExecutionRequest,
+  TaskExecutionResponse
 } from '../types/scheduler';
 
 const API_BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.it';
@@ -220,20 +222,30 @@ const schedulerApi = {
     }
   },
 
-  executeTask: async (taskId: string): Promise<void> => {
+  executeTask: async (taskId: string, executeParams?: ManualExecutionRequest): Promise<TaskExecutionResponse> => {
     const res = await fetch(`${API_BASE_URL}/scheduler/tasks/${taskId}/execute`, {
       method: 'POST',
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(executeParams || {})
     });
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
+      console.error('❌ Execute task failed:', {
+        taskId,
+        status: res.status,
+        statusText: res.statusText,
+        errorData,
+        executeParams: executeParams || {}
+      });
+      const error = new Error(errorData.detail || errorData.message || `HTTP ${res.status}: ${res.statusText}`);
       (error as any).status = res.status;
       (error as any).data = errorData;
       throw error;
     }
+    
+    return res.json();
   },
 
   getTaskHistory: async (taskId: string, params: ExecutionQueryParams = {}): Promise<ExecutionListResponse> => {
@@ -439,8 +451,8 @@ export const useDeleteTask = () => {
 export const useTaskControl = () => {
   const queryClient = useQueryClient();
   
-  return useMutation<void, Error, { action: TaskControlAction; taskId: string }>({
-    mutationFn: ({ action, taskId }) => {
+  return useMutation<TaskExecutionResponse | void, Error, { action: TaskControlAction; taskId: string; executeParams?: ManualExecutionRequest }>({
+    mutationFn: ({ action, taskId, executeParams }) => {
       switch (action) {
         case 'enable':
           return schedulerApi.enableTask(taskId);
@@ -451,7 +463,7 @@ export const useTaskControl = () => {
         case 'resume':
           return schedulerApi.resumeTask(taskId);
         case 'execute':
-          return schedulerApi.executeTask(taskId);
+          return schedulerApi.executeTask(taskId, executeParams);
         default:
           throw new Error(`Unknown action: ${action}`);
       }
