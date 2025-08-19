@@ -101,11 +101,14 @@ export const useUpdateUser = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: ({ characterId, userData }) => 
-      apiCall(`/users/users/${characterId}`, {
+    mutationFn: ({ characterId, userData }) => {
+      console.log(`Making PUT request to: /users/${characterId}`);
+      console.log('Request body:', JSON.stringify(userData, null, 2));
+      return apiCall(`/users/${characterId}`, {
         method: 'PUT',
         body: JSON.stringify(userData)
-      }),
+      });
+    },
     onSuccess: (data, { characterId }) => {
       // Invalidate and refetch user queries
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -113,6 +116,9 @@ export const useUpdateUser = () => {
       toast.success(data?.message || 'User updated successfully');
     },
     onError: (error) => {
+      console.error('User update error:', error);
+      console.error('Error status:', error.status);
+      console.error('Error data:', error.data);
       toast.error(error?.data?.message || `Failed to update user: ${error.message}`);
     }
   });
@@ -377,5 +383,7 @@ export const createPolicy = (subject, resource, action, domain = CASBIN_DOMAINS.
 
 // Helper function to create role assignment objects
 export const createRoleAssignment = (userId, role, domain = CASBIN_DOMAINS.DEFAULT, characterId) => {
-  return CasbinDTOFactory.createRoleAssignmentRequest(userId, role, domain, characterId);
+  // Ensure role has 'role:' prefix
+  const roleWithPrefix = role.startsWith('role:') ? role : `role:${role}`;
+  return CasbinDTOFactory.createRoleAssignmentRequest(userId, roleWithPrefix, domain, characterId);
 };

@@ -59,8 +59,8 @@ export interface RoleInfo {
 }
 
 export interface RoleListResponse {
-  roles: RoleInfo[];
-  total: number;
+  roles: string[][]; // Array of arrays: [user_id, role, domain]
+  count: number;
 }
 
 export interface PolicyInfo {
@@ -72,8 +72,8 @@ export interface PolicyInfo {
 }
 
 export interface PolicyListResponse {
-  policies: PolicyInfo[];
-  total: number;
+  policies: string[][]; // Array of arrays: [subject, resource, action, domain, effect]
+  count: number;
 }
 
 export interface RoleAssignmentRequest {
@@ -519,8 +519,18 @@ export class CasbinDTOFactory {
     total: number;
   } {
     return {
-      roles: apiData.roles.map(role => new RoleDTO(role)),
-      total: apiData.total
+      roles: apiData.roles.map((roleArray: string[]) => {
+        // Convert array format [user_id, role, domain] to RoleInfo object
+        const [_subject, role, domain] = roleArray; // prefix with underscore to indicate unused
+        const roleInfo: RoleInfo = {
+          role: role.startsWith('role:') ? role.substring(5) : role, // Remove 'role:' prefix if present
+          domain: domain || 'global',
+          assigned_at: new Date().toISOString(), // Default to current time since not provided
+          character_id: undefined // Not available in this endpoint format
+        };
+        return new RoleDTO(roleInfo);
+      }),
+      total: apiData.count
     };
   }
 
@@ -533,8 +543,19 @@ export class CasbinDTOFactory {
     total: number;
   } {
     return {
-      policies: apiData.policies.map(policy => new PolicyDTO(policy)),
-      total: apiData.total
+      policies: apiData.policies.map((policyArray: string[]) => {
+        // Convert array format [subject, resource, action, domain, effect] to PolicyInfo object
+        const [subject, resource, action, domain, effect] = policyArray;
+        const policyInfo: PolicyInfo = {
+          subject: subject.startsWith('role:') ? subject.substring(5) : subject, // Remove 'role:' prefix if present for consistency
+          resource: resource,
+          action: action,
+          domain: domain || 'global',
+          effect: effect || 'allow'
+        };
+        return new PolicyDTO(policyInfo);
+      }),
+      total: apiData.count
     };
   }
 
@@ -543,32 +564,42 @@ export class CasbinDTOFactory {
   }
 
   // Create user roles response from API data
-  static createUserRoles(apiData: any): {
+  static createUserRoles(apiData: { roles?: RoleInfo[]; total?: number }): {
     roles: RoleDTO[];
     total: number;
   } {
     return {
-      roles: apiData.roles ? apiData.roles.map(role => new RoleDTO(role)) : [],
+      roles: apiData.roles ? apiData.roles.map((role: RoleInfo) => {
+        // Ensure consistent role name format (remove 'role:' prefix if present)
+        const normalizedRole: RoleInfo = {
+          ...role,
+          role: role.role.startsWith('role:') ? role.role.substring(5) : role.role
+        };
+        return new RoleDTO(normalizedRole);
+      }) : [],
       total: apiData.total || 0
     };
   }
 
   // Create role policies response from API data
-  static createRolePolicies(apiData: any): {
+  static createRolePolicies(apiData: { policies?: PolicyInfo[]; total?: number }): {
     policies: PolicyDTO[];
     total: number;
   } {
     return {
-      policies: apiData.policies ? apiData.policies.map(policy => new PolicyDTO(policy)) : [],
+      policies: apiData.policies ? apiData.policies.map((policy: PolicyInfo) => new PolicyDTO(policy)) : [],
       total: apiData.total || 0
     };
   }
 
   // Helper methods for creating request DTOs
   static createRoleAssignmentRequest(userId: string, role: string, domain: string = 'global', characterId?: number): RoleAssignmentRequest {
+    // Ensure role has 'role:' prefix format
+    const roleWithPrefix = role.startsWith('role:') ? role : `role:${role}`;
+    
     const request: RoleAssignmentRequest = {
       user_id: userId,
-      role,
+      role: roleWithPrefix,
       domain
     };
     

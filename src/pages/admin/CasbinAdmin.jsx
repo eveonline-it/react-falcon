@@ -35,6 +35,42 @@ import {
   COMMON_ACTIONS
 } from 'hooks/useCasbin';
 
+// Component to manage user roles in the edit modal
+const UserRoleFormManager = ({ user, userForm, setUserForm, setInitialUserRoles }) => {
+  const { data: userRolesData, isLoading } = useUserRoles(user?.id);
+  
+  React.useEffect(() => {
+    if (userRolesData?.roles && user) {
+      const currentRoles = userRolesData.roles.map(roleDTO => {
+        // Ensure role names match the format used in availableRoles (no 'role:' prefix)
+        const roleName = roleDTO.name;
+        return roleName.startsWith('role:') ? roleName.substring(5) : roleName;
+      });
+      setUserForm(prev => ({
+        ...prev,
+        roles: currentRoles
+      }));
+      setInitialUserRoles(currentRoles); // Store initial roles for comparison
+    }
+  }, [userRolesData, user, setUserForm, setInitialUserRoles]);
+  
+  if (isLoading) {
+    return <div className="text-muted">Loading user roles...</div>;
+  }
+  
+  // Debug info for development
+  if (userRolesData?.roles && process.env.NODE_ENV === 'development') {
+    const currentRoles = userRolesData.roles.map(roleDTO => roleDTO.name);
+    return (
+      <div className="small text-info mb-2">
+        Debug: User has roles: [{currentRoles.join(', ')}] | Form roles: [{userForm.roles.join(', ')}]
+      </div>
+    );
+  }
+  
+  return null; // This component only manages data, renders nothing
+};
+
 // Component to display user roles using the new API endpoint
 const UserRolesCell = ({ user, availableRoles, onRoleToggle }) => {
   const { data: userRolesData, isLoading: rolesLoading, error: rolesError } = useUserRoles(user.id);
@@ -116,42 +152,45 @@ const PermissionChecker = () => {
   };
   
   return (
-    <Card className="mb-4">
-      <Card.Header>
+    <Card className="mb-3">
+      <Card.Header className="py-2">
         <h6 className="mb-0">
-          <FontAwesomeIcon icon={faVial} className="me-2" />
+          <FontAwesomeIcon icon={faVial} className="me-1" size="sm" />
           Permission Checker
         </h6>
       </Card.Header>
-      <Card.Body>
+      <Card.Body className="py-2">
         <Form>
           <Row>
             <Col md={3}>
-              <Form.Group className="mb-3">
-                <Form.Label>Character ID</Form.Label>
+              <Form.Group className="mb-2">
+                <Form.Label className="small">Character ID</Form.Label>
                 <Form.Control
                   type="number"
                   placeholder="e.g., 12345678"
+                  size="sm"
                   value={permissionForm.character_id}
                   onChange={(e) => setPermissionForm(prev => ({ ...prev, character_id: e.target.value }))}
                 />
               </Form.Group>
             </Col>
             <Col md={3}>
-              <Form.Group className="mb-3">
-                <Form.Label>Resource</Form.Label>
+              <Form.Group className="mb-2">
+                <Form.Label className="small">Resource</Form.Label>
                 <Form.Control
                   type="text"
                   placeholder="e.g., admin_panel, users"
+                  size="sm"
                   value={permissionForm.resource}
                   onChange={(e) => setPermissionForm(prev => ({ ...prev, resource: e.target.value }))}
                 />
               </Form.Group>
             </Col>
             <Col md={2}>
-              <Form.Group className="mb-3">
-                <Form.Label>Action</Form.Label>
+              <Form.Group className="mb-2">
+                <Form.Label className="small">Action</Form.Label>
                 <Form.Select
+                  size="sm"
                   value={permissionForm.action}
                   onChange={(e) => setPermissionForm(prev => ({ ...prev, action: e.target.value }))}
                 >
@@ -165,9 +204,10 @@ const PermissionChecker = () => {
               </Form.Group>
             </Col>
             <Col md={2}>
-              <Form.Group className="mb-3">
-                <Form.Label>Domain</Form.Label>
+              <Form.Group className="mb-2">
+                <Form.Label className="small">Domain</Form.Label>
                 <Form.Select
+                  size="sm"
                   value={permissionForm.domain}
                   onChange={(e) => setPermissionForm(prev => ({ ...prev, domain: e.target.value }))}
                 >
@@ -178,11 +218,12 @@ const PermissionChecker = () => {
               </Form.Group>
             </Col>
             <Col md={2}>
-              <Form.Group className="mb-3">
-                <Form.Label>&nbsp;</Form.Label>
+              <Form.Group className="mb-2">
+                <Form.Label className="small">&nbsp;</Form.Label>
                 <div>
                   <Button 
                     variant="primary" 
+                    size="sm"
                     onClick={handlePermissionCheck}
                     disabled={permissionCheckMutation.isPending}
                     className="w-100"
@@ -266,18 +307,18 @@ const RolePoliciesDisplay = ({ roleName }) => {
       {policyDisplays.length > 0 ? (
         <>
           {policyDisplays.slice(0, 5).map((perm, index) => (
-            <Badge key={index} bg="secondary" className="me-1 mb-1 small">
+            <Badge key={index} bg="secondary" className="me-1 mb-1" style={{ fontSize: '0.7rem' }}>
               {perm}
             </Badge>
           ))}
           {policyDisplays.length > 5 && (
-            <Badge bg="light" text="dark" className="small">
+            <Badge bg="light" text="dark" style={{ fontSize: '0.7rem' }}>
               +{policyDisplays.length - 5} more
             </Badge>
           )}
         </>
       ) : (
-        <Badge bg="light" text="muted" className="small">
+        <Badge bg="light" text="muted" style={{ fontSize: '0.7rem' }}>
           No policies assigned
         </Badge>
       )}
@@ -397,6 +438,7 @@ const CasbinAdmin = () => {
 
   // Form states
   const [userForm, setUserForm] = useState({ characterName: '', characterId: '', roles: [] });
+  const [initialUserRoles, setInitialUserRoles] = useState([]); // Track original roles for comparison
   const [roleForm, setRoleForm] = useState({ name: '', permissions: [] });
   const [routeForm, setRouteForm] = useState({ path: '', method: 'GET', roles: [], protected: true });
   const [bulkRoleForm, setBulkRoleForm] = useState({ role: '', domain: 'global', action: 'assign' });
@@ -502,9 +544,11 @@ const CasbinAdmin = () => {
   const handleRoleToggle = async (userId, characterId, roleName, isRemoving) => {
     try {
       if (isRemoving) {
+        // Ensure role has 'role:' prefix for removal
+        const roleWithPrefix = roleName.startsWith('role:') ? roleName : `role:${roleName}`;
         await removeRoleMutation.mutateAsync({
           user_id: userId,
-          role: roleName,
+          role: roleWithPrefix,
           domain: 'global'
         });
       } else {
@@ -551,9 +595,12 @@ const CasbinAdmin = () => {
     }
 
     try {
+      // Ensure role has 'role:' prefix for bulk assignment
+      const roleWithPrefix = bulkRoleForm.role.startsWith('role:') ? bulkRoleForm.role : `role:${bulkRoleForm.role}`;
+      
       const bulkRequest = {
         user_ids: selectedUsers,
-        role: bulkRoleForm.role,
+        role: roleWithPrefix,
         domain: bulkRoleForm.domain
       };
 
@@ -571,27 +618,33 @@ const CasbinAdmin = () => {
   const handleSaveUser = async () => {
     if (editingUser) {
       try {
-        await updateUserMutation.mutateAsync({
-          characterId: editingUser.characterId,
+        // Try using user_id instead of characterId for the API call
+        const updateData = {
+          characterId: editingUser.id, // Use internal user ID instead of characterId
           userData: {
             character_name: userForm.characterName,
             enabled: true,
             notes: userForm.notes || ''
           }
-        });
+        };
+        console.log('Updating user with data:', updateData);
+        await updateUserMutation.mutateAsync(updateData);
         
         // Handle role assignments separately
-        const currentRoles = getUserRoles(editingUser.characterId);
-        const newRoles = userForm.roles;
+        // Use the initial roles (from when modal opened) vs current form roles (after user edits)
+        const currentRoles = initialUserRoles; // Roles when modal was opened
+        const newRoles = userForm.roles; // Current roles in form after user modifications
         
         // Remove roles that are no longer assigned
         const rolesToRemove = currentRoles.filter(role => !newRoles.includes(role));
         const rolesToAdd = newRoles.filter(role => !currentRoles.includes(role));
         
         for (const role of rolesToRemove) {
+          // Ensure role has 'role:' prefix for removal
+          const roleWithPrefix = role.startsWith('role:') ? role : `role:${role}`;
           await removeRoleMutation.mutateAsync({
             user_id: editingUser.id, // Use user_id instead of character_id
-            role,
+            role: roleWithPrefix,
             domain: CASBIN_DOMAINS.DEFAULT
           });
         }
@@ -614,6 +667,7 @@ const CasbinAdmin = () => {
     setShowUserModal(false);
     setEditingUser(null);
     setUserForm({ characterName: '', characterId: '', roles: [], notes: '' });
+    setInitialUserRoles([]); // Reset initial roles
   };
 
   const handleSaveRole = async () => {
@@ -733,9 +787,11 @@ const CasbinAdmin = () => {
           // Find the user_id for this character_id
           const user = users.find(u => u.characterId === assignment.character_id);
           if (user) {
+            // Ensure role has 'role:' prefix for removal
+            const roleWithPrefix = roleName.startsWith('role:') ? roleName : `role:${roleName}`;
             await removeRoleMutation.mutateAsync({
               user_id: user.id, // Use user_id as required by the API
-              role: roleName,
+              role: roleWithPrefix,
               domain: assignment.domain || CASBIN_DOMAINS.DEFAULT
             });
           }
@@ -781,12 +837,13 @@ const CasbinAdmin = () => {
 
   const openUserModal = (user = null) => {
     setEditingUser(user);
+    setInitialUserRoles([]); // Reset initial roles
     if (user) {
-      const userRoles = getUserRoles(user.characterId);
+      // Initialize form with basic user data first
       setUserForm({
         characterName: user.characterName,
         characterId: user.characterId,
-        roles: userRoles,
+        roles: [], // Will be populated when useUserRoles data is available
         notes: user.notes || ''
       });
     } else {
@@ -897,29 +954,31 @@ const CasbinAdmin = () => {
   return (
     <Container fluid>
       
-      <Row className="mb-4">
+      <Row className="mb-3">
         <Col>
           <div className="d-flex justify-content-between align-items-center">
-            <h1>
-              <FontAwesomeIcon icon={faShieldAlt} className="me-2" />
+            <h2>
+              <FontAwesomeIcon icon={faShieldAlt} className="me-2" size="sm" />
               Casbin Administration
-            </h1>
+            </h2>
             <div>
               <Button 
                 variant="info" 
+                size="sm"
                 className="me-2"
                 onClick={() => setShowPermissionTester(!showPermissionTester)}
               >
-                <FontAwesomeIcon icon={faVial} className="me-2" />
-                {showPermissionTester ? 'Hide' : 'Show'} Permission Tester
+                <FontAwesomeIcon icon={faVial} className="me-1" />
+                {showPermissionTester ? 'Hide' : 'Show'} Tester
               </Button>
               <Button 
                 variant="outline-secondary" 
+                size="sm"
                 className="me-2"
                 onClick={handleRefresh}
                 disabled={isLoading}
               >
-                <FontAwesomeIcon icon={isLoading ? faSpinner : faSync} className="me-2" spin={isLoading} />
+                <FontAwesomeIcon icon={isLoading ? faSpinner : faSync} className="me-1" spin={isLoading} />
                 Refresh
               </Button>
             </div>
@@ -932,24 +991,24 @@ const CasbinAdmin = () => {
         <PermissionChecker />
       )}
 
-      <Tabs activeKey={activeTab} onSelect={setActiveTab} className="mb-4">
+      <Tabs activeKey={activeTab} onSelect={setActiveTab} className="mb-3" variant="pills">
         <Tab eventKey="users" title={
-          <span>
-            <FontAwesomeIcon icon={faUsers} className="me-2" />
+          <small>
+            <FontAwesomeIcon icon={faUsers} className="me-1" size="sm" />
             Users ({users.length})
-          </span>
+          </small>
         }>
           <Card>
             <Card.Header>
               <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">
+                <h6 className="mb-0">
                   User Management
                   {selectedUsers.length > 0 && (
-                    <Badge bg="primary" className="ms-2">
+                    <Badge bg="primary" className="ms-2" size="sm">
                       {selectedUsers.length} selected
                     </Badge>
                   )}
-                </h5>
+                </h6>
                 <div className="d-flex flex-wrap gap-2">
                   {selectedUsers.length > 0 && (
                     <Button 
@@ -966,12 +1025,14 @@ const CasbinAdmin = () => {
                     placeholder="Search by name or ID..."
                     value={searchTerm}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    style={{ width: '200px' }}
+                    size="sm"
+                    style={{ width: '180px' }}
                   />
                   <Form.Select
                     value={filterRole}
                     onChange={(e) => setFilterRole(e.target.value)}
-                    style={{ width: '120px' }}
+                    size="sm"
+                    style={{ width: '110px' }}
                   >
                     <option value="">All Roles</option>
                     {availableRoles.map(role => (
@@ -991,7 +1052,8 @@ const CasbinAdmin = () => {
                       }
                       setUserFilters(newFilters);
                     }}
-                    style={{ width: '100px' }}
+                    size="sm"
+                    style={{ width: '90px' }}
                   >
                     <option value="">All Status</option>
                     <option value="true">Enabled</option>
@@ -1010,7 +1072,8 @@ const CasbinAdmin = () => {
                       }
                       setUserFilters(newFilters);
                     }}
-                    style={{ width: '100px' }}
+                    size="sm"
+                    style={{ width: '90px' }}
                   >
                     <option value="">All Banned</option>
                     <option value="false">Not Banned</option>
@@ -1029,7 +1092,8 @@ const CasbinAdmin = () => {
                       }
                       setUserFilters(newFilters);
                     }}
-                    style={{ width: '120px' }}
+                    size="sm"
+                    style={{ width: '110px' }}
                   >
                     <option value="">Sort By</option>
                     <option value="character_name">Name</option>
@@ -1047,25 +1111,26 @@ const CasbinAdmin = () => {
                           sort_order: prev.sort_order === 'asc' ? 'desc' : 'asc'
                         }));
                       }}
-                      style={{ width: '60px' }}
+                      style={{ width: '50px' }}
                     >
                       {userFilters.sort_order === 'desc' ? '↓' : '↑'}
                     </Button>
                   )}
-                  <Button variant="primary" onClick={() => openUserModal()}>
-                    <FontAwesomeIcon icon={faUserPlus} className="me-2" />
+                  <Button variant="primary" size="sm" onClick={() => openUserModal()}>
+                    <FontAwesomeIcon icon={faUserPlus} className="me-1" />
                     Add User
                   </Button>
                 </div>
               </div>
             </Card.Header>
             <Card.Body className="p-0">
-              <Table responsive hover>
+              <Table responsive hover size="sm">
                 <thead>
                   <tr>
-                    <th>
+                    <th style={{ width: '40px' }}>
                       <Form.Check
                         type="checkbox"
+                        size="sm"
                         checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
                         onChange={handleSelectAllUsers}
                       />
@@ -1074,7 +1139,7 @@ const CasbinAdmin = () => {
                     <th>Character ID</th>
                     <th>Roles</th>
                     <th>Permissions</th>
-                    <th>Actions</th>
+                    <th style={{ width: '100px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1083,6 +1148,7 @@ const CasbinAdmin = () => {
                       <td>
                         <Form.Check
                           type="checkbox"
+                          size="sm"
                           checked={selectedUsers.includes(user.id)}
                           onChange={(e) => handleUserSelection(user.id, e.target.checked)}
                         />
@@ -1181,15 +1247,15 @@ const CasbinAdmin = () => {
         </Tab>
 
         <Tab eventKey="roles" title={
-          <span>
-            <FontAwesomeIcon icon={faUserShield} className="me-2" />
+          <small>
+            <FontAwesomeIcon icon={faUserShield} className="me-1" size="sm" />
             Roles ({roles.length})
-          </span>
+          </small>
         }>
           <Card>
             <Card.Header>
               <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">Role Management</h5>
+                <h6 className="mb-0">Role Management</h6>
                 <Button variant="primary" onClick={() => openRoleModal()}>
                   <FontAwesomeIcon icon={faPlus} className="me-2" />
                   Create Role
@@ -1199,12 +1265,12 @@ const CasbinAdmin = () => {
             <Card.Body>
               <Row>
                 {roles.map(role => (
-                  <Col md={6} lg={4} key={role.name} className="mb-3">
-                    <Card className="h-100">
-                      <Card.Header className="d-flex justify-content-between align-items-center">
+                  <Col md={6} lg={4} key={role.name} className="mb-2">
+                    <Card className="h-100" style={{ fontSize: '0.9rem' }}>
+                      <Card.Header className="d-flex justify-content-between align-items-center py-2">
                         <Badge 
                           bg={role.name === 'admin' ? 'danger' : role.name === 'moderator' ? 'warning' : 'primary'}
-                          className="fs-6"
+                          style={{ fontSize: '0.8rem' }}
                         >
                           {role.name}
                         </Badge>
@@ -1227,9 +1293,9 @@ const CasbinAdmin = () => {
                           </Button>
                         </div>
                       </Card.Header>
-                      <Card.Body>
-                        <div className="mb-2">
-                          <small className="text-muted">Users: {role.users}</small>
+                      <Card.Body className="py-2">
+                        <div className="mb-1">
+                          <small className="text-muted" style={{ fontSize: '0.75rem' }}>Users: {role.users}</small>
                         </div>
                         <RolePoliciesDisplay roleName={role.name} />
                       </Card.Body>
@@ -1242,15 +1308,15 @@ const CasbinAdmin = () => {
         </Tab>
 
         <Tab eventKey="routes" title={
-          <span>
-            <FontAwesomeIcon icon={faRoute} className="me-2" />
+          <small>
+            <FontAwesomeIcon icon={faRoute} className="me-1" size="sm" />
             Routes ({routes.length})
-          </span>
+          </small>
         }>
           <Card>
             <Card.Header>
               <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">Route Access Control</h5>
+                <h6 className="mb-0">Route Access Control</h6>
                 <Button variant="primary" onClick={() => openRouteModal()}>
                   <FontAwesomeIcon icon={faPlus} className="me-2" />
                   Add Route
@@ -1258,14 +1324,14 @@ const CasbinAdmin = () => {
               </div>
             </Card.Header>
             <Card.Body className="p-0">
-              <Table responsive hover>
+              <Table responsive hover size="sm">
                 <thead>
                   <tr>
                     <th>Path</th>
-                    <th>Method</th>
-                    <th>Status</th>
+                    <th style={{ width: '80px' }}>Method</th>
+                    <th style={{ width: '80px' }}>Status</th>
                     <th>Allowed Roles</th>
-                    <th>Actions</th>
+                    <th style={{ width: '100px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1301,7 +1367,8 @@ const CasbinAdmin = () => {
                               bg={role === '*' ? 'success' : 
                                   role === 'admin' ? 'danger' : 
                                   role === 'moderator' ? 'warning' : 'primary'}
-                              className="small"
+                              style={{ fontSize: '0.7rem' }}
+                              className="me-1"
                             >
                               {role === '*' ? 'Public' : role}
                             </Badge>
@@ -1343,6 +1410,16 @@ const CasbinAdmin = () => {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          {/* Component to manage user roles data fetching */}
+          {editingUser && (
+            <UserRoleFormManager 
+              user={editingUser} 
+              userForm={userForm} 
+              setUserForm={setUserForm}
+              setInitialUserRoles={setInitialUserRoles}
+            />
+          )}
+          
           {!editingUser && (
             <Alert variant="warning">
               <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
