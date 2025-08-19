@@ -218,6 +218,7 @@ export interface SchedulerErrorResponse {
 
 // Task Types Enum
 export type TaskType = 
+  | 'system'
   | 'data_sync'
   | 'cleanup' 
   | 'backup'

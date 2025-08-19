@@ -74,10 +74,31 @@ const SchedulerAdmin = () => {
       return;
     }
 
+    // Filter out system tasks for operations that shouldn't affect them
+    const restrictedOperations = ['enable', 'disable', 'pause', 'delete'];
+    let taskIdsToProcess = selectedTasks;
+    
+    if (restrictedOperations.includes(operation)) {
+      const selectedTaskObjects = tasks?.tasks?.filter(task => selectedTasks.includes(task.id)) || [];
+      const systemTasks = selectedTaskObjects.filter(task => task.type === 'system');
+      taskIdsToProcess = selectedTasks.filter(taskId => 
+        !selectedTaskObjects.find(task => task.id === taskId && task.type === 'system')
+      );
+      
+      if (systemTasks.length > 0) {
+        toast.warning(`${systemTasks.length} system task(s) excluded from bulk ${operation} operation`);
+      }
+      
+      if (taskIdsToProcess.length === 0) {
+        toast.warning('No eligible tasks selected for this operation');
+        return;
+      }
+    }
+
     try {
       await bulkOperationMutation.mutateAsync({
         operation,
-        task_ids: selectedTasks
+        task_ids: taskIdsToProcess
       });
       toast.success(`Bulk ${operation} successful`);
       setSelectedTasks([]);
@@ -476,11 +497,25 @@ const SchedulerAdmin = () => {
                       {tasks?.tasks?.map(task => (
                         <tr key={task.id}>
                           <td>
-                            <Form.Check
-                              type="checkbox"
-                              checked={selectedTasks.includes(task.id)}
-                              onChange={() => toggleTaskSelection(task.id)}
-                            />
+                            {task.type === 'system' ? (
+                              <OverlayTrigger
+                                placement="right"
+                                overlay={<Tooltip>System tasks are excluded from bulk operations</Tooltip>}
+                              >
+                                <Form.Check
+                                  type="checkbox"
+                                  checked={selectedTasks.includes(task.id)}
+                                  onChange={() => toggleTaskSelection(task.id)}
+                                  className="text-muted"
+                                />
+                              </OverlayTrigger>
+                            ) : (
+                              <Form.Check
+                                type="checkbox"
+                                checked={selectedTasks.includes(task.id)}
+                                onChange={() => toggleTaskSelection(task.id)}
+                              />
+                            )}
                           </td>
                           <td>
                             <div>
@@ -490,7 +525,11 @@ const SchedulerAdmin = () => {
                               )}
                             </div>
                           </td>
-                          <td><Badge bg="info">{task.type}</Badge></td>
+                          <td>
+                            <Badge bg={task.type === 'system' ? 'warning' : 'info'}>
+                              {task.type}
+                            </Badge>
+                          </td>
                           <td>{getStatusBadge(task.status)}</td>
                           <td>
                             <code className="small">{task.schedule}</code>
@@ -522,13 +561,20 @@ const SchedulerAdmin = () => {
                               {task.status === 'running' ? (
                                 <OverlayTrigger
                                   placement="top"
-                                  overlay={<Tooltip>Pause this task</Tooltip>}
+                                  overlay={
+                                    <Tooltip>
+                                      {task.type === 'system' 
+                                        ? 'System tasks cannot be manually paused' 
+                                        : 'Pause this task'
+                                      }
+                                    </Tooltip>
+                                  }
                                 >
                                   <Button
                                     size="sm"
-                                    variant="outline-warning"
+                                    variant={task.type === 'system' ? 'outline-secondary' : 'outline-warning'}
                                     onClick={() => handleTaskControl('pause', task.id)}
-                                    disabled={taskControlMutation.isPending}
+                                    disabled={taskControlMutation.isPending || task.type === 'system'}
                                   >
                                     <FontAwesomeIcon icon={faPause} />
                                   </Button>
@@ -536,13 +582,22 @@ const SchedulerAdmin = () => {
                               ) : (
                                 <OverlayTrigger
                                   placement="top"
-                                  overlay={<Tooltip>{task.status === 'paused' ? 'Resume this task' : 'Enable this task'}</Tooltip>}
+                                  overlay={
+                                    <Tooltip>
+                                      {task.type === 'system' 
+                                        ? 'System tasks cannot be manually enabled' 
+                                        : task.status === 'paused' 
+                                          ? 'Resume this task' 
+                                          : 'Enable this task'
+                                      }
+                                    </Tooltip>
+                                  }
                                 >
                                   <Button
                                     size="sm"
-                                    variant="outline-success"
+                                    variant={task.type === 'system' ? 'outline-secondary' : 'outline-success'}
                                     onClick={() => handleTaskControl(task.status === 'paused' ? 'resume' : 'enable', task.id)}
-                                    disabled={taskControlMutation.isPending}
+                                    disabled={taskControlMutation.isPending || task.type === 'system'}
                                   >
                                     <FontAwesomeIcon icon={faPlay} />
                                   </Button>
@@ -578,7 +633,14 @@ const SchedulerAdmin = () => {
                               </OverlayTrigger>
                               <OverlayTrigger
                                 placement="top"
-                                overlay={<Tooltip>Edit task settings</Tooltip>}
+                                overlay={
+                                  <Tooltip>
+                                    {task.type === 'system' 
+                                      ? 'System tasks cannot be edited' 
+                                      : 'Edit task settings'
+                                    }
+                                  </Tooltip>
+                                }
                               >
                                 <Button
                                   size="sm"
@@ -587,19 +649,27 @@ const SchedulerAdmin = () => {
                                     setEditingTask(task);
                                     setShowTaskModal(true);
                                   }}
+                                  disabled={task.type === 'system'}
                                 >
                                   <FontAwesomeIcon icon={faEdit} />
                                 </Button>
                               </OverlayTrigger>
                               <OverlayTrigger
                                 placement="top"
-                                overlay={<Tooltip>Delete this task permanently</Tooltip>}
+                                overlay={
+                                  <Tooltip>
+                                    {task.type === 'system' 
+                                      ? 'System tasks cannot be deleted' 
+                                      : 'Delete this task permanently'
+                                    }
+                                  </Tooltip>
+                                }
                               >
                                 <Button
                                   size="sm"
-                                  variant="outline-danger"
+                                  variant={task.type === 'system' ? 'outline-secondary' : 'outline-danger'}
                                   onClick={() => handleDeleteTask(task.id)}
-                                  disabled={deleteTaskMutation.isPending}
+                                  disabled={deleteTaskMutation.isPending || task.type === 'system'}
                                 >
                                   <FontAwesomeIcon icon={faTrash} />
                                 </Button>
