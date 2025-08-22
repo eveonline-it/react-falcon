@@ -113,11 +113,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Show toast only once per session for auth errors
       if (!hasShownErrorToast.current) {
         if ((error as any)?.isAuthStatusFailure) {
-          console.log('🔗 Auth status endpoint failed');
-          toast.error('Unable to verify authentication status. Please check your connection.', {
-            toastId: 'auth-status-failed',
-            autoClose: 5000,
-          });
+          const originalError = (error as any)?.originalError;
+          
+          // Handle server errors (502, 503, 504) as connectivity issues
+          if (originalError?.status === 502 || originalError?.status === 503 || originalError?.status === 504) {
+            const errorMessages = {
+              502: 'Backend server is temporarily unavailable (Bad Gateway)',
+              503: 'Backend server is temporarily unavailable (Service Unavailable)',
+              504: 'Backend server request timed out (Gateway Timeout)'
+            };
+            const message = errorMessages[originalError.status as keyof typeof errorMessages] || 'Backend server is temporarily unavailable';
+            console.log(`🔗 Backend server connectivity issue (${originalError.status})`);
+            toast.error(`${message}. Please try again in a moment.`, {
+              toastId: `server-connectivity-${originalError.status}`,
+              autoClose: 8000,
+            });
+          } else {
+            console.log('🔗 Auth status endpoint failed');
+            toast.error('Unable to verify authentication status. Please check your connection.', {
+              toastId: 'auth-status-failed',
+              autoClose: 5000,
+            });
+          }
         } else {
           console.log('⚠️ Authentication error occurred');
           toast.warning('Authentication issue detected. Please log in again if needed.', {

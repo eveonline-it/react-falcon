@@ -80,6 +80,20 @@ const checkAuthStatus = async (): Promise<AuthStatus> => {
       };
     }
     
+    // Handle server errors as connectivity/server problems, not auth failures
+    if (response.status === 502 || response.status === 503 || response.status === 504) {
+      const statusMessages = {
+        502: 'Bad Gateway',
+        503: 'Service Unavailable', 
+        504: 'Gateway Timeout'
+      };
+      console.warn(`🔗 Backend server connectivity issue (${response.status} ${statusMessages[response.status as keyof typeof statusMessages]})`);
+      const connectivityError = new Error('Backend server connectivity issue') as AuthError;
+      connectivityError.isAuthStatusFailure = true;
+      connectivityError.originalError = { status: response.status, statusText: statusMessages[response.status as keyof typeof statusMessages] };
+      throw connectivityError;
+    }
+    
     // Other non-200 responses are actual errors
     throw new Error(`Auth status check failed with status ${response.status}`);
   } catch (error) {

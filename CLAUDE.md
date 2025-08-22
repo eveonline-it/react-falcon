@@ -729,6 +729,8 @@ The app uses `GET /auth/auth-status` endpoint to verify authentication status. T
 - `user_id`, `character_id`, `character_name`: User information when authenticated
 - Cookie-based authentication with `credentials: 'include'` in fetch requests
 
+**Error Handling**: Server errors (502 Bad Gateway, 503 Service Unavailable, 504 Gateway Timeout) are treated as connectivity/server problems, not authentication failures. These errors show appropriate user messages without clearing authentication state.
+
 ### Scheduler Status Check
 The app uses `GET /scheduler/scheduler-status` endpoint to get scheduler engine status. This endpoint returns:
 - `status`: "running" when scheduler is active
