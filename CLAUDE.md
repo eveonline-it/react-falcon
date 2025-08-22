@@ -705,6 +705,13 @@ The app uses `GET /auth/auth-status` endpoint to verify authentication status. T
 - `user_id`, `character_id`, `character_name`: User information when authenticated
 - Cookie-based authentication with `credentials: 'include'` in fetch requests
 
+### Scheduler Status Check
+The app uses `GET /scheduler/scheduler-status` endpoint to get scheduler engine status. This endpoint returns:
+- `status`: "running" when scheduler is active
+- `engine`: boolean indicating if scheduler engine is enabled
+- `version`: scheduler version information
+- **Note**: Different from `/scheduler/status` which returns module health status
+
 ### Character Data Structure
 The backend manages all character data and session information. The React app doesn't directly handle tokens or character data - this is all managed server-side for security.
 

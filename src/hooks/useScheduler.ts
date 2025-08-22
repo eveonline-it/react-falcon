@@ -24,7 +24,7 @@ const API_BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonli
 const schedulerApi = {
   // Status and stats
   getStatus: async (): Promise<SchedulerStatusResponse> => {
-    const res = await fetch(`${API_BASE_URL}/scheduler/status`, {
+    const res = await fetch(`${API_BASE_URL}/scheduler/scheduler-status`, {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' }
     });
