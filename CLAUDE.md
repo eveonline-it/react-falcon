@@ -3,7 +3,6 @@
 ## Project Overview
 React Falcon is a comprehensive admin dashboard template built with React 19, featuring multiple specialized dashboards for various business applications including analytics, CRM, e-commerce, project management, SaaS, and support desk systems.
 
-**Note**: All original Themewagon branding and references have been replaced with React Falcon branding throughout the codebase for a clean, customizable foundation.
 
 ## Development Setup
 
@@ -699,6 +698,12 @@ The backend handles all EVE Online SSO configuration including:
 6. EVE Online redirects directly to backend callback
 7. Backend validates state, exchanges code for tokens, and verifies character
 8. Backend handles session management and redirects user to frontend dashboard
+
+### Authentication Status Check
+The app uses `GET /auth/auth-status` endpoint to verify authentication status. This endpoint returns:
+- `authenticated`: boolean indicating if user has valid session
+- `user_id`, `character_id`, `character_name`: User information when authenticated
+- Cookie-based authentication with `credentials: 'include'` in fetch requests
 
 ### Character Data Structure
 The backend manages all character data and session information. The React app doesn't directly handle tokens or character data - this is all managed server-side for security.

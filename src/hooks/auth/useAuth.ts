@@ -46,7 +46,7 @@ export interface CurrentUser {
 const checkAuthStatus = async (): Promise<AuthStatus> => {
   try {
     const backendUrl = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.it';
-    const response = await fetch(`${backendUrl}/auth/status`, {
+    const response = await fetch(`${backendUrl}/auth/auth-status`, {
       method: 'GET',
       credentials: 'include',
       headers: {
