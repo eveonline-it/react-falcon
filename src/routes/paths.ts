@@ -221,6 +221,7 @@ export interface AppPaths {
   faq: string;
   designFile: string;
   schedulerAdmin: string;
+  taskAnalyticsAdmin: string;
   settingsAdmin: string;
   corporationsAdmin: string;
   alliancesAdmin: string;
@@ -380,6 +381,7 @@ const paths: AppPaths = {
   faq: `/${rootPaths.docRoot}/faq`,
   designFile: `/${rootPaths.docRoot}/design-file`,
   schedulerAdmin: `/${rootPaths.adminRoot}/scheduler`,
+  taskAnalyticsAdmin: `/${rootPaths.adminRoot}/task-analytics`,
   settingsAdmin: `/${rootPaths.adminRoot}/settings`,
   corporationsAdmin: `/${rootPaths.adminRoot}/corporations`,
   alliancesAdmin: `/${rootPaths.adminRoot}/alliances`,

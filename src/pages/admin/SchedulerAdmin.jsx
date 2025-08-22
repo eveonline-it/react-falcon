@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Dropdown, Alert, Modal, Form, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Badge, Dropdown, Alert, Modal, Form, OverlayTrigger, Tooltip, Nav, Tab } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faPlay, faPause, faStop, faTrash, faEdit, faPlus, faDownload, 
   faUpload, faCog, faHistory, faCheck, faTimes, faSpinner,
-  faServer, faChartLine, faTasks, faExclamationTriangle, faSquare
+  faServer, faChartLine, faTasks, faExclamationTriangle, faSquare,
+  faClock, faChartBar
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 
@@ -19,8 +20,8 @@ import {
   useBulkTaskOperation,
   useImportTasks
 } from 'hooks/useScheduler.ts';
-import TaskModal from 'components/scheduler/TaskModal';
-import TaskHistoryModal from 'components/scheduler/TaskHistoryModal';
+import { TaskModal, TaskHistoryModal, TaskPerformanceDashboard } from 'components/scheduler';
+import { useGlobalExecutionStatistics } from 'hooks/useTaskStatistics';
 
 // Add the style tag for pulse animation
 const addPulseStyles = () => {
@@ -50,6 +51,7 @@ const SchedulerAdmin = () => {
     limit: 20
   });
   const [pendingTaskOperations, setPendingTaskOperations] = useState({});
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Add pulse animation styles on component mount
   React.useEffect(() => {
@@ -65,6 +67,7 @@ const SchedulerAdmin = () => {
   const { data: status, isLoading: statusLoading, error: statusError } = useSchedulerStatus();
   const { data: stats, isLoading: statsLoading } = useSchedulerStats();
   const { data: tasks, isLoading: tasksLoading, error: tasksError, refetch: refetchTasks } = useSchedulerTasks(taskFilters);
+  const { statistics: globalStats, isLoading: statsLoadingGlobal } = useGlobalExecutionStatistics();
 
   // Mutation hooks
   const taskControlMutation = useTaskControl();
@@ -447,10 +450,94 @@ const SchedulerAdmin = () => {
         </Col>
       </Row>
 
-      {/* Task Management */}
-      <Row>
-        <Col>
+      {/* Enhanced Stats Row */}
+      <Row className="mb-4">
+        <Col md={4}>
           <Card>
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <FontAwesomeIcon icon={faClock} size="2x" className="text-warning me-3" />
+                <div>
+                  <h6 className="mb-0">Average Runtime</h6>
+                  {statsLoading ? (
+                    <FontAwesomeIcon icon={faSpinner} spin />
+                  ) : (
+                    <h4 className="mb-0">{stats?.average_runtime || '0s'}</h4>
+                  )}
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={4}>
+          <Card>
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <FontAwesomeIcon icon={faChartLine} size="2x" className="text-info me-3" />
+                <div>
+                  <h6 className="mb-0">Success Rate</h6>
+                  {statsLoadingGlobal ? (
+                    <FontAwesomeIcon icon={faSpinner} spin />
+                  ) : (
+                    <div>
+                      <h4 className="mb-0">{globalStats?.successRate?.toFixed(1) || '0'}%</h4>
+                      <small className="text-muted">
+                        {globalStats?.successCount || 0}/{globalStats?.totalExecutions || 0} executions
+                      </small>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={4}>
+          <Card>
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <FontAwesomeIcon icon={faChartBar} size="2x" className="text-primary me-3" />
+                <div>
+                  <h6 className="mb-0">Performance</h6>
+                  {statsLoadingGlobal ? (
+                    <FontAwesomeIcon icon={faSpinner} spin />
+                  ) : (
+                    <div>
+                      <Badge 
+                        bg={
+                          globalStats?.performanceTrend === 'improving' ? 'success' :
+                          globalStats?.performanceTrend === 'degrading' ? 'danger' : 'secondary'
+                        }
+                      >
+                        {globalStats?.performanceTrend || 'stable'}
+                      </Badge>
+                      <div className="small text-muted mt-1">
+                        Trend analysis
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Tabbed Interface */}
+      <Tab.Container activeKey={activeTab} onSelect={setActiveTab}>
+        <Row>
+          <Col>
+            <Nav variant="tabs" className="mb-4">
+              <Nav.Item>
+                <Nav.Link eventKey="overview">Task Overview</Nav.Link>
+              </Nav.Item>
+              <Nav.Item>
+                <Nav.Link eventKey="performance">Performance Dashboard</Nav.Link>
+              </Nav.Item>
+            </Nav>
+
+            <Tab.Content>
+              <Tab.Pane eventKey="overview">
+                <Card>
             <Card.Header>
               <div className="d-flex justify-content-between align-items-center">
                 <h5 className="mb-0">Tasks</h5>
@@ -753,9 +840,16 @@ const SchedulerAdmin = () => {
                 </div>
               )}
             </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                </Card>
+              </Tab.Pane>
+              
+              <Tab.Pane eventKey="performance">
+                <TaskPerformanceDashboard />
+              </Tab.Pane>
+            </Tab.Content>
+          </Col>
+        </Row>
+      </Tab.Container>
 
       {/* Modals */}
       <TaskModal

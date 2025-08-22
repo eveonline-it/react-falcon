@@ -135,7 +135,7 @@ The project now maintains crystal clear boundaries between different types of co
 
 #### 📄 Page Components (`src/pages/`)
 **Page-level components for routing:**
-- **`admin/`** - Administrative pages (SettingsAdmin, SchedulerAdmin, CorporationsAdmin, AllianceAdmin, GroupsAdmin)
+- **`admin/`** - Administrative pages (SettingsAdmin, SchedulerAdmin, TaskAnalyticsAdmin, CorporationsAdmin, AllianceAdmin, GroupsAdmin)
 - **`faq/`** - FAQ pages (basic, accordion, alt layouts)
 - **`pricing/`** - Pricing pages (default, alternative layouts)
 - **`user/`** - User profile and settings pages
@@ -737,6 +737,38 @@ The app uses `GET /scheduler/scheduler-status` endpoint to get scheduler engine 
 - `engine`: boolean indicating if scheduler engine is enabled
 - `version`: scheduler version information
 - **Note**: Different from `/scheduler/status` which returns module health status
+
+### Task Analytics & Performance Monitoring
+The application includes comprehensive task execution analytics and performance monitoring capabilities:
+
+#### Available Analytics Components
+- **TaskPerformanceCard** (`src/components/scheduler/TaskPerformanceCard.jsx`) - Individual task metrics with duration tracking, success rates, and performance trends
+- **TaskPerformanceDashboard** (`src/components/scheduler/TaskPerformanceDashboard.jsx`) - System-wide performance overview with real-time metrics
+- **TaskAnalyticsAdmin** (`src/pages/admin/TaskAnalyticsAdmin.jsx`) - Dedicated analytics page with comprehensive reporting
+
+#### Analytics Hooks (`src/hooks/useTaskStatistics.js`)
+- **useTaskStatistics(taskId)** - Task-specific performance metrics and execution history analysis
+- **useGlobalExecutionStatistics()** - System-wide execution statistics and trends
+- **useSystemPerformanceTrends(timeRange)** - Historical performance trend analysis
+- **calculateTaskStatistics(executions)** - Utility function for comprehensive execution analysis
+
+#### Key Metrics Tracked
+- **Duration Analytics**: Average, median, min/max execution times with trend analysis
+- **Success Rates**: Task completion rates with failure analysis
+- **Performance Trends**: Improving/degrading/stable performance indicators
+- **Execution Patterns**: Time-based distribution analysis (hourly/daily patterns)
+- **Error Tracking**: Recent error messages and failure trend analysis
+
+#### Analytics Features
+- **Real-time Performance Monitoring**: Live updates of task execution metrics
+- **Advanced Filtering**: Filter by task type, time range, and execution status
+- **CSV Export**: Export analytics data for external analysis
+- **Trend Analysis**: Historical performance comparison and trajectory analysis
+- **Visual Indicators**: Performance badges, progress bars, and trend icons
+
+#### Navigation
+- **Scheduler Admin**: `/admin/scheduler` - Enhanced with performance metrics and analytics tab
+- **Task Analytics**: `/admin/task-analytics` - Dedicated analytics dashboard with system overview, individual task performance, and trend analysis
 
 ### Character Data Structure
 The backend manages all character data and session information. The React app doesn't directly handle tokens or character data - this is all managed server-side for security.

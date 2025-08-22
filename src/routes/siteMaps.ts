@@ -1050,6 +1050,12 @@ export const adminRoutes: RouteGroup = {
       active: true
     },
     {
+      name: 'Task Analytics',
+      icon: 'chart-line',
+      to: paths.taskAnalyticsAdmin,
+      active: true
+    },
+    {
       name: 'Groups',
       icon: 'users',
       to: paths.groupsAdmin,

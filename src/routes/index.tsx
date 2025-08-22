@@ -168,6 +168,7 @@ import DoubleTopNavLayout from 'layouts/DoubleTopNavLayout';
 import FalconLoader from 'components/common/FalconLoader';
 
 const SchedulerAdmin = lazy(() => import('pages/admin/SchedulerAdmin'));
+const TaskAnalyticsAdmin = lazy(() => import('pages/admin/TaskAnalyticsAdmin'));
 const SettingsAdmin = lazy(() => import('pages/admin/SettingsAdmin'));
 const CorporationsAdmin = lazy(() => import('pages/admin/CorporationsAdmin'));
 const AllianceAdmin = lazy(() => import('pages/admin/AllianceAdmin'));
@@ -1033,6 +1034,14 @@ const routes: RouteObject[] = [
                 element: (
                   <Suspense key="scheduler-admin" fallback={<FalconLoader />}>
                     <SchedulerAdmin />
+                  </Suspense>
+                )
+              },
+              {
+                path: paths.taskAnalyticsAdmin,
+                element: (
+                  <Suspense key="task-analytics-admin" fallback={<FalconLoader />}>
+                    <TaskAnalyticsAdmin />
                   </Suspense>
                 )
               },
