@@ -249,4 +249,5 @@ export type TaskControlAction =
   | 'disable'
   | 'pause'
   | 'resume'
+  | 'stop'
   | 'execute';

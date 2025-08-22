@@ -221,8 +221,7 @@ export interface AppPaths {
   faq: string;
   designFile: string;
   schedulerAdmin: string;
-  casbinAdmin: string;
-  casbinAdminTest: string;
+  settingsAdmin: string;
 }
 
 const paths: AppPaths = {
@@ -378,8 +377,7 @@ const paths: AppPaths = {
   faq: `/${rootPaths.docRoot}/faq`,
   designFile: `/${rootPaths.docRoot}/design-file`,
   schedulerAdmin: `/${rootPaths.adminRoot}/scheduler`,
-  casbinAdmin: `/${rootPaths.adminRoot}/casbin`,
-  casbinAdminTest: `/${rootPaths.adminRoot}/casbin-test`
+  settingsAdmin: `/${rootPaths.adminRoot}/settings`
 };
 
 export default paths;

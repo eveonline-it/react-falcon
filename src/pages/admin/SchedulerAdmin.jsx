@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faPlay, faPause, faStop, faTrash, faEdit, faPlus, faDownload, 
   faUpload, faCog, faHistory, faCheck, faTimes, faSpinner,
-  faServer, faChartLine, faTasks, faExclamationTriangle
+  faServer, faChartLine, faTasks, faExclamationTriangle, faSquare
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 
@@ -22,6 +22,25 @@ import {
 import TaskModal from 'components/scheduler/TaskModal';
 import TaskHistoryModal from 'components/scheduler/TaskHistoryModal';
 
+// Add the style tag for pulse animation
+const addPulseStyles = () => {
+  if (typeof document !== 'undefined' && !document.getElementById('scheduler-pulse-styles')) {
+    const style = document.createElement('style');
+    style.id = 'scheduler-pulse-styles';
+    style.textContent = `
+      @keyframes statusPulse {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(1.05); }
+        100% { opacity: 1; transform: scale(1); }
+      }
+      .status-pulse {
+        animation: statusPulse 1.5s ease-in-out infinite;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+};
+
 const SchedulerAdmin = () => {
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [taskFilters, setTaskFilters] = useState({
@@ -30,6 +49,13 @@ const SchedulerAdmin = () => {
     page: 1,
     limit: 20
   });
+  const [pendingTaskOperations, setPendingTaskOperations] = useState({});
+
+  // Add pulse animation styles on component mount
+  React.useEffect(() => {
+    addPulseStyles();
+  }, []);
+  
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -50,10 +76,21 @@ const SchedulerAdmin = () => {
 
   const handleTaskControl = async (action, taskId) => {
     try {
+      // Add task to pending operations
+      setPendingTaskOperations(prev => ({ ...prev, [taskId]: true }));
+      
       await taskControlMutation.mutateAsync({ action, taskId });
       toast.success(`Task ${action} successful`);
+      // Refresh tasks immediately after the action
+      refetchTasks();
     } catch (error) {
       toast.error(`Failed to ${action} task: ${error.message}`);
+    } finally {
+      // Remove task from pending operations
+      setPendingTaskOperations(prev => {
+        const { [taskId]: removed, ...rest } = prev;
+        return rest;
+      });
     }
   };
 
@@ -61,10 +98,19 @@ const SchedulerAdmin = () => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
     
     try {
+      // Add task to pending operations
+      setPendingTaskOperations(prev => ({ ...prev, [taskId]: true }));
+      
       await deleteTaskMutation.mutateAsync(taskId);
       toast.success('Task deleted successfully');
     } catch (error) {
       toast.error(`Failed to delete task: ${error.message}`);
+    } finally {
+      // Remove task from pending operations
+      setPendingTaskOperations(prev => {
+        const { [taskId]: removed, ...rest } = prev;
+        return rest;
+      });
     }
   };
 
@@ -143,7 +189,15 @@ const SchedulerAdmin = () => {
       'failed': 'danger',
       'completed': 'primary'
     };
-    return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
+    
+    return (
+      <Badge 
+        bg={variants[status] || 'secondary'}
+        className={status === 'running' ? 'status-pulse' : ''}
+      >
+        {status}
+      </Badge>
+    );
   };
 
   const formatDate = (dateString) => {
@@ -574,7 +628,7 @@ const SchedulerAdmin = () => {
                                     size="sm"
                                     variant={task.type === 'system' ? 'outline-secondary' : 'outline-warning'}
                                     onClick={() => handleTaskControl('pause', task.id)}
-                                    disabled={taskControlMutation.isPending || task.type === 'system'}
+                                    disabled={pendingTaskOperations[task.id] || task.type === 'system'}
                                   >
                                     <FontAwesomeIcon icon={faPause} />
                                   </Button>
@@ -597,25 +651,41 @@ const SchedulerAdmin = () => {
                                     size="sm"
                                     variant={task.type === 'system' ? 'outline-secondary' : 'outline-success'}
                                     onClick={() => handleTaskControl(task.status === 'paused' ? 'resume' : 'enable', task.id)}
-                                    disabled={taskControlMutation.isPending || task.type === 'system'}
+                                    disabled={pendingTaskOperations[task.id] || task.type === 'system'}
                                   >
                                     <FontAwesomeIcon icon={faPlay} />
                                   </Button>
                                 </OverlayTrigger>
                               )}
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip>Execute task manually now</Tooltip>}
-                              >
-                                <Button
-                                  size="sm"
-                                  variant="outline-primary"
-                                  onClick={() => handleTaskControl('execute', task.id)}
-                                  disabled={taskControlMutation.isPending}
+                              {task.status === 'running' ? (
+                                <OverlayTrigger
+                                  placement="top"
+                                  overlay={<Tooltip>Stop running task execution</Tooltip>}
                                 >
-                                  <FontAwesomeIcon icon={faPlay} />
-                                </Button>
-                              </OverlayTrigger>
+                                  <Button
+                                    size="sm"
+                                    variant="outline-danger"
+                                    onClick={() => handleTaskControl('stop', task.id)}
+                                    disabled={pendingTaskOperations[task.id]}
+                                  >
+                                    <FontAwesomeIcon icon={faStop} />
+                                  </Button>
+                                </OverlayTrigger>
+                              ) : (
+                                <OverlayTrigger
+                                  placement="top"
+                                  overlay={<Tooltip>Execute task manually now</Tooltip>}
+                                >
+                                  <Button
+                                    size="sm"
+                                    variant="outline-primary"
+                                    onClick={() => handleTaskControl('execute', task.id)}
+                                    disabled={pendingTaskOperations[task.id]}
+                                  >
+                                    <FontAwesomeIcon icon={faPlay} />
+                                  </Button>
+                                </OverlayTrigger>
+                              )}
                               <OverlayTrigger
                                 placement="top"
                                 overlay={<Tooltip>View task execution history</Tooltip>}
@@ -669,7 +739,7 @@ const SchedulerAdmin = () => {
                                   size="sm"
                                   variant={task.type === 'system' ? 'outline-secondary' : 'outline-danger'}
                                   onClick={() => handleDeleteTask(task.id)}
-                                  disabled={deleteTaskMutation.isPending || task.type === 'system'}
+                                  disabled={pendingTaskOperations[task.id] || task.type === 'system'}
                                 >
                                   <FontAwesomeIcon icon={faTrash} />
                                 </Button>

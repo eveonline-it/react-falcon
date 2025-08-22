@@ -222,6 +222,22 @@ const schedulerApi = {
     }
   },
 
+  stopTask: async (taskId: string): Promise<void> => {
+    const res = await fetch(`${API_BASE_URL}/scheduler/tasks/${taskId}/stop`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
+      (error as any).status = res.status;
+      (error as any).data = errorData;
+      throw error;
+    }
+  },
+
   executeTask: async (taskId: string, executeParams?: ManualExecutionRequest): Promise<TaskExecutionResponse> => {
     const res = await fetch(`${API_BASE_URL}/scheduler/tasks/${taskId}/execute`, {
       method: 'POST',
@@ -462,6 +478,8 @@ export const useTaskControl = () => {
           return schedulerApi.pauseTask(taskId);
         case 'resume':
           return schedulerApi.resumeTask(taskId);
+        case 'stop':
+          return schedulerApi.stopTask(taskId);
         case 'execute':
           return schedulerApi.executeTask(taskId, executeParams);
         default:

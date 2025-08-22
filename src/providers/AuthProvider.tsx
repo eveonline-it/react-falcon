@@ -107,7 +107,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         authStore.setLoading(false);
       }
     }
-  }, [authStatus, isLoading, error, authStore]);
+  }, [authStatus, isLoading, error]);
 
   // Log auth state changes in development
   useEffect(() => {

@@ -30,6 +30,7 @@ interface AuthState {
   sessionExpiry: Date | null;
   permissions: string[];
   preferences: UserPreferences;
+  _isLoggingOut: boolean;
 }
 
 interface AuthActions {
@@ -67,7 +68,8 @@ const initialState: AuthState = {
     theme: 'light',
     language: 'en',
     notifications: true
-  }
+  },
+  _isLoggingOut: false
 };
 
 // Development helpers
@@ -106,13 +108,25 @@ export const useAuthStore = create<AuthStore>()(
         },
 
         logout: () => {
+          const state = get();
+          
+          // Prevent infinite loops by checking if we're already logging out
+          if (state._isLoggingOut) {
+            console.log('🔄 Logout already in progress, skipping...');
+            return;
+          }
+          
           performanceTracker.start('logout');
           const prevState = get();
+          
+          // Set logging out flag first
+          set({ _isLoggingOut: true }, false, 'logout:start');
           
           set(
             {
               ...initialState,
-              preferences: get().preferences // Keep user preferences
+              preferences: get().preferences, // Keep user preferences
+              _isLoggingOut: false // Reset the flag
             },
             false,
             'logout'
@@ -122,7 +136,8 @@ export const useAuthStore = create<AuthStore>()(
           // The backend logout endpoint (/auth/logout) handles cookie invalidation
 
           performanceTracker.end('logout');
-          actionLogger('logout', prevState, get());
+          // Temporarily disabled to prevent infinite loops
+          // actionLogger('logout', prevState, get());
         },
 
         // Loading states
@@ -238,10 +253,11 @@ export const useAuthStore = create<AuthStore>()(
 
         checkSessionExpiry: () => {
           const state = get();
-          if (!state.isAuthenticated || !state.sessionExpiry) return true;
+          if (!state.isAuthenticated || !state.sessionExpiry || state._isLoggingOut) return true;
           
           const isExpired = new Date() > new Date(state.sessionExpiry);
-          if (isExpired) {
+          if (isExpired && !state._isLoggingOut) {
+            console.log('🕐 Session expired, logging out...');
             get().logout();
           }
           return !isExpired;

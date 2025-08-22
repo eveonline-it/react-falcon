@@ -134,6 +134,7 @@ The project now maintains crystal clear boundaries between different types of co
 
 #### 📄 Page Components (`src/pages/`)
 **Page-level components for routing:**
+- **`admin/`** - Administrative pages (SettingsAdmin, SchedulerAdmin)
 - **`faq/`** - FAQ pages (basic, accordion, alt layouts)
 - **`pricing/`** - Pricing pages (default, alternative layouts)
 - **`user/`** - User profile and settings pages
@@ -241,6 +242,26 @@ import QueryProvider from 'providers/QueryProvider';
 ```
 
 ### Available Query Hooks
+
+#### Settings Management (src/hooks/useSettings.js)
+```jsx
+import { useSettings, useCreateSetting, useUpdateSetting, useDeleteSetting } from 'hooks/useSettings';
+
+// Fetch site settings with filters
+const { data, isLoading, error } = useSettings({
+  category: 'ui',
+  is_public: true,
+  is_active: true
+});
+
+// CRUD operations
+const createMutation = useCreateSetting({
+  onSuccess: (data) => console.log('Created!', data)
+});
+
+const updateMutation = useUpdateSetting();
+const deleteMutation = useDeleteSetting();
+```
 
 #### User Management (src/hooks/useUserProfile.js)
 ```jsx
@@ -432,6 +453,7 @@ export const settings = {
 - `theme.scss` - Main theme file
 - `_user-variables.scss` - Custom variable overrides
 - `theme/` directory with modular SCSS files
+- `theme/_animations.scss` - CSS animations (spin, pulse, etc.)
 - Bootstrap customization and extensions
 
 ### Theme System

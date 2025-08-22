@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
       }
     }
-  }, [isLoading, cookieAuth, authData, authStore.isAuthenticated, authStore.user]);
+  }, [isLoading, cookieAuth, authData, authStore.isAuthenticated, authStore.user?.characterId]);
 
   // Handle authentication failures without redirects
   useEffect(() => {
@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         hasShownErrorToast.current = true;
       }
     }
-  }, [isLoading, cookieAuth, error, authStore]);
+  }, [isLoading, cookieAuth, error, authStore.isAuthenticated]);
 
   // Handle auth verification errors without redirects
   useEffect(() => {
@@ -128,7 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         hasShownErrorToast.current = true;
       }
     }
-  }, [error, authStore]);
+  }, [error]);
 
   const value: AuthContextValue = {
     isAuthenticated: cookieAuth || authStore.isAuthenticated,

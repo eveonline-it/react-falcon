@@ -1050,15 +1050,9 @@ export const adminRoutes: RouteGroup = {
       active: true
     },
     {
-      name: 'Casbin Admin',
-      icon: 'shield-alt',
-      to: paths.casbinAdmin,
-      active: true
-    },
-    {
-      name: 'Casbin Test',
-      icon: 'vial',
-      to: paths.casbinAdminTest,
+      name: 'Settings',
+      icon: 'cog',
+      to: paths.settingsAdmin,
       active: true
     }
   ]
