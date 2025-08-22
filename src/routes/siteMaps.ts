@@ -1063,6 +1063,11 @@ export const adminRoutes: RouteGroup = {
           name: 'Corporations',
           to: paths.corporationsAdmin,
           active: true
+        },
+        {
+          name: 'Alliances',
+          to: paths.alliancesAdmin,
+          active: true
         }
       ]
     }

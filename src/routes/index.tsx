@@ -170,6 +170,7 @@ import FalconLoader from 'components/common/FalconLoader';
 const SchedulerAdmin = lazy(() => import('pages/admin/SchedulerAdmin'));
 const SettingsAdmin = lazy(() => import('pages/admin/SettingsAdmin'));
 const CorporationsAdmin = lazy(() => import('pages/admin/CorporationsAdmin'));
+const AllianceAdmin = lazy(() => import('pages/admin/AllianceAdmin'));
 
 const routes: RouteObject[] = [
   {
@@ -1047,6 +1048,14 @@ const routes: RouteObject[] = [
                 element: (
                   <Suspense key="corporations-admin" fallback={<FalconLoader />}>
                     <CorporationsAdmin />
+                  </Suspense>
+                )
+              },
+              {
+                path: paths.alliancesAdmin,
+                element: (
+                  <Suspense key="alliances-admin" fallback={<FalconLoader />}>
+                    <AllianceAdmin />
                   </Suspense>
                 )
               }

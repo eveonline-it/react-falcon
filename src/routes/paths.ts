@@ -223,6 +223,7 @@ export interface AppPaths {
   schedulerAdmin: string;
   settingsAdmin: string;
   corporationsAdmin: string;
+  alliancesAdmin: string;
 }
 
 const paths: AppPaths = {
@@ -379,7 +380,8 @@ const paths: AppPaths = {
   designFile: `/${rootPaths.docRoot}/design-file`,
   schedulerAdmin: `/${rootPaths.adminRoot}/scheduler`,
   settingsAdmin: `/${rootPaths.adminRoot}/settings`,
-  corporationsAdmin: `/${rootPaths.adminRoot}/corporations`
+  corporationsAdmin: `/${rootPaths.adminRoot}/corporations`,
+  alliancesAdmin: `/${rootPaths.adminRoot}/alliances`
 };
 
 export default paths;
