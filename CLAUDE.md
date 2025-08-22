@@ -135,7 +135,7 @@ The project now maintains crystal clear boundaries between different types of co
 
 #### 📄 Page Components (`src/pages/`)
 **Page-level components for routing:**
-- **`admin/`** - Administrative pages (SettingsAdmin, SchedulerAdmin, CorporationsAdmin, AllianceAdmin)
+- **`admin/`** - Administrative pages (SettingsAdmin, SchedulerAdmin, CorporationsAdmin, AllianceAdmin, GroupsAdmin)
 - **`faq/`** - FAQ pages (basic, accordion, alt layouts)
 - **`pricing/`** - Pricing pages (default, alternative layouts)
 - **`user/`** - User profile and settings pages
@@ -296,6 +296,28 @@ const addMutation = useAddManagedAlliance();
 const updateStatusMutation = useUpdateAllianceStatus();
 const removeMutation = useRemoveManagedAlliance();
 const bulkUpdateMutation = useBulkUpdateAlliances(); // Drag & drop reordering
+```
+
+#### Groups Management (src/hooks/useGroups.js)
+```jsx
+import { useGroups, useCreateGroup, useUpdateGroup, useDeleteGroup, useGroupMembers, useAddGroupMember, useRemoveGroupMember } from 'hooks/useGroups';
+
+// Fetch groups with filters
+const { data, isLoading, error } = useGroups({
+  type: 'custom',
+  page: 1,
+  limit: 20
+});
+
+// Group membership management
+const { data: members } = useGroupMembers(groupId);
+
+// CRUD operations with optimistic updates
+const createMutation = useCreateGroup();
+const updateMutation = useUpdateGroup();
+const deleteMutation = useDeleteGroup();
+const addMemberMutation = useAddGroupMember();
+const removeMemberMutation = useRemoveGroupMember();
 ```
 
 #### User Management (src/hooks/useUserProfile.js)

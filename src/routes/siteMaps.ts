@@ -1050,6 +1050,12 @@ export const adminRoutes: RouteGroup = {
       active: true
     },
     {
+      name: 'Groups',
+      icon: 'users',
+      to: paths.groupsAdmin,
+      active: true
+    },
+    {
       name: 'Settings',
       icon: 'cog',
       active: true,

@@ -249,6 +249,7 @@ const CorporationsAdmin = () => {
   const { data: corporationsData, isLoading, error, refetch } = useManagedCorporations();
   const { data: searchResults, isLoading: searchLoading } = useSearchCorporations(searchQuery);
   const { data: healthData, isLoading: healthLoading } = useCorporationHealth();
+  console.log("healthData: ", healthData)
   
   const addCorporationMutation = useAddManagedCorporation();
   const updateStatusMutation = useUpdateCorporationStatus();
@@ -404,7 +405,7 @@ const CorporationsAdmin = () => {
               Error loading corporations: {error.message}
             </Alert>
           ) : healthData ? (
-            <Alert variant={healthData.health === 'healthy' ? 'success' : 'warning'}>
+            <Alert variant={healthData.healthy === 'true' ? 'success' : 'warning'}>
               <FontAwesomeIcon 
                 icon={healthData.health === 'healthy' ? faCheckCircle : faExclamationTriangle} 
                 className="me-2" 

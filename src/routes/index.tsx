@@ -171,6 +171,7 @@ const SchedulerAdmin = lazy(() => import('pages/admin/SchedulerAdmin'));
 const SettingsAdmin = lazy(() => import('pages/admin/SettingsAdmin'));
 const CorporationsAdmin = lazy(() => import('pages/admin/CorporationsAdmin'));
 const AllianceAdmin = lazy(() => import('pages/admin/AllianceAdmin'));
+const GroupsAdmin = lazy(() => import('pages/admin/GroupsAdmin'));
 
 const routes: RouteObject[] = [
   {
@@ -1056,6 +1057,14 @@ const routes: RouteObject[] = [
                 element: (
                   <Suspense key="alliances-admin" fallback={<FalconLoader />}>
                     <AllianceAdmin />
+                  </Suspense>
+                )
+              },
+              {
+                path: paths.groupsAdmin,
+                element: (
+                  <Suspense key="groups-admin" fallback={<FalconLoader />}>
+                    <GroupsAdmin />
                   </Suspense>
                 )
               }
