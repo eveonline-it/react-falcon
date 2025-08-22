@@ -320,6 +320,8 @@ const addMemberMutation = useAddGroupMember();
 const removeMemberMutation = useRemoveGroupMember();
 ```
 
+**Note**: Includes backend error handling workarounds for inconsistent API responses (500 errors on successful operations).
+
 #### User Management (src/hooks/useUserProfile.js)
 ```jsx
 import { useUserProfile, useUpdateUserProfile } from 'hooks/useUserProfile';
