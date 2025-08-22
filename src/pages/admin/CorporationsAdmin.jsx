@@ -6,9 +6,9 @@ import {
 } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faSearch, faPlus, faTrash, faPowerOff, faGripVertical,
+  faSearch, faPlus, faTrash, faGripVertical,
   faBuilding, faCheckCircle, faTimesCircle, faExclamationTriangle,
-  faInfoCircle, faSyncAlt
+  faSyncAlt
 } from '@fortawesome/free-solid-svg-icons';
 import { 
   DndContext, 
@@ -243,11 +243,12 @@ const CorporationsAdmin = () => {
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [corporationToRemove, setCorporationToRemove] = useState(null);
   const [activeId, setActiveId] = useState(null);
+  const [optimisticCorps, setOptimisticCorps] = useState(null);
 
   // API hooks
   const { data: corporationsData, isLoading, error, refetch } = useManagedCorporations();
   const { data: searchResults, isLoading: searchLoading } = useSearchCorporations(searchQuery);
-  const { data: healthData } = useCorporationHealth();
+  const { data: healthData, isLoading: healthLoading } = useCorporationHealth();
   
   const addCorporationMutation = useAddManagedCorporation();
   const updateStatusMutation = useUpdateCorporationStatus();
@@ -262,7 +263,7 @@ const CorporationsAdmin = () => {
     })
   );
 
-  const corporations = corporationsData?.corporations || [];
+  const corporations = optimisticCorps || corporationsData?.corporations || [];
   
   
 
@@ -272,17 +273,20 @@ const CorporationsAdmin = () => {
     setActiveId(null);
 
     if (active.id !== over?.id) {
-      const oldIndex = corporations.findIndex(corp => corp.corporation_id === active.id);
-      const newIndex = corporations.findIndex(corp => corp.corporation_id === over.id);
+      const currentCorps = optimisticCorps || corporationsData?.corporations || [];
+      const oldIndex = currentCorps.findIndex(corp => corp.corporation_id === active.id);
+      const newIndex = currentCorps.findIndex(corp => corp.corporation_id === over.id);
       
       if (oldIndex === -1 || newIndex === -1) {
         console.error('Could not find corporation indices for drag operation');
         return;
       }
       
-      const reorderedCorps = arrayMove(corporations, oldIndex, newIndex);
+      // Immediately update UI with new order
+      const reorderedCorps = arrayMove(currentCorps, oldIndex, newIndex);
+      setOptimisticCorps(reorderedCorps);
       
-      // Update order in backend with 1-based positions
+      // Prepare data for backend with 1-based positions
       const corporationsWithOrder = reorderedCorps.map((corp, index) => ({
         corporation_id: corp.corporation_id,
         name: corp.name,
@@ -290,9 +294,22 @@ const CorporationsAdmin = () => {
         position: index + 1 // API expects 1-based positions
       }));
       
-      bulkUpdateMutation.mutate(corporationsWithOrder);
+      // Verify with backend
+      bulkUpdateMutation.mutate(corporationsWithOrder, {
+        onSuccess: () => {
+          // Backend confirmed - delay clearing optimistic state for smooth transition
+          setTimeout(() => {
+            setOptimisticCorps(null);
+          }, 500); // Small delay to avoid jarring refresh
+        },
+        onError: () => {
+          // Backend rejected - restore original data immediately
+          setOptimisticCorps(null);
+          refetch(); // Ensure we have latest server state
+        }
+      });
     }
-  }, [corporations, bulkUpdateMutation]);
+  }, [optimisticCorps, corporationsData, bulkUpdateMutation, refetch]);
 
   const handleDragStart = useCallback((event) => {
     setActiveId(event.active.id);
@@ -369,20 +386,35 @@ const CorporationsAdmin = () => {
       </Row>
 
       {/* Health Status */}
-      {healthData && (
-        <Row className="mb-3">
-          <Col>
-            <Alert variant={healthData.status === 'healthy' ? 'success' : 'warning'}>
+      <Row className="mb-3">
+        <Col>
+          {healthLoading ? (
+            <Alert variant="info">
+              <Spinner animation="border" size="sm" className="me-2" />
+              Checking corporation service health...
+            </Alert>
+          ) : optimisticCorps && bulkUpdateMutation.isPending ? (
+            <Alert variant="info">
+              <Spinner animation="border" size="sm" className="me-2" />
+              Saving new order...
+            </Alert>
+          ) : error ? (
+            <Alert variant="danger">
+              <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
+              Error loading corporations: {error.message}
+            </Alert>
+          ) : healthData ? (
+            <Alert variant={healthData.health === 'healthy' ? 'success' : 'warning'}>
               <FontAwesomeIcon 
-                icon={healthData.status === 'healthy' ? faCheckCircle : faExclamationTriangle} 
+                icon={healthData.health === 'healthy' ? faCheckCircle : faExclamationTriangle} 
                 className="me-2" 
               />
-              Corporation Service: {healthData.status === 'healthy' ? 'Healthy' : 'Warning'}
+              Corporation Service: {healthData.health === 'healthy' ? 'Healthy' : 'Warning'}
               {healthData.message && <span className="ms-2">- {healthData.message}</span>}
             </Alert>
-          </Col>
-        </Row>
-      )}
+          ) : null}
+        </Col>
+      </Row>
 
       {/* Search Section */}
       <Row className="mb-4">
@@ -424,17 +456,7 @@ const CorporationsAdmin = () => {
       {/* Corporations Grid */}
       <Row>
         <Col>
-          {isLoading ? (
-            <div className="text-center py-5">
-              <Spinner animation="border" />
-              <div className="mt-2">Loading corporations...</div>
-            </div>
-          ) : error ? (
-            <Alert variant="danger">
-              <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-              Error loading corporations: {error.message}
-            </Alert>
-          ) : corporations.length === 0 ? (
+          {corporations.length === 0 ? (
             <Card>
               <Card.Body className="text-center py-5">
                 <FontAwesomeIcon icon={faBuilding} size="3x" className="text-muted mb-3" />
@@ -445,12 +467,13 @@ const CorporationsAdmin = () => {
               </Card.Body>
             </Card>
           ) : (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-            >
+            <div className={optimisticCorps ? 'opacity-75' : ''}>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+              >
               <SortableContext 
                 items={corporations.map(corp => corp.corporation_id)}
                 strategy={verticalListSortingStrategy}
@@ -475,7 +498,8 @@ const CorporationsAdmin = () => {
                   />
                 ) : null}
               </DragOverlay>
-            </DndContext>
+              </DndContext>
+            </div>
           )}
         </Col>
       </Row>

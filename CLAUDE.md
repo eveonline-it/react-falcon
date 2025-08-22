@@ -273,10 +273,11 @@ const { data, isLoading, error } = useManagedCorporations();
 // Search EVE Online corporations
 const { data: searchResults } = useSearchCorporations(query);
 
-// CRUD operations
+// CRUD operations with optimistic updates
 const addMutation = useAddManagedCorporation();
 const updateStatusMutation = useUpdateCorporationStatus();
 const removeMutation = useRemoveManagedCorporation();
+const bulkUpdateMutation = useBulkUpdateCorporations(); // Drag & drop reordering
 ```
 
 #### User Management (src/hooks/useUserProfile.js)
