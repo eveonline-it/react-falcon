@@ -1052,8 +1052,19 @@ export const adminRoutes: RouteGroup = {
     {
       name: 'Settings',
       icon: 'cog',
-      to: paths.settingsAdmin,
-      active: true
+      active: true,
+      children: [
+        {
+          name: 'Site Settings',
+          to: paths.settingsAdmin,
+          active: true
+        },
+        {
+          name: 'Corporations',
+          to: paths.corporationsAdmin,
+          active: true
+        }
+      ]
     }
   ]
 };

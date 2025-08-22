@@ -134,7 +134,7 @@ The project now maintains crystal clear boundaries between different types of co
 
 #### 📄 Page Components (`src/pages/`)
 **Page-level components for routing:**
-- **`admin/`** - Administrative pages (SettingsAdmin, SchedulerAdmin)
+- **`admin/`** - Administrative pages (SettingsAdmin, SchedulerAdmin, CorporationsAdmin)
 - **`faq/`** - FAQ pages (basic, accordion, alt layouts)
 - **`pricing/`** - Pricing pages (default, alternative layouts)
 - **`user/`** - User profile and settings pages
@@ -261,6 +261,22 @@ const createMutation = useCreateSetting({
 
 const updateMutation = useUpdateSetting();
 const deleteMutation = useDeleteSetting();
+```
+
+#### Corporation Management (src/hooks/useCorporations.js)
+```jsx
+import { useManagedCorporations, useSearchCorporations, useAddManagedCorporation } from 'hooks/useCorporations';
+
+// Fetch managed corporations
+const { data, isLoading, error } = useManagedCorporations();
+
+// Search EVE Online corporations
+const { data: searchResults } = useSearchCorporations(query);
+
+// CRUD operations
+const addMutation = useAddManagedCorporation();
+const updateStatusMutation = useUpdateCorporationStatus();
+const removeMutation = useRemoveManagedCorporation();
 ```
 
 #### User Management (src/hooks/useUserProfile.js)
