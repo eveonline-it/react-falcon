@@ -75,7 +75,7 @@ const EmailDetail = () => {
                     Happy International Women’s Day!
                   </h3>
                   <p className="mb-2">
-                    On International Women’s Day, we at ThemeWagon want you to
+                    On International Women's Day, we at React Falcon want you to
                     discover the skills you can learn from our amazing women
                     digital marketing instructors.
                   </p>

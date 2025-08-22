@@ -112,11 +112,11 @@ const FooterStandard: React.FC = () => {
                 <br className="d-sm-none" /> {new Date().getFullYear()} &copy;{' '}
                 <a
                   className="text-white opacity-85"
-                  href="https://themewagon.com"
+                  href="https://example.com"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  ThemeWagon
+                  React Falcon
                 </a>
               </p>
             </Col>

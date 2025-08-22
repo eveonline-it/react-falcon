@@ -68,11 +68,11 @@ const Rules = ({ props, ref }) => {
         <h6>Reporting abuse</h6>
         <p className="mb-0 ps-3">
           If you think anyone is violating any of these Terms, please{' '}
-          <a href="mailto:support@themewagon.com">notify us</a> immediately. If
+          <a href="mailto:support@example.com">notify us</a> immediately. If
           you received spam you think came from a falcon user, we want to{' '}
-          <a href="mailto:support@themewagon.com">hear about it</a>. If you
+          <a href="mailto:support@example.com">hear about it</a>. If you
           think anyone has posted material that violates any copyrights, then
-          you may <a href="mailto:support@themewagon.com">notify us</a>
+          you may <a href="mailto:support@example.com">notify us</a>
         </p>
         <hr className="my-4" />
         <h6>SES and third-party providers</h6>

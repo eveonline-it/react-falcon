@@ -243,7 +243,7 @@ export const topPagesTableData = [
   },
   {
     id: 6,
-    path: '/themewagon.com/themes/free-website-template',
+    path: '/example.com/themes/free-website-template',
     views: 1007,
     time: '0m:34s',
     exitRate: '35.9%'
@@ -264,7 +264,7 @@ export const topPagesTableData = [
   },
   {
     id: 9,
-    path: '/themewagon.com/themes/free-website-template',
+    path: '/example.com/themes/free-website-template',
     views: 971,
     time: '1m:06s',
     exitRate: '49.3%'
@@ -285,14 +285,14 @@ export const topPagesTableData = [
   },
   {
     id: 12,
-    path: '/themewagon.com/themes/bootstrap-template',
+    path: '/example.com/themes/bootstrap-template',
     views: 11047,
     time: '1m:16s',
     exitRate: '21.5%'
   },
   {
     id: 13,
-    path: '/themewagon.com/themes/free-website-template',
+    path: '/example.com/themes/free-website-template',
     views: 11047,
     time: '0m:54s',
     exitRate: '62.5%'

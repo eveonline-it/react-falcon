@@ -1,4 +1,3 @@
-import themewagon from 'assets/img/nav-icons/themewagon.png';
 import mailbluster from 'assets/img/nav-icons/mailbluster.png';
 import google from 'assets/img/nav-icons/google.png';
 import spotify from 'assets/img/nav-icons/spotify.png';
@@ -22,11 +21,6 @@ export const quickLinks = [
     avatar: account,
     title: 'Account',
     link: `/user/profile`
-  },
-  {
-    img: themewagon,
-    title: 'Themewagon',
-    link: 'https://themewagon.com/'
   },
   {
     img: mailbluster,

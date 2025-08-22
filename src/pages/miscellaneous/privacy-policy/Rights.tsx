@@ -16,7 +16,7 @@ const Rights = ({ props, ref }) => {
           trade secrets, and copyrights). No rights are granted to you under
           these Terms other than as expressly set forth in these Terms. You will
           respect our proprietary rights. “falcon” and the “falcon” logo are
-          trademarks belonging to ThemeWagon, Inc. You are not authorized by us
+          trademarks belonging to React Falcon, Inc. You are not authorized by us
           to use our trademarks or brand assets without prior permission.
         </p>
         <hr className="my-4" />

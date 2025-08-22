@@ -21,7 +21,7 @@ const Changelog = () => (
               Backup your files and read the changelog before updating Falcon on
               your project. If you come across with any problems with Falcon
               template during the update, feel free to contact us at{' '}
-              <a href="mailto:support@themewagon.com">support@themewagon.com</a>
+              <a href="mailto:support@example.com">support@example.com</a>
               .
             </div>
           </Flex>

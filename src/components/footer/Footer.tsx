@@ -10,7 +10,7 @@ const Footer = () => (
           Thank you for creating with Falcon{' '}
           <span className="d-none d-sm-inline-block">| </span>
           <br className="d-sm-none" /> {new Date().getFullYear()} &copy;{' '}
-          <a href="https://themewagon.com">Themewagon</a>
+          <a href="https://example.com">React Falcon</a>
         </p>
       </Col>
       <Col sm="auto">

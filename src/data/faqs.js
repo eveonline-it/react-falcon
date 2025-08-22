@@ -115,7 +115,7 @@ export const faqDoc = [
     id: 6,
     title: 'Where will I get the Figma Files?',
     description: `<p >You will find the Figma link in the <code>README.md</code> file on your downloaded copy of Falcon. Here is the detailed documentation: <a target='_blank' href='//${homepage}/documentation/design-file'> ${homepage}/documentation/design-file</a>.</p>
-    <p class='mb-0'>If you still have any problem with the link, reach us out with your purchase ID at <a href="mailto:support@themewagon.com">support@themewagon.com</a></p>`
+    <p class='mb-0'>If you still have any problem with the link, reach us out with your purchase ID at <a href="mailto:support@example.com">support@example.com</a></p>`
   },
   {
     id: 7,
@@ -146,7 +146,7 @@ export const faqDoc = [
 
     <p>Note:  Remember deleting other files/directories will be the cause of errors. You have to remove the corresponding import statement and unnecessary lines from your code manually.
     </p>
-    <p class="mb-0">We have created a mini version of Falcon React with all the essential files only. If you are interested, please reach us out with your purchase ID at <a href="mailto:support@themewagon.com">support@themewagon.com</a>.
+    <p class="mb-0">We have created a mini version of Falcon React with all the essential files only. If you are interested, please reach us out with your purchase ID at <a href="mailto:support@example.com">support@example.com</a>.
     </p>`
   },
   {
@@ -173,13 +173,13 @@ export const faqDoc = [
     description: `<p>Yes, Falcon React is compatible with Next.js. We provide a starter 
     version for Next.js (App Router) with basic navigation and layout setups. If you want
      the starter version, please reach out to us with your purchase ID at 
-     <a href="mailto:support@themewagon.com">support@themewagon.com</a>.
+     <a href="mailto:support@example.com">support@example.com</a>.
      </p>
     `
   },
   {
     id: 11,
     title: 'Does Falcon React work with Vite?',
-    description: `<p>Yes, Falcon React works seamlessly with Vite. We offer a starter version for Vite that includes basic navigation and layouts. To get the starter, contact us with your purchase ID at <a href="mailto:support@themewagon.com">support@themewagon.com</a>.</p>`
+    description: `<p>Yes, Falcon React works seamlessly with Vite. We offer a starter version for Vite that includes basic navigation and layouts. To get the starter, contact us with your purchase ID at <a href="mailto:support@example.com">support@example.com</a>.</p>`
   }
 ];

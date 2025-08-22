@@ -112,7 +112,7 @@ export const projectsTable = [
   {
     id: 1,
     project: 'Organizing UI',
-    team: 'ThemeWagon',
+    team: 'Design Team',
     iconColor: 'text-primary'
   },
   {
@@ -475,7 +475,7 @@ export const runningProjects = [
       size: 'xl',
       contentClass: 'text-success bg-success-subtle fs-9'
     },
-    projectName: 'Themewagon',
+    projectName: 'Design System',
     members: [
       {
         id: uuid(),
@@ -532,7 +532,7 @@ export const runningProjects = [
       size: 'xl',
       contentClass: 'text-warning bg-warning-subtle fs-9'
     },
-    projectName: 'Themewagon',
+    projectName: 'Design System',
     members: [
       {
         id: uuid(),
@@ -594,7 +594,7 @@ export const runningProjects = [
       size: 'xl',
       contentClass: 'text-success bg-success-subtle fs-9'
     },
-    projectName: 'Themewagon',
+    projectName: 'Design System',
     members: [
       {
         id: uuid(),

@@ -71,7 +71,7 @@ const GettingStarted = () => (
           </Card.Body>
           <Card.Footer className="position-relative pt-0">
             <span className="fw-semibold">Give us a nudge at </span>
-            <a href="mailto:support@themewagon.com">support@themewagon.com</a>
+            <a href="mailto:support@example.com">support@example.com</a>
           </Card.Footer>
         </Card>
       </Col>

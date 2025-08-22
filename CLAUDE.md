@@ -3,6 +3,8 @@
 ## Project Overview
 React Falcon is a comprehensive admin dashboard template built with React 19, featuring multiple specialized dashboards for various business applications including analytics, CRM, e-commerce, project management, SaaS, and support desk systems.
 
+**Note**: All original Themewagon branding and references have been replaced with React Falcon branding throughout the codebase for a clean, customizable foundation.
+
 ## Development Setup
 
 ### Prerequisites

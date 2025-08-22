@@ -129,7 +129,7 @@ export default [
     publish: '22 August, 2024',
     logs: {
       New: [
-        '<span class="fw-bold">Vite starter version</span> (Contact <a href="mailto:support@themewagon.com">support</a> with the purchase ID)',
+        '<span class="fw-bold">Vite starter version</span> (Contact <a href="mailto:support@example.com">support</a> with the purchase ID)',
         'Plugin: <code>react-simple-star-rating</code>',
         `Page: <ul>
           <li><code>layouts/vertical-nav-layout</code></li>
@@ -149,7 +149,7 @@ export default [
         `Removed: <ul>
           <li>Plugin: <code>react-rating</code></li>
         </ul>`,
-        '<span class="fw-bold">Falcon Next.js starter with App router</span> (Contact <a href="mailto:support@themewagon.com">support</a> with the purchase ID)'
+        '<span class="fw-bold">Falcon Next.js starter with App router</span> (Contact <a href="mailto:support@example.com">support</a> with the purchase ID)'
       ],
       Fix: ['Fix echarts issue while changing layouts', 'Minor bugs.']
     }
