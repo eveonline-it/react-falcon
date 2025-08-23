@@ -329,9 +329,11 @@ const removeMemberMutation = useRemoveGroupMember();
 - **Character Search**: Search members by name (minimum 3 characters) with real-time results
 - **Add Confirmation Modal**: Click character from search results to show confirmation dialog before adding
 - **Remove Confirmation Modal**: Click remove button to show confirmation dialog before removing members
+- **Active/Inactive Toggle**: Edit groups to change active/inactive status with visual switch control
 - **Paginated Member List**: Character names displayed first for better UX
 - **Safe Member Management**: Both add and remove operations require explicit confirmation
 - **Interactive Workflows**: Search → Click → Confirm → Add and Click → Confirm → Remove
+- **Status Management**: Create groups as active by default, toggle status during editing
 - Backend error handling workarounds for inconsistent API responses (500 errors on successful operations)
 - Member display format: Character Name, Character ID, Added Date, Actions
 

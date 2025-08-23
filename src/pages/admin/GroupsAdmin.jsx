@@ -49,7 +49,8 @@ const GroupsAdmin = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    type: 'custom'
+    type: 'custom',
+    is_active: true
   });
 
   const { data: groupsData, isLoading, error, refetch } = useGroups(filters);
@@ -93,14 +94,16 @@ const GroupsAdmin = () => {
       setFormData({
         name: group.name,
         description: group.description || '',
-        type: group.type
+        type: group.type,
+        is_active: group.is_active
       });
     } else {
       setEditingGroup(null);
       setFormData({
         name: '',
         description: '',
-        type: 'custom'
+        type: 'custom',
+        is_active: true
       });
     }
     setShowModal(true);
@@ -112,7 +115,8 @@ const GroupsAdmin = () => {
     setFormData({
       name: '',
       description: '',
-      type: 'custom'
+      type: 'custom',
+      is_active: true
     });
   };
 
@@ -375,7 +379,7 @@ const GroupsAdmin = () => {
                           </Badge>
                         </td>
                         <td className="py-2 align-middle">
-                          {group.active ? (
+                          {group.is_active ? (
                             <Badge bg="success" className="small">
                               <FontAwesomeIcon icon={faCheckCircle} className="me-1" size="xs" />
                               Active
@@ -493,6 +497,22 @@ const GroupsAdmin = () => {
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
                 placeholder="Enter group description"
               />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Check
+                type="switch"
+                id="is-active-switch"
+                label={formData.is_active ? "Active" : "Inactive"}
+                checked={formData.is_active}
+                onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+              />
+              <Form.Text className="text-muted">
+                {formData.is_active ? 
+                  "Group is currently active and visible to users" : 
+                  "Group is inactive and hidden from users"
+                }
+              </Form.Text>
             </Form.Group>
 
             {!editingGroup && (
