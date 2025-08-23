@@ -813,7 +813,7 @@ const UsersAdmin = () => {
                   <div className="mt-2">
                     <h5 className="mb-1">{selectedUser.character_name}</h5>
                     {selectedUser.corporation_name && (
-                      <div className="d-flex align-items-center justify-content-center">
+                      <div className="d-flex align-items-center justify-content-center mb-1">
                         {selectedUser.corporation_id && (
                           <CorporationLogo 
                             corporationId={selectedUser.corporation_id}
@@ -822,6 +822,18 @@ const UsersAdmin = () => {
                           />
                         )}
                         <small className="text-muted ms-2">{selectedUser.corporation_name}</small>
+                      </div>
+                    )}
+                    {selectedUser.alliance_name && (
+                      <div className="d-flex align-items-center justify-content-center">
+                        {selectedUser.alliance_id && (
+                          <AllianceLogo 
+                            allianceId={selectedUser.alliance_id}
+                            allianceName={selectedUser.alliance_name}
+                            size={18}
+                          />
+                        )}
+                        <small className="text-muted ms-2">{selectedUser.alliance_name}</small>
                       </div>
                     )}
                   </div>
@@ -843,7 +855,20 @@ const UsersAdmin = () => {
                       </tr>
                       <tr>
                         <td><strong>Corporation ID:</strong></td>
-                        <td>{selectedUser.corporation_id || 'Not available'}</td>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            {selectedUser.corporation_id && (
+                              <div className="me-2">
+                                <CorporationLogo 
+                                  corporationId={selectedUser.corporation_id}
+                                  corporationName={selectedUser.corporation_name}
+                                  size={16}
+                                />
+                              </div>
+                            )}
+                            <span>{selectedUser.corporation_id || 'Not available'}</span>
+                          </div>
+                        </td>
                       </tr>
                       <tr>
                         <td><strong>Corporation Name:</strong></td>
@@ -864,7 +889,20 @@ const UsersAdmin = () => {
                       </tr>
                       <tr>
                         <td><strong>Alliance ID:</strong></td>
-                        <td>{selectedUser.alliance_id || 'Not available'}</td>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            {selectedUser.alliance_id && (
+                              <div className="me-2">
+                                <AllianceLogo 
+                                  allianceId={selectedUser.alliance_id}
+                                  allianceName={selectedUser.alliance_name}
+                                  size={16}
+                                />
+                              </div>
+                            )}
+                            <span>{selectedUser.alliance_id || 'Not available'}</span>
+                          </div>
+                        </td>
                       </tr>
                       <tr>
                         <td><strong>Alliance Name:</strong></td>

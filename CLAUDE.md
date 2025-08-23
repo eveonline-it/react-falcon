@@ -882,17 +882,20 @@ Complete user management interface with advanced features:
   - Circular design with proper borders and responsive sizing
   - Fallback to user icons when portraits fail to load
 - **Corporation Logos**: Uses `https://images.evetech.net/corporations/{corporation_id}/logo` for official corporation logos
-  - 24px size in table rows, 20px in modals and detail views
+  - Table rows: 24px size alongside corporation names
+  - Modal portrait section: 20px size under character name
+  - Modal detail tables: 20px in corporation name rows, 16px in corporation ID rows
   - Fallback to building icons when logos unavailable
-  - Displays alongside corporation names for enhanced visual identification
 - **Alliance Logos**: Uses `https://images.evetech.net/alliances/{alliance_id}/logo` for official alliance logos
-  - 24px size in table rows, 20px in modals and detail views
+  - Table rows: 24px size alongside alliance names (when available)
+  - Modal portrait section: 18px size under corporation info
+  - Modal detail tables: 20px in alliance name rows, 16px in alliance ID rows
   - Fallback to globe icons when logos unavailable
-  - Only displayed when alliance information is available
-- **Component Architecture**: Reusable `CharacterPortrait`, `CorporationLogo`, and `AllianceLogo` components with error state management
+- **Component Architecture**: Reusable `CharacterPortrait`, `CorporationLogo`, and `AllianceLogo` components with comprehensive error state management and multiple size support
 
 #### Navigation
 - **Users Admin**: `/admin/users` - Complete user account management and administration
+- **Navigation Hierarchy**: Administration section positioned prominently as second menu group (after Dashboard) for easy access to all administrative functions
 
 ### Character Data Structure
 The backend manages all character data and session information. The React app doesn't directly handle tokens or character data - this is all managed server-side for security.

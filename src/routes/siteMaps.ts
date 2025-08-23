@@ -1161,10 +1161,10 @@ export const documentationRoutes: RouteGroup = {
 
 const routeGroups: RouteGroup[] = [
   dashboardRoutes,
+  adminRoutes,
   appRoutes,
   pagesRoutes,
   modulesRoutes,
-  adminRoutes,
   documentationRoutes
 ];
 
