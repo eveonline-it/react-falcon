@@ -1068,6 +1068,12 @@ export const adminRoutes: RouteGroup = {
       active: true
     },
     {
+      name: 'Permissions',
+      icon: 'shield-alt',
+      to: paths.permissionsAdmin,
+      active: true
+    },
+    {
       name: 'Settings',
       icon: 'cog',
       active: true,

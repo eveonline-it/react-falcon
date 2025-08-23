@@ -135,7 +135,7 @@ The project now maintains crystal clear boundaries between different types of co
 
 #### 📄 Page Components (`src/pages/`)
 **Page-level components for routing:**
-- **`admin/`** - Administrative pages (SettingsAdmin, SchedulerAdmin, TaskAnalyticsAdmin, UsersAdmin, CorporationsAdmin, AllianceAdmin, GroupsAdmin)
+- **`admin/`** - Administrative pages (SettingsAdmin, SchedulerAdmin, TaskAnalyticsAdmin, UsersAdmin, CorporationsAdmin, AllianceAdmin, GroupsAdmin, PermissionsAdmin)
 - **`faq/`** - FAQ pages (basic, accordion, alt layouts)
 - **`pricing/`** - Pricing pages (default, alternative layouts)
 - **`user/`** - User profile and settings pages
@@ -418,6 +418,53 @@ refreshMutation.mutate(userId);
 - **CSV Export**: Complete user data export functionality with filtering support
 - **Status Management**: Granular control with enabled, banned, and invalid boolean flags
 - **Row Selection**: Multi-select interface for bulk operations with safety confirmations
+
+#### Permissions Management (src/hooks/usePermissions.js)
+```jsx
+import {
+  usePermissions,
+  usePermission,
+  useCheckPermission,
+  usePermissionCheck,
+  usePermissionsHealth
+} from 'hooks/usePermissions';
+
+// Fetch permissions with filtering and pagination
+const { data, isLoading, error } = usePermissions({
+  service: 'users',
+  category: 'admin',
+  static: 'false',
+  page: 1,
+  limit: 20
+});
+
+// Get individual permission details
+const { data: permission } = usePermission(permissionId);
+
+// Check if user/character has specific permission
+const { data: checkResult } = useCheckPermission(permissionId, characterId);
+// Returns: { character_id, permission_id, granted: boolean, granted_via?: string }
+
+// Test permission interactively
+const checkMutation = usePermissionCheck();
+checkMutation.mutate({
+  permissionId: 123,
+  characterId: 456 // Optional - uses current user if not provided
+});
+
+// Get permissions system health
+const { data: healthData } = usePermissionsHealth();
+```
+
+**Features**:
+- **Permission Listing**: Paginated list with filtering by service, category, and static/dynamic type
+- **Advanced Search**: Search by name, description, service, resource, or action across all fields
+- **Permission Testing**: Interactive permission checking for any user/character with detailed results
+- **Static vs Dynamic**: Visual distinction between hardcoded (static) and configurable (dynamic) permissions
+- **Service Organization**: Permissions grouped and color-coded by service (auth, users, groups, etc.)
+- **Comprehensive Details**: Complete permission information including resource, action, category, and creation date
+- **Health Monitoring**: System health status for the permissions module
+- **Real-time Updates**: Live permission status checking with proper error handling and user feedback
 
 #### Analytics Data (src/hooks/useAnalytics.js)
 ```jsx
@@ -916,8 +963,41 @@ Complete user management interface with advanced features:
 - **Real-time Loading**: Groups load independently with proper loading and error states
 - **Component**: Reusable `GroupsBadges` component with compact and full display modes
 
+#### Permissions Admin Page (`src/pages/admin/PermissionsAdmin.jsx`)
+Complete permissions management interface for the go-falcon EVE Online API gateway:
+
+**Core Features:**
+- **Permission Listing**: Paginated display of all system permissions with comprehensive filtering
+- **Advanced Search**: Multi-field search across permission names, descriptions, services, resources, and actions
+- **Service & Category Filtering**: Filter by service (auth, users, groups, etc.) and permission categories
+- **Static vs Dynamic**: Toggle between hardcoded system permissions and configurable dynamic permissions
+- **Permission Details**: Complete permission information including resource, action, category, and creation timestamps
+- **Interactive Testing**: Built-in permission checking modal for testing user/character permissions in real-time
+- **System Health Monitoring**: Permissions module status indicator and health checks
+
+**Permission Management:**
+- **Overview Dashboard**: Real-time statistics showing total permissions, static/dynamic counts, and service distribution
+- **Color-Coded Services**: Visual service identification with consistent color schemes (auth: primary, users: success, etc.)
+- **Permission Types**: Clear visual distinction between static (hardcoded) and dynamic (configurable) permissions
+- **Comprehensive Details Modal**: Full permission information display with formatted resource and action details
+- **Test Interface**: Permission checking modal supporting both current user and specific character ID testing
+
+**User Interface:**
+- **Responsive Design**: Optimized table layout with proper mobile responsiveness and compact view options
+- **Professional Styling**: Consistent Bootstrap-based design matching existing admin interface patterns  
+- **Status Badges**: Color-coded badges for services, categories, and permission types for quick identification
+- **Interactive Elements**: Hover states, tooltips, and clear action buttons for enhanced user experience
+- **Error Handling**: Comprehensive error states with user-friendly messaging and proper fallback displays
+
+**System Integration:**
+- **OpenAPI Compliance**: Full adherence to go-falcon permissions API specification with proper endpoint usage
+- **Health Monitoring**: Real-time system status checks and module health indicators
+- **Cookie Authentication**: Secure authentication using cookie-based sessions with proper credential handling
+- **Performance Optimized**: Efficient pagination, caching, and query optimization for large permission datasets
+
 #### Navigation
 - **Users Admin**: `/admin/users` - Complete user account management and administration
+- **Permissions Admin**: `/admin/permissions` - Complete permissions system management and testing interface
 - **Navigation Hierarchy**: Administration section positioned prominently as second menu group (after Dashboard) for easy access to all administrative functions
 
 ### Character Data Structure
