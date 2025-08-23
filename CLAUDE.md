@@ -135,7 +135,7 @@ The project now maintains crystal clear boundaries between different types of co
 
 #### 📄 Page Components (`src/pages/`)
 **Page-level components for routing:**
-- **`admin/`** - Administrative pages (SettingsAdmin, SchedulerAdmin, TaskAnalyticsAdmin, CorporationsAdmin, AllianceAdmin, GroupsAdmin)
+- **`admin/`** - Administrative pages (SettingsAdmin, SchedulerAdmin, TaskAnalyticsAdmin, UsersAdmin, CorporationsAdmin, AllianceAdmin, GroupsAdmin)
 - **`faq/`** - FAQ pages (basic, accordion, alt layouts)
 - **`pricing/`** - Pricing pages (default, alternative layouts)
 - **`user/`** - User profile and settings pages
@@ -337,18 +337,76 @@ const removeMemberMutation = useRemoveGroupMember();
 - Backend error handling workarounds for inconsistent API responses (500 errors on successful operations)
 - Member display format: Character Name, Character ID, Added Date, Actions
 
-#### User Management (src/hooks/useUserProfile.js)
+#### User Management (src/hooks/useUsers.js)
 ```jsx
-import { useUserProfile, useUpdateUserProfile } from 'hooks/useUserProfile';
+import { 
+  useUsers, 
+  useUserStats, 
+  useUserProfile, 
+  useUpdateUser, 
+  useUpdateUserStatus, 
+  useRefreshUserData,
+  useBulkUpdateUsers,
+  useUsersStatus 
+} from 'hooks/useUsers';
 
-// Fetch user profile
-const { data, isLoading, error } = useUserProfile(userId);
-
-// Update user profile with optimistic updates
-const updateMutation = useUpdateUserProfile({
-  onSuccess: (data) => console.log('Updated!', data)
+// Fetch users with filtering and pagination
+const { data, isLoading, error } = useUsers({
+  page: 1,
+  limit: 20,
+  search: 'character name',
+  enabled: 'true',
+  banned: 'false'
 });
+
+// Get user statistics
+const { data: stats } = useUserStats();
+// Returns: { total_users, enabled_users, disabled_users, banned_users, invalid_users }
+
+// Get users module health status
+const { data: status } = useUsersStatus();
+
+// Individual user profile
+const { data: profile } = useUserProfile(userId);
+
+// Update user with full control
+const updateMutation = useUpdateUser();
+updateMutation.mutate({
+  userId: 123,
+  data: {
+    enabled: true,
+    banned: false,
+    invalid: false,
+    notes: 'Admin notes',
+    position: 10
+  }
+});
+
+// Bulk user operations
+const bulkMutation = useBulkUpdateUsers();
+bulkMutation.mutate({
+  userIds: [1, 2, 3],
+  data: { enabled: false, banned: true }
+});
+
+// Refresh user data from EVE Online
+const refreshMutation = useRefreshUserData();
+refreshMutation.mutate(userId);
 ```
+
+**Features**:
+- **Complete User CRUD**: Create, read, update operations with comprehensive field support
+- **Advanced Filtering**: Search by name, email, corporation, alliance with status filters  
+- **Bulk Operations**: Mass enable/disable/ban/unban multiple users simultaneously
+- **User Statistics**: Real-time counts of total, enabled, disabled, banned, and invalid users
+- **Notes System**: Admin can add internal notes to users for tracking and management
+- **Position Management**: Numerical ranking system for user organization and sorting
+- **Health Monitoring**: Users module status checking for system health
+- **EVE Online Integration**: Refresh user data directly from EVE Online ESI
+- **Optimistic Updates**: Immediate UI feedback with automatic rollback on errors
+- **CSV Export**: Complete user data export functionality with filtering support
+- **Status Management**: Granular control with enabled, banned, and invalid boolean flags
+- **Row Selection**: Multi-select interface for bulk operations with safety confirmations
 
 #### Analytics Data (src/hooks/useAnalytics.js)
 ```jsx
@@ -784,6 +842,38 @@ The application includes comprehensive task execution analytics and performance 
 #### Navigation
 - **Scheduler Admin**: `/admin/scheduler` - Enhanced with performance metrics and analytics tab
 - **Task Analytics**: `/admin/task-analytics` - Dedicated analytics dashboard with system overview, individual task performance, and trend analysis
+
+### User Management & Administration
+The application includes comprehensive user account management and administration capabilities:
+
+#### Users Admin Page (`src/pages/admin/UsersAdmin.jsx`)
+Complete user management interface with advanced features:
+
+**Core Features:**
+- **User List Management**: Paginated display of all EVE Online character accounts
+- **Advanced Search**: Multi-field search by character name, email, corporation, alliance
+- **Status Filtering**: Filter by enabled, banned, invalid status with checkbox controls
+- **Bulk Operations**: Multi-select users for mass enable/disable/ban/unban operations
+- **Individual User Management**: Edit user notes, position, and status individually
+- **Character Integration**: Display EVE Online character portraits and corporate affiliations
+
+**Administrative Functions:**
+- **User Statistics**: Real-time dashboard with counts of total, enabled, disabled, banned users
+- **Health Monitoring**: Users module status indicator with system health checks
+- **CSV Export**: Export filtered user data for external analysis and reporting
+- **Notes System**: Internal admin notes for tracking user issues and communications
+- **Position Management**: Numerical ranking system for user organization
+- **Data Refresh**: Manual refresh of user data from EVE Online ESI
+
+**User Interface:**
+- **Row Selection**: Individual and bulk user selection with visual feedback
+- **Status Badges**: Color-coded status indicators (Enabled/Disabled/Banned/Invalid)
+- **Action Buttons**: Quick access to view details, edit, refresh, and status changes
+- **Confirmation Modals**: Safety confirmations for all administrative actions
+- **Progress Indicators**: Loading states and progress feedback for all operations
+
+#### Navigation
+- **Users Admin**: `/admin/users` - Complete user account management and administration
 
 ### Character Data Structure
 The backend manages all character data and session information. The React app doesn't directly handle tokens or character data - this is all managed server-side for security.

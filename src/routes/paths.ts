@@ -226,6 +226,7 @@ export interface AppPaths {
   corporationsAdmin: string;
   alliancesAdmin: string;
   groupsAdmin: string;
+  usersAdmin: string;
 }
 
 const paths: AppPaths = {
@@ -385,7 +386,8 @@ const paths: AppPaths = {
   settingsAdmin: `/${rootPaths.adminRoot}/settings`,
   corporationsAdmin: `/${rootPaths.adminRoot}/corporations`,
   alliancesAdmin: `/${rootPaths.adminRoot}/alliances`,
-  groupsAdmin: `/${rootPaths.adminRoot}/groups`
+  groupsAdmin: `/${rootPaths.adminRoot}/groups`,
+  usersAdmin: `/${rootPaths.adminRoot}/users`
 };
 
 export default paths;
