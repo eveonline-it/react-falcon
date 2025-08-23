@@ -309,8 +309,9 @@ const { data, isLoading, error } = useGroups({
   limit: 20
 });
 
-// Group membership management
+// Group membership management - returns paginated response
 const { data: members } = useGroupMembers(groupId);
+// Access members array: members.members, total: members.total
 
 // CRUD operations with optimistic updates
 const createMutation = useCreateGroup();
@@ -320,7 +321,10 @@ const addMemberMutation = useAddGroupMember();
 const removeMemberMutation = useRemoveGroupMember();
 ```
 
-**Note**: Includes backend error handling workarounds for inconsistent API responses (500 errors on successful operations).
+**Features**:
+- Paginated member list with character names displayed first
+- Backend error handling workarounds for inconsistent API responses (500 errors on successful operations)
+- Member display format: Character Name, Character ID, Added Date, Actions
 
 #### User Management (src/hooks/useUserProfile.js)
 ```jsx

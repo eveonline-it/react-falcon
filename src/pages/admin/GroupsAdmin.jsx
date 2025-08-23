@@ -607,8 +607,8 @@ const GroupsAdmin = () => {
             <Table hover responsive size="sm">
               <thead>
                 <tr>
-                  <th>Character ID</th>
                   <th>Character Name</th>
+                  <th>Character ID</th>
                   <th>Added Date</th>
                   <th>Actions</th>
                 </tr>
@@ -616,8 +616,8 @@ const GroupsAdmin = () => {
               <tbody>
                 {selectedGroupMembers?.members?.map((member) => (
                   <tr key={member.character_id}>
-                    <td>{member.character_id}</td>
                     <td>{member.character_name || '-'}</td>
+                    <td>{member.character_id}</td>
                     <td>{member.added_at ? new Date(member.added_at).toLocaleDateString() : '-'}</td>
                     <td>
                       <Button
