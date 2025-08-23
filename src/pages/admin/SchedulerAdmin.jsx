@@ -19,7 +19,7 @@ import {
   useUpdateTask,
   useBulkTaskOperation,
   useImportTasks
-} from 'hooks/useScheduler.ts';
+} from 'hooks/useScheduler';
 import { TaskModal, TaskHistoryModal, TaskPerformanceDashboard } from 'components/scheduler';
 import { useGlobalExecutionStatistics } from 'hooks/useTaskStatistics';
 

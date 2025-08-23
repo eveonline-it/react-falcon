@@ -300,7 +300,11 @@ const bulkUpdateMutation = useBulkUpdateAlliances(); // Drag & drop reordering
 
 #### Groups Management (src/hooks/useGroups.js)
 ```jsx
-import { useGroups, useCreateGroup, useUpdateGroup, useDeleteGroup, useGroupMembers, useAddGroupMember, useRemoveGroupMember, useCharacterSearch } from 'hooks/useGroups';
+import { 
+  useGroups, useCreateGroup, useUpdateGroup, useDeleteGroup, 
+  useGroupMembers, useAddGroupMember, useRemoveGroupMember, useCharacterSearch,
+  useGroupPermissions, useGrantPermissionToGroup, useRevokePermissionFromGroup
+} from 'hooks/useGroups';
 
 // Fetch groups with filters
 const { data, isLoading, error } = useGroups({
@@ -317,12 +321,23 @@ const { data: members } = useGroupMembers(groupId);
 const { data: searchResults, isLoading: searching } = useCharacterSearch(searchTerm);
 // Requires minimum 3 characters, returns: { characters: [...], count: number }
 
+// Group permissions management
+const { data: permissions } = useGroupPermissions(groupId);
+// Returns: { permissions: [...] } with full permission details
+
 // CRUD operations with optimistic updates
 const createMutation = useCreateGroup();
 const updateMutation = useUpdateGroup();
 const deleteMutation = useDeleteGroup();
 const addMemberMutation = useAddGroupMember();
 const removeMemberMutation = useRemoveGroupMember();
+
+// Permission management operations
+const grantPermissionMutation = useGrantPermissionToGroup();
+grantPermissionMutation.mutate({ groupId, permissionId });
+
+const revokePermissionMutation = useRevokePermissionFromGroup();
+revokePermissionMutation.mutate({ groupId, permissionId });
 ```
 
 **Features**:
@@ -335,6 +350,11 @@ const removeMemberMutation = useRemoveGroupMember();
 - **Interactive Workflows**: Search → Click → Confirm → Add and Click → Confirm → Remove
 - **Status Management**: Create groups as active by default, toggle status during editing
 - **Group Deletion**: Delete button with confirmation modal available for custom, corporation, and alliance groups (system groups protected)
+- **Permission Management**: Grant and revoke permissions to/from groups with comprehensive UI
+- **Permission Search & Filter**: Search permissions by name, description, resource, or action with service filtering
+- **Permission Assignment**: Interactive permission selection with real-time availability checking
+- **Permission Overview**: View all permissions assigned to a group with detailed information
+- **Safe Permission Operations**: Grant and revoke operations with confirmation modals
 - Backend error handling workarounds for inconsistent API responses (500 errors on successful operations)
 - Member display format: Character Name, Character ID, Added Date, Actions
 

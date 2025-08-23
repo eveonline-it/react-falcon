@@ -25,6 +25,8 @@ import {
   useCharacterSearch
 } from 'hooks/useGroups';
 
+import GroupPermissions from 'components/admin/GroupPermissions';
+
 const GroupsAdmin = () => {
   const [filters, setFilters] = useState({
     type: '',
@@ -45,6 +47,8 @@ const GroupsAdmin = () => {
   const [characterToAdd, setCharacterToAdd] = useState(null);
   const [showRemoveMemberConfirm, setShowRemoveMemberConfirm] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState(null);
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [permissionsGroup, setPermissionsGroup] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -207,6 +211,8 @@ const GroupsAdmin = () => {
     setCharacterToAdd(null);
     setShowRemoveMemberConfirm(false);
     setMemberToRemove(null);
+    setShowPermissionsModal(false);
+    setPermissionsGroup(null);
   };
 
   const handleConfirmAddMember = async () => {
@@ -244,6 +250,16 @@ const GroupsAdmin = () => {
       setShowRemoveMemberConfirm(false);
       setMemberToRemove(null);
     }
+  };
+
+  const handleOpenPermissionsModal = (group) => {
+    setPermissionsGroup(group);
+    setShowPermissionsModal(true);
+  };
+
+  const handleClosePermissionsModal = () => {
+    setShowPermissionsModal(false);
+    setPermissionsGroup(null);
   };
 
   if (error) {
@@ -408,6 +424,14 @@ const GroupsAdmin = () => {
                             onClick={() => handleOpenMembersModal(group)}
                           >
                             <FontAwesomeIcon icon={faUsers} size="xs" />
+                          </Button>
+                          <Button
+                            variant="outline-warning"
+                            className="me-1 btn-xs"
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                            onClick={() => handleOpenPermissionsModal(group)}
+                          >
+                            <FontAwesomeIcon icon={faKey} size="xs" />
                           </Button>
                           {group.type === 'custom' && (
                             <>
@@ -823,6 +847,18 @@ const GroupsAdmin = () => {
             )}
           </Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* Group Permissions Modal */}
+      <Modal show={showPermissionsModal} onHide={handleClosePermissionsModal} size="xl">
+        <Modal.Body className="p-0">
+          {permissionsGroup && (
+            <GroupPermissions 
+              group={permissionsGroup} 
+              onClose={handleClosePermissionsModal}
+            />
+          )}
+        </Modal.Body>
       </Modal>
     </Container>
   );

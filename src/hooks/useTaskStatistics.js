@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useSchedulerExecutions, useTaskHistory } from './useScheduler.ts';
+import { useSchedulerExecutions, useTaskHistory } from './useScheduler';
 
 const API_BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.it';
 

@@ -270,3 +270,64 @@ export const useCharacterSearch = (searchTerm) => {
     },
   });
 };
+
+// Group Permissions Management
+export const useGroupPermissions = (groupId) => {
+  return useQuery({
+    queryKey: ['groups', groupId, 'permissions'],
+    queryFn: () => fetcher(`/groups/${groupId}/permissions`),
+    staleTime: 1000 * 60 * 5,
+    enabled: !!groupId,
+    retry: (failureCount, error) => {
+      if (error.status === 401 || error.status === 403) return false;
+      return failureCount < 3;
+    },
+  });
+};
+
+export const useGrantPermissionToGroup = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ groupId, permissionId }) => {
+      return fetcher(`/groups/${groupId}/permissions`, {
+        method: 'POST',
+        body: JSON.stringify({ permission_id: permissionId }),
+      });
+    },
+    onSuccess: (data, { groupId }) => {
+      queryClient.invalidateQueries({ queryKey: ['groups', groupId, 'permissions'] });
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+      toast.success('Permission granted to group successfully');
+      return data;
+    },
+    onError: (error) => {
+      const message = error.response?.errors?.[0]?.message || error.response?.error || 'Failed to grant permission to group';
+      toast.error(message);
+      throw error;
+    },
+  });
+};
+
+export const useRevokePermissionFromGroup = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ groupId, permissionId }) => {
+      return fetcher(`/groups/${groupId}/permissions/${permissionId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: (data, { groupId }) => {
+      queryClient.invalidateQueries({ queryKey: ['groups', groupId, 'permissions'] });
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+      toast.success('Permission revoked from group successfully');
+      return data;
+    },
+    onError: (error) => {
+      const message = error.response?.errors?.[0]?.message || error.response?.error || 'Failed to revoke permission from group';
+      toast.error(message);
+      throw error;
+    },
+  });
+};

@@ -6,7 +6,7 @@ import {
   faEye, faDownload, faRefresh
 } from '@fortawesome/free-solid-svg-icons';
 
-import { useTaskHistory } from 'hooks/useScheduler.ts';
+import { useTaskHistory } from 'hooks/useScheduler';
 
 const TaskHistoryModal = ({ 
   show, 
