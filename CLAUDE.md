@@ -300,7 +300,7 @@ const bulkUpdateMutation = useBulkUpdateAlliances(); // Drag & drop reordering
 
 #### Groups Management (src/hooks/useGroups.js)
 ```jsx
-import { useGroups, useCreateGroup, useUpdateGroup, useDeleteGroup, useGroupMembers, useAddGroupMember, useRemoveGroupMember } from 'hooks/useGroups';
+import { useGroups, useCreateGroup, useUpdateGroup, useDeleteGroup, useGroupMembers, useAddGroupMember, useRemoveGroupMember, useCharacterSearch } from 'hooks/useGroups';
 
 // Fetch groups with filters
 const { data, isLoading, error } = useGroups({
@@ -313,6 +313,10 @@ const { data, isLoading, error } = useGroups({
 const { data: members } = useGroupMembers(groupId);
 // Access members array: members.members, total: members.total
 
+// Character search for adding members
+const { data: searchResults, isLoading: searching } = useCharacterSearch(searchTerm);
+// Requires minimum 3 characters, returns: { characters: [...], count: number }
+
 // CRUD operations with optimistic updates
 const createMutation = useCreateGroup();
 const updateMutation = useUpdateGroup();
@@ -322,7 +326,12 @@ const removeMemberMutation = useRemoveGroupMember();
 ```
 
 **Features**:
-- Paginated member list with character names displayed first
+- **Character Search**: Search members by name (minimum 3 characters) with real-time results
+- **Add Confirmation Modal**: Click character from search results to show confirmation dialog before adding
+- **Remove Confirmation Modal**: Click remove button to show confirmation dialog before removing members
+- **Paginated Member List**: Character names displayed first for better UX
+- **Safe Member Management**: Both add and remove operations require explicit confirmation
+- **Interactive Workflows**: Search → Click → Confirm → Add and Click → Confirm → Remove
 - Backend error handling workarounds for inconsistent API responses (500 errors on successful operations)
 - Member display format: Character Name, Character ID, Added Date, Actions
 

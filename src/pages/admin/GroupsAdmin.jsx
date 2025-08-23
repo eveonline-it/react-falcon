@@ -21,7 +21,8 @@ import {
   useDeleteGroup,
   useAddGroupMember,
   useRemoveGroupMember,
-  useGroupsHealth
+  useGroupsHealth,
+  useCharacterSearch
 } from 'hooks/useGroups';
 
 const GroupsAdmin = () => {
@@ -38,7 +39,12 @@ const GroupsAdmin = () => {
   const [groupToDelete, setGroupToDelete] = useState(null);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
-  const [newMemberCharacterId, setNewMemberCharacterId] = useState('');
+  const [characterSearchTerm, setCharacterSearchTerm] = useState('');
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [showAddMemberConfirm, setShowAddMemberConfirm] = useState(false);
+  const [characterToAdd, setCharacterToAdd] = useState(null);
+  const [showRemoveMemberConfirm, setShowRemoveMemberConfirm] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -49,6 +55,7 @@ const GroupsAdmin = () => {
   const { data: groupsData, isLoading, error, refetch } = useGroups(filters);
   const { data: healthData, isLoading: healthLoading } = useGroupsHealth();
   const { data: selectedGroupMembers, isLoading: membersLoading } = useGroupMembers(selectedGroup?.id);
+  const { data: characterSearchResults, isLoading: charactersLoading } = useCharacterSearch(characterSearchTerm);
   const createMutation = useCreateGroup();
   const updateMutation = useUpdateGroup();
   const deleteMutation = useDeleteGroup();
@@ -184,34 +191,48 @@ const GroupsAdmin = () => {
   const handleCloseMembersModal = () => {
     setShowMembersModal(false);
     setSelectedGroup(null);
-    setNewMemberCharacterId('');
+    setCharacterSearchTerm('');
+    setSelectedCharacter(null);
+    setShowAddMemberConfirm(false);
+    setCharacterToAdd(null);
+    setShowRemoveMemberConfirm(false);
+    setMemberToRemove(null);
   };
 
-  const handleAddMember = async (e) => {
-    e.preventDefault();
-    if (!newMemberCharacterId || !selectedGroup) return;
+  const handleConfirmAddMember = async () => {
+    if (!characterToAdd || !selectedGroup) return;
 
     try {
       await addMemberMutation.mutateAsync({
         groupId: selectedGroup.id,
-        characterId: parseInt(newMemberCharacterId)
+        characterId: characterToAdd.character_id
       });
-      setNewMemberCharacterId('');
+      setShowAddMemberConfirm(false);
+      setCharacterToAdd(null);
+      setCharacterSearchTerm('');
+      toast.success(`${characterToAdd.name} added to group successfully!`);
     } catch (err) {
       console.error('Failed to add member:', err);
+      setShowAddMemberConfirm(false);
+      setCharacterToAdd(null);
     }
   };
 
-  const handleRemoveMember = async (characterId) => {
-    if (!selectedGroup) return;
+  const handleConfirmRemoveMember = async () => {
+    if (!memberToRemove || !selectedGroup) return;
 
     try {
       await removeMemberMutation.mutateAsync({
         groupId: selectedGroup.id,
-        characterId
+        characterId: memberToRemove.character_id
       });
+      setShowRemoveMemberConfirm(false);
+      setMemberToRemove(null);
+      toast.success(`${memberToRemove.character_name || memberToRemove.name} removed from group successfully!`);
     } catch (err) {
       console.error('Failed to remove member:', err);
+      setShowRemoveMemberConfirm(false);
+      setMemberToRemove(null);
     }
   };
 
@@ -560,36 +581,51 @@ const GroupsAdmin = () => {
         </Modal.Header>
         <Modal.Body>
           {/* Add Member Form */}
-          <Form onSubmit={handleAddMember} className="mb-4">
+          <div className="mb-4">
             <Row>
-              <Col md={8}>
+              <Col md={12}>
                 <Form.Control
-                  type="number"
-                  placeholder="Enter Character ID"
-                  value={newMemberCharacterId}
-                  onChange={(e) => setNewMemberCharacterId(e.target.value)}
-                  required
+                  type="text"
+                  placeholder="Search character name (min 3 characters) - click to add to group"
+                  value={characterSearchTerm}
+                  onChange={(e) => {
+                    setCharacterSearchTerm(e.target.value);
+                  }}
                 />
-              </Col>
-              <Col md={4}>
-                <Button 
-                  type="submit" 
-                  variant="primary"
-                  disabled={addMemberMutation.isPending}
-                  className="w-100"
-                >
-                  {addMemberMutation.isPending ? (
-                    <Spinner size="sm" animation="border" />
-                  ) : (
-                    <>
-                      <FontAwesomeIcon icon={faUserPlus} className="me-2" />
-                      Add Member
-                    </>
-                  )}
-                </Button>
+                {characterSearchTerm.length >= 3 && (
+                  <div className="mt-2">
+                    {charactersLoading ? (
+                      <div className="text-center py-2">
+                        <Spinner size="sm" animation="border" />
+                        <span className="ms-2">Searching...</span>
+                      </div>
+                    ) : characterSearchResults?.characters?.length > 0 ? (
+                      <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', borderRadius: '0.375rem' }}>
+                        {characterSearchResults.characters.map((character) => (
+                          <div
+                            key={character.character_id}
+                            className="p-2 border-bottom cursor-pointer hover-bg-light"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => {
+                              setCharacterToAdd(character);
+                              setShowAddMemberConfirm(true);
+                            }}
+                          >
+                            <div className="fw-bold">{character.name}</div>
+                            <div className="small text-muted">ID: {character.character_id} - Click to add to group</div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Alert variant="info" className="py-2">
+                        No characters found matching "{characterSearchTerm}"
+                      </Alert>
+                    )}
+                  </div>
+                )}
               </Col>
             </Row>
-          </Form>
+          </div>
 
           {/* Members List */}
           {membersLoading ? (
@@ -623,7 +659,10 @@ const GroupsAdmin = () => {
                       <Button
                         variant="outline-danger"
                         size="sm"
-                        onClick={() => handleRemoveMember(member.character_id)}
+                        onClick={() => {
+                          setMemberToRemove(member);
+                          setShowRemoveMemberConfirm(true);
+                        }}
                         disabled={removeMemberMutation.isPending}
                       >
                         <FontAwesomeIcon icon={faUserMinus} size="xs" />
@@ -638,6 +677,120 @@ const GroupsAdmin = () => {
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseMembersModal}>
             Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Add Member Confirmation Modal */}
+      <Modal show={showAddMemberConfirm} onHide={() => setShowAddMemberConfirm(false)} size="sm">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <FontAwesomeIcon icon={faUserPlus} className="me-2" />
+            Confirm Add Member
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="text-center">
+            <FontAwesomeIcon icon={faUsers} size="3x" className="text-primary mb-3" />
+            <h5>Add Character to Group?</h5>
+            {characterToAdd && selectedGroup && (
+              <>
+                <p className="mb-2">
+                  <strong>Character:</strong> {characterToAdd.name}
+                  <br />
+                  <small className="text-muted">ID: {characterToAdd.character_id}</small>
+                </p>
+                <p className="mb-3">
+                  <strong>Group:</strong> {selectedGroup.name}
+                </p>
+              </>
+            )}
+            <p className="small text-muted">
+              This character will be added to the group with full member privileges.
+            </p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="justify-content-center">
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowAddMemberConfirm(false)}
+            disabled={addMemberMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={handleConfirmAddMember}
+            disabled={addMemberMutation.isPending}
+          >
+            {addMemberMutation.isPending ? (
+              <>
+                <Spinner size="sm" animation="border" className="me-2" />
+                Adding...
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faUserPlus} className="me-2" />
+                Add Member
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Remove Member Confirmation Modal */}
+      <Modal show={showRemoveMemberConfirm} onHide={() => setShowRemoveMemberConfirm(false)} size="sm">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <FontAwesomeIcon icon={faUserMinus} className="me-2 text-danger" />
+            Confirm Remove Member
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <div className="text-center">
+            <FontAwesomeIcon icon={faExclamationTriangle} size="3x" className="text-warning mb-3" />
+            <h5>Remove Character from Group?</h5>
+            {memberToRemove && selectedGroup && (
+              <>
+                <p className="mb-2">
+                  <strong>Character:</strong> {memberToRemove.character_name || memberToRemove.name}
+                  <br />
+                  <small className="text-muted">ID: {memberToRemove.character_id}</small>
+                </p>
+                <p className="mb-3">
+                  <strong>Group:</strong> {selectedGroup.name}
+                </p>
+              </>
+            )}
+            <p className="small text-muted">
+              This character will be removed from the group and will lose all associated privileges.
+            </p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="justify-content-center">
+          <Button 
+            variant="secondary" 
+            onClick={() => setShowRemoveMemberConfirm(false)}
+            disabled={removeMemberMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={handleConfirmRemoveMember}
+            disabled={removeMemberMutation.isPending}
+          >
+            {removeMemberMutation.isPending ? (
+              <>
+                <Spinner size="sm" animation="border" className="me-2" />
+                Removing...
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faUserMinus} className="me-2" />
+                Remove Member
+              </>
+            )}
           </Button>
         </Modal.Footer>
       </Modal>

@@ -257,3 +257,16 @@ export const useGroupsStatus = () => {
     staleTime: 1000 * 60,
   });
 };
+
+export const useCharacterSearch = (searchTerm) => {
+  return useQuery({
+    queryKey: ['characters', 'search', searchTerm],
+    queryFn: () => fetcher(`/character/search?name=${encodeURIComponent(searchTerm)}`),
+    enabled: !!(searchTerm && searchTerm.length >= 3),
+    staleTime: 1000 * 60 * 5,
+    retry: (failureCount, error) => {
+      if (error.status === 401 || error.status === 403) return false;
+      return failureCount < 3;
+    },
+  });
+};
