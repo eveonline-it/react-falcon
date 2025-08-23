@@ -11,7 +11,7 @@ import {
   faCheckCircle, faTimesCircle, faInfoCircle, faUser,
   faUserSlash, faBan, faShieldAlt, faGlobe, faCalendarAlt,
   faEdit, faSave, faPlus, faTrash, faCopy, faFileExport,
-  faCheckSquare, faSquare, faStickyNote, faBuilding
+  faCheckSquare, faSquare, faStickyNote, faBuilding, faUsersCog
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 
@@ -25,7 +25,8 @@ import {
   useBulkUpdateUsers,
   useUsersStatus,
   useDeleteUser,
-  useEnrichedUser
+  useEnrichedUser,
+  useUserGroups
 } from 'hooks/useUsers';
 
 const CharacterPortrait = ({ characterId, characterName, size = 32 }) => {
@@ -139,6 +140,137 @@ const AllianceLogo = ({ allianceId, allianceName, size = 24 }) => {
       style={{ objectFit: 'cover' }}
       onError={handleImageError}
     />
+  );
+};
+
+const GroupsBadges = ({ userId, compact = false }) => {
+  const { data: userGroupsData, isLoading } = useUserGroups(userId);
+  
+  if (isLoading) {
+    return <Spinner size="sm" animation="border" className="text-muted" />;
+  }
+  
+  const groups = userGroupsData?.groups || [];
+  
+  if (!groups || !groups.length) {
+    return compact ? (
+      <span className="text-muted small">-</span>
+    ) : (
+      <small className="text-muted">No groups</small>
+    );
+  }
+  
+  if (compact) {
+    return (
+      <OverlayTrigger
+        placement="top"
+        overlay={
+          <Tooltip>
+            <div>
+              {groups.map((group, index) => (
+                <div key={group.id}>
+                  <FontAwesomeIcon icon={faUsersCog} className="me-1" />
+                  {group.name}
+                </div>
+              ))}
+            </div>
+          </Tooltip>
+        }
+      >
+        <div className="d-flex align-items-center">
+          <FontAwesomeIcon icon={faUsersCog} className="me-1 text-primary" size="xs" />
+          <small className="text-truncate" style={{ maxWidth: '60px' }}>
+            {groups.length === 1 ? groups[0].name : `${groups.length} groups`}
+          </small>
+        </div>
+      </OverlayTrigger>
+    );
+  }
+  
+  return (
+    <div className="d-flex flex-wrap gap-2">
+      {groups.map((group) => {
+        // Determine badge style based on group type
+        let badgeVariant = 'primary';
+        let badgeIcon = faUsersCog;
+        
+        switch (group.type) {
+          case 'system':
+            badgeVariant = 'success';
+            badgeIcon = faShieldAlt;
+            break;
+          case 'corporation':
+            badgeVariant = 'info';
+            badgeIcon = faBuilding;
+            break;
+          case 'alliance':
+            badgeVariant = 'warning';
+            badgeIcon = faGlobe;
+            break;
+          case 'custom':
+            badgeVariant = 'secondary';
+            badgeIcon = faUsersCog;
+            break;
+          default:
+            badgeVariant = 'primary';
+            badgeIcon = faUsersCog;
+        }
+        
+        return (
+          <Card 
+            key={group.id} 
+            className="border-0 shadow-sm" 
+            style={{ minWidth: '180px' }}
+          >
+            <Card.Body className="p-2">
+              <div className="d-flex align-items-center justify-content-between">
+                <div className="d-flex align-items-center flex-grow-1">
+                  <Badge 
+                    bg={badgeVariant} 
+                    className="me-2 d-flex align-items-center"
+                    style={{ fontSize: '0.75rem' }}
+                  >
+                    <FontAwesomeIcon icon={badgeIcon} className="me-1" size="xs" />
+                    {group.type}
+                  </Badge>
+                  <div>
+                    <div className="fw-semibold small text-truncate" style={{ maxWidth: '120px' }}>
+                      {group.name}
+                    </div>
+                    {group.description && (
+                      <div className="text-muted" style={{ fontSize: '0.7rem' }}>
+                        {group.description.length > 30 
+                          ? `${group.description.substring(0, 30)}...` 
+                          : group.description}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {!group.is_active && (
+                  <Badge bg="danger" className="ms-1" style={{ fontSize: '0.6rem' }}>
+                    Inactive
+                  </Badge>
+                )}
+              </div>
+              {(group.eve_entity_id || group.system_name) && (
+                <div className="mt-1">
+                  {group.eve_entity_id && (
+                    <small className="text-muted d-block">
+                      EVE ID: {group.eve_entity_id}
+                    </small>
+                  )}
+                  {group.system_name && (
+                    <small className="text-muted d-block">
+                      System: {group.system_name}
+                    </small>
+                  )}
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+        );
+      })}
+    </div>
   );
 };
 
@@ -604,6 +736,7 @@ const UsersAdmin = () => {
                       <th className="py-2 align-middle">Status</th>
                       <th className="py-2 align-middle">Corporation</th>
                       <th className="py-2 align-middle">Alliance</th>
+                      <th className="py-2 align-middle">Groups</th>
                       <th className="py-2 align-middle">Joined</th>
                       <th className="py-2 align-middle">Last Login</th>
                       <th className="py-2 align-middle">Notes</th>
@@ -689,6 +822,9 @@ const UsersAdmin = () => {
                                 {user.alliance_name || '-'}
                               </span>
                             </div>
+                          </td>
+                          <td className="py-2 align-middle">
+                            <GroupsBadges userId={user.user_id || user.id} compact={true} />
                           </td>
                           <td className="py-2 align-middle">
                             {formatDate(user.created_at)}
@@ -1057,6 +1193,21 @@ const UsersAdmin = () => {
                       ) : null}
                     </tbody>
                   </Table>
+                </Col>
+              </Row>
+              
+              {/* Groups Section */}
+              <Row className="mt-4">
+                <Col>
+                  <h5>
+                    <FontAwesomeIcon icon={faUsersCog} className="me-2" />
+                    Group Membership
+                  </h5>
+                  <Card>
+                    <Card.Body>
+                      <GroupsBadges userId={selectedUser.user_id || selectedUser.id} compact={false} />
+                    </Card.Body>
+                  </Card>
                 </Col>
               </Row>
             </>

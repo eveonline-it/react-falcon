@@ -254,6 +254,23 @@ const fetchUsersStatus = async () => {
   return response.json();
 };
 
+const fetchUserGroups = async (userId) => {
+  const response = await fetch(`${BASE_URL}/users/${userId}/groups`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to fetch user groups: ${response.status}`);
+  }
+
+  return response.json();
+};
+
 export const useUsers = (filters = {}) => {
   return useQuery({
     queryKey: ['users', filters],
@@ -435,5 +452,14 @@ export const useEnrichedUser = (user) => {
     queryFn: () => enrichUserWithESIData(user),
     staleTime: 1000 * 60 * 10, // 10 minutes - ESI data doesn't change often
     enabled: !!user?.character_id,
+  });
+};
+
+export const useUserGroups = (userId) => {
+  return useQuery({
+    queryKey: ['user', 'groups', userId],
+    queryFn: () => fetchUserGroups(userId),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!userId,
   });
 };

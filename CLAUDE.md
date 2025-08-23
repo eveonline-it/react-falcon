@@ -349,7 +349,8 @@ import {
   useRefreshUserData,
   useBulkUpdateUsers,
   useDeleteUser,
-  useUsersStatus 
+  useUsersStatus,
+  useUserGroups
 } from 'hooks/useUsers';
 
 // Fetch users with filtering and pagination
@@ -387,6 +388,10 @@ updateMutation.mutate({
 // Delete user character (uses character_id, API endpoint: DELETE /users/mgt/{character_id})
 const deleteMutation = useDeleteUser();
 deleteMutation.mutate(characterId); // Super administrators cannot be deleted
+
+// Fetch user group memberships (uses user_id, API endpoint: GET /users/{user_id}/groups)
+const { data: userGroups } = useUserGroups(userId);
+// Returns: { user_id, characters, groups: [...], total }
 
 // Bulk user operations
 const bulkMutation = useBulkUpdateUsers();
@@ -859,6 +864,7 @@ Complete user management interface with advanced features:
 - **User List Management**: Paginated display of all EVE Online character accounts
 - **Advanced Search**: Multi-field search by character name, corporation, alliance
 - **Status Filtering**: Filter by enabled, banned, invalid status with checkbox controls
+- **Group Membership Display**: Shows user group memberships in both table and detail modal
 - **Bulk Operations**: Multi-select users for mass enable/disable/ban/unban operations
 - **Individual User Management**: Edit user notes, position, and status individually
 - **User Deletion**: Permanent user character removal with confirmation (super administrators protected)
@@ -900,6 +906,15 @@ Complete user management interface with advanced features:
   - Modal detail tables: 20px in alliance name rows, 16px in alliance ID rows
   - Fallback to globe icons when logos unavailable
 - **Component Architecture**: Reusable `CharacterPortrait`, `CorporationLogo`, and `AllianceLogo` components with comprehensive error state management and multiple size support
+
+**Group Membership Integration:**
+- **Table Display**: Compact group badges with tooltips showing all user groups in dedicated "Groups" column
+- **Modal Display**: Rich card-based layout with color-coded group types and detailed information
+- **Group Types**: System (green), Corporation (blue), Alliance (yellow), Custom (gray)
+- **Group Information**: Name, description, type badge, EVE entity ID, system name, active status
+- **Visual Indicators**: Icons for different group types (shield, building, globe, users)
+- **Real-time Loading**: Groups load independently with proper loading and error states
+- **Component**: Reusable `GroupsBadges` component with compact and full display modes
 
 #### Navigation
 - **Users Admin**: `/admin/users` - Complete user account management and administration
