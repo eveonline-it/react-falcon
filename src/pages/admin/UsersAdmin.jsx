@@ -23,7 +23,8 @@ import {
   useUpdateUser,
   useRefreshUserData,
   useBulkUpdateUsers,
-  useUsersStatus
+  useUsersStatus,
+  useEnrichedUser
 } from 'hooks/useUsers';
 
 const CharacterPortrait = ({ characterId, characterName, size = 32 }) => {
@@ -64,6 +65,82 @@ const CharacterPortrait = ({ characterId, characterName, size = 32 }) => {
   );
 };
 
+const CorporationLogo = ({ corporationId, corporationName, size = 24 }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  const handleImageError = () => {
+    setImageError(true);
+  };
+  
+  if (imageError || !corporationId) {
+    return (
+      <div 
+        className="rounded bg-light border d-flex align-items-center justify-content-center"
+        style={{ 
+          width: `${size}px`, 
+          height: `${size}px`
+        }}
+      >
+        <FontAwesomeIcon 
+          icon={faBuilding} 
+          className="text-muted" 
+          size="xs" 
+        />
+      </div>
+    );
+  }
+  
+  return (
+    <img
+      src={`https://images.evetech.net/corporations/${corporationId}/logo?size=${size > 24 ? 128 : 64}`}
+      alt={corporationName}
+      className="rounded border"
+      width={size}
+      height={size}
+      style={{ objectFit: 'cover' }}
+      onError={handleImageError}
+    />
+  );
+};
+
+const AllianceLogo = ({ allianceId, allianceName, size = 24 }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  const handleImageError = () => {
+    setImageError(true);
+  };
+  
+  if (imageError || !allianceId) {
+    return (
+      <div 
+        className="rounded bg-light border d-flex align-items-center justify-content-center"
+        style={{ 
+          width: `${size}px`, 
+          height: `${size}px`
+        }}
+      >
+        <FontAwesomeIcon 
+          icon={faGlobe} 
+          className="text-muted" 
+          size="xs" 
+        />
+      </div>
+    );
+  }
+  
+  return (
+    <img
+      src={`https://images.evetech.net/alliances/${allianceId}/logo?size=${size > 24 ? 128 : 64}`}
+      alt={allianceName}
+      className="rounded border"
+      width={size}
+      height={size}
+      style={{ objectFit: 'cover' }}
+      onError={handleImageError}
+    />
+  );
+};
+
 const UsersAdmin = () => {
   const [filters, setFilters] = useState({
     page: 1,
@@ -91,6 +168,7 @@ const UsersAdmin = () => {
   const { data: usersData, isLoading, error, refetch } = useUsers(filters);
   const { data: statsData, isLoading: statsLoading } = useUserStats();
   const { data: userProfile, isLoading: profileLoading } = useUserProfile(selectedUser?.user_id || selectedUser?.id);
+  const { data: enrichedUser, isLoading: enrichedLoading } = useEnrichedUser(selectedUser);
   const { data: usersStatus } = useUsersStatus();
   const updateStatusMutation = useUpdateUserStatus();
   const updateUserMutation = useUpdateUser();
@@ -105,7 +183,6 @@ const UsersAdmin = () => {
   const filteredUsers = users.filter(user => {
     if (searchTerm && !(
       user.character_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.corporation_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.alliance_name?.toLowerCase().includes(searchTerm.toLowerCase())
     )) {
@@ -132,6 +209,7 @@ const UsersAdmin = () => {
   };
 
   const handleOpenUserModal = (user) => {
+    console.log('Selected user data:', user); // Debug log to see available fields
     setSelectedUser(user);
     setShowUserModal(true);
   };
@@ -201,11 +279,22 @@ const UsersAdmin = () => {
     try {
       const updateData = {
         notes: userNotes,
-        position: userPosition ? parseInt(userPosition, 10) : null
+        position: userPosition ? parseInt(userPosition, 10) : null,
+        // Include current status fields to maintain user's current state
+        banned: editingUser.banned || false,
+        enabled: editingUser.enabled !== false, // Default to true if undefined
+        invalid: editingUser.invalid || false
       };
       
+      const characterId = editingUser.character_id;
+      if (!characterId) {
+        throw new Error('Character ID is required for user updates');
+      }
+      
+      console.log('Updating user by character_id:', characterId, 'with data:', updateData);
+      
       await updateUserMutation.mutateAsync({
-        userId: editingUser.user_id || editingUser.id,
+        userId: characterId, // API expects character_id, but we call it userId in the hook
         data: updateData
       });
       
@@ -216,6 +305,7 @@ const UsersAdmin = () => {
       refetch();
     } catch (err) {
       console.error('Failed to update user:', err);
+      toast.error(`Failed to update user: ${err.message}`);
     }
   };
   
@@ -272,12 +362,11 @@ const UsersAdmin = () => {
   
   const exportUsers = () => {
     const csvContent = [
-      ['Character Name', 'Email', 'Status', 'Corporation', 'Alliance', 'Joined', 'Last Login', 'Notes'].join(','),
+      ['Character Name', 'Status', 'Corporation', 'Alliance', 'Joined', 'Last Login', 'Notes'].join(','),
       ...filteredUsers.map(user => {
         const status = getUserStatus(user);
         return [
           user.character_name || '',
-          user.email || '',
           status.label,
           user.corporation_name || '',
           user.alliance_name || '',
@@ -359,7 +448,7 @@ const UsersAdmin = () => {
           <InputGroup>
             <Form.Control
               type="text"
-              placeholder="Search users by name, email, corporation, alliance..."
+              placeholder="Search users by character name, corporation, alliance..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -490,7 +579,6 @@ const UsersAdmin = () => {
                         />
                       </th>
                       <th className="py-2 align-middle">Character</th>
-                      <th className="py-2 align-middle">Email</th>
                       <th className="py-2 align-middle">Status</th>
                       <th className="py-2 align-middle">Corporation</th>
                       <th className="py-2 align-middle">Alliance</th>
@@ -537,15 +625,10 @@ const UsersAdmin = () => {
                                 )}
                               </div>
                               <div>
-                                <div className="fw-bold">{user.character_name || user.email}</div>
+                                <div className="fw-bold">{user.character_name}</div>
                                 <small className="text-muted">ID: {user.character_id || 'N/A'}</small>
                               </div>
                             </div>
-                          </td>
-                          <td className="py-2 align-middle">
-                            <span className="text-truncate d-inline-block" style={{ maxWidth: '200px' }}>
-                              {user.email || '-'}
-                            </span>
                           </td>
                           <td className="py-2 align-middle">
                             <Badge bg={statusInfo.color} className="small">
@@ -554,14 +637,36 @@ const UsersAdmin = () => {
                             </Badge>
                           </td>
                           <td className="py-2 align-middle">
-                            <span className="text-truncate d-inline-block" style={{ maxWidth: '150px' }}>
-                              {user.corporation_name || '-'}
-                            </span>
+                            <div className="d-flex align-items-center">
+                              {user.corporation_id && (
+                                <div className="me-2" style={{ width: '24px', height: '24px', flexShrink: 0 }}>
+                                  <CorporationLogo 
+                                    corporationId={user.corporation_id}
+                                    corporationName={user.corporation_name}
+                                    size={24}
+                                  />
+                                </div>
+                              )}
+                              <span className="text-truncate" style={{ maxWidth: '130px' }}>
+                                {user.corporation_name || '-'}
+                              </span>
+                            </div>
                           </td>
                           <td className="py-2 align-middle">
-                            <span className="text-truncate d-inline-block" style={{ maxWidth: '150px' }}>
-                              {user.alliance_name || '-'}
-                            </span>
+                            <div className="d-flex align-items-center">
+                              {user.alliance_id && (
+                                <div className="me-2" style={{ width: '24px', height: '24px', flexShrink: 0 }}>
+                                  <AllianceLogo 
+                                    allianceId={user.alliance_id}
+                                    allianceName={user.alliance_name}
+                                    size={24}
+                                  />
+                                </div>
+                              )}
+                              <span className="text-truncate" style={{ maxWidth: '130px' }}>
+                                {user.alliance_name || '-'}
+                              </span>
+                            </div>
                           </td>
                           <td className="py-2 align-middle">
                             {formatDate(user.created_at)}
@@ -683,11 +788,11 @@ const UsersAdmin = () => {
         <Modal.Header closeButton>
           <Modal.Title>
             <FontAwesomeIcon icon={faUser} className="me-2" />
-            User Details - {selectedUser?.character_name || selectedUser?.email}
+            User Details - {selectedUser?.character_name}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {profileLoading ? (
+          {(profileLoading || enrichedLoading) ? (
             <div className="text-center py-3">
               <Spinner animation="border" role="status">
                 <span className="visually-hidden">Loading user details...</span>
@@ -707,7 +812,18 @@ const UsersAdmin = () => {
                   </div>
                   <div className="mt-2">
                     <h5 className="mb-1">{selectedUser.character_name}</h5>
-                    <small className="text-muted">{selectedUser.corporation_name}</small>
+                    {selectedUser.corporation_name && (
+                      <div className="d-flex align-items-center justify-content-center">
+                        {selectedUser.corporation_id && (
+                          <CorporationLogo 
+                            corporationId={selectedUser.corporation_id}
+                            corporationName={selectedUser.corporation_name}
+                            size={20}
+                          />
+                        )}
+                        <small className="text-muted ms-2">{selectedUser.corporation_name}</small>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -715,103 +831,161 @@ const UsersAdmin = () => {
               <Row>
                 <Col md={6}>
                   <h5>Character Information</h5>
-                <Table borderless size="sm">
-                  <tbody>
-                    <tr>
-                      <td><strong>Character Name:</strong></td>
-                      <td>{selectedUser.character_name || '-'}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Character ID:</strong></td>
-                      <td>{selectedUser.character_id || '-'}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Corporation:</strong></td>
-                      <td>{selectedUser.corporation_name || '-'}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Alliance:</strong></td>
-                      <td>{selectedUser.alliance_name || '-'}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Security Status:</strong></td>
-                      <td>{selectedUser.security_status ? selectedUser.security_status.toFixed(2) : (userProfile?.security_status ? userProfile.security_status.toFixed(2) : '-')}</td>
-                    </tr>
-                  </tbody>
-                </Table>
-              </Col>
-              <Col md={6}>
-                <h5>Account Information</h5>
-                <Table borderless size="sm">
-                  <tbody>
-                    <tr>
-                      <td><strong>User ID:</strong></td>
-                      <td>{selectedUser.user_id || selectedUser.id || '-'}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Email:</strong></td>
-                      <td>{selectedUser.email || '-'}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Status:</strong></td>
-                      <td>
-                        <Badge bg={getUserStatus(selectedUser).color}>
-                          {getUserStatus(selectedUser).label}
-                        </Badge>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td><strong>Enabled:</strong></td>
-                      <td>
-                        <Badge bg={selectedUser.enabled ? 'success' : 'secondary'}>
-                          {selectedUser.enabled ? 'Yes' : 'No'}
-                        </Badge>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td><strong>Banned:</strong></td>
-                      <td>
-                        <Badge bg={selectedUser.banned ? 'danger' : 'success'}>
-                          {selectedUser.banned ? 'Yes' : 'No'}
-                        </Badge>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td><strong>Invalid:</strong></td>
-                      <td>
-                        <Badge bg={selectedUser.invalid ? 'warning' : 'success'}>
-                          {selectedUser.invalid ? 'Yes' : 'No'}
-                        </Badge>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td><strong>Joined:</strong></td>
-                      <td>{formatDateTime(selectedUser.created_at)}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Last Login:</strong></td>
-                      <td>{formatDateTime(selectedUser.last_login)}</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Last Updated:</strong></td>
-                      <td>{formatDateTime(selectedUser.updated_at)}</td>
-                    </tr>
-                    {selectedUser.notes ? (
+                  <Table borderless size="sm">
+                    <tbody>
                       <tr>
-                        <td><strong>Admin Notes:</strong></td>
-                        <td className="text-break">{selectedUser.notes}</td>
+                        <td><strong>Character Name:</strong></td>
+                        <td>{selectedUser.character_name || 'Not available'}</td>
                       </tr>
-                    ) : null}
-                    {selectedUser.position ? (
                       <tr>
-                        <td><strong>Position:</strong></td>
-                        <td>{selectedUser.position}</td>
+                        <td><strong>Character ID:</strong></td>
+                        <td>{selectedUser.character_id || 'Not available'}</td>
                       </tr>
-                    ) : null}
-                  </tbody>
-                </Table>
-              </Col>
-            </Row>
+                      <tr>
+                        <td><strong>Corporation ID:</strong></td>
+                        <td>{selectedUser.corporation_id || 'Not available'}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Corporation Name:</strong></td>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            {selectedUser.corporation_id && (
+                              <div className="me-2">
+                                <CorporationLogo 
+                                  corporationId={selectedUser.corporation_id}
+                                  corporationName={selectedUser.corporation_name}
+                                  size={20}
+                                />
+                              </div>
+                            )}
+                            <span>{selectedUser.corporation_name || 'Not available'}</span>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><strong>Alliance ID:</strong></td>
+                        <td>{selectedUser.alliance_id || 'Not available'}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Alliance Name:</strong></td>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            {selectedUser.alliance_id && (
+                              <div className="me-2">
+                                <AllianceLogo 
+                                  allianceId={selectedUser.alliance_id}
+                                  allianceName={selectedUser.alliance_name}
+                                  size={20}
+                                />
+                              </div>
+                            )}
+                            <span>{selectedUser.alliance_name || 'Not available'}</span>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><strong>Security Status:</strong></td>
+                        <td>
+                          {selectedUser.security_status !== undefined && selectedUser.security_status !== null 
+                            ? selectedUser.security_status.toFixed(2) 
+                            : 'Not available'}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><strong>Birthday:</strong></td>
+                        <td>{selectedUser.birthday ? formatDate(selectedUser.birthday) : 'Not available'}</td>
+                      </tr>
+                    </tbody>
+                  </Table>
+                </Col>
+                <Col md={6}>
+                  <h5>Account Information</h5>
+                  <Table borderless size="sm">
+                    <tbody>
+                      <tr>
+                        <td><strong>User ID:</strong></td>
+                        <td>{selectedUser.user_id || selectedUser.id || 'Not available'}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                          <Badge bg={getUserStatus(selectedUser).color}>
+                            {getUserStatus(selectedUser).label}
+                          </Badge>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><strong>Enabled:</strong></td>
+                        <td>
+                          <Badge bg={selectedUser.enabled ? 'success' : 'secondary'}>
+                            {selectedUser.enabled !== undefined ? (selectedUser.enabled ? 'Yes' : 'No') : 'Not available'}
+                          </Badge>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><strong>Banned:</strong></td>
+                        <td>
+                          <Badge bg={selectedUser.banned ? 'danger' : 'success'}>
+                            {selectedUser.banned !== undefined ? (selectedUser.banned ? 'Yes' : 'No') : 'Not available'}
+                          </Badge>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><strong>Invalid:</strong></td>
+                        <td>
+                          <Badge bg={selectedUser.invalid ? 'warning' : 'success'}>
+                            {selectedUser.invalid !== undefined ? (selectedUser.invalid ? 'Yes' : 'No') : 'Not available'}
+                          </Badge>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><strong>Scopes:</strong></td>
+                        <td>
+                          {selectedUser.scopes ? (
+                            <small className="text-muted">
+                              {Array.isArray(selectedUser.scopes) 
+                                ? selectedUser.scopes.join(', ') 
+                                : selectedUser.scopes}
+                            </small>
+                          ) : 'Not available'}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><strong>Valid Profile:</strong></td>
+                        <td>
+                          <Badge bg={selectedUser.valid ? 'success' : 'warning'}>
+                            {selectedUser.valid !== undefined ? (selectedUser.valid ? 'Yes' : 'No') : 'Not available'}
+                          </Badge>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><strong>Joined:</strong></td>
+                        <td>{formatDateTime(selectedUser.created_at) || 'Not available'}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Last Login:</strong></td>
+                        <td>{formatDateTime(selectedUser.last_login) || 'Not available'}</td>
+                      </tr>
+                      <tr>
+                        <td><strong>Profile Updated:</strong></td>
+                        <td>{formatDateTime(selectedUser.profile_updated) || 'Not available'}</td>
+                      </tr>
+                      {selectedUser.notes ? (
+                        <tr>
+                          <td><strong>Admin Notes:</strong></td>
+                          <td className="text-break">{selectedUser.notes}</td>
+                        </tr>
+                      ) : null}
+                      {selectedUser.position ? (
+                        <tr>
+                          <td><strong>Position:</strong></td>
+                          <td>{selectedUser.position}</td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </Table>
+                </Col>
+              </Row>
             </>
           ) : (
             <Alert variant="info">
@@ -854,7 +1028,7 @@ const UsersAdmin = () => {
         <Modal.Body>
           <Alert variant="warning">
             <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-            Are you sure you want to change the status of user <strong>{statusUpdate.user?.character_name || statusUpdate.user?.email}</strong> to <strong>{getStatusInfo(statusUpdate.status).label}</strong>?
+            Are you sure you want to change the status of user <strong>{statusUpdate.user?.character_name}</strong> to <strong>{getStatusInfo(statusUpdate.status).label}</strong>?
           </Alert>
         </Modal.Body>
         <Modal.Footer>
@@ -886,7 +1060,7 @@ const UsersAdmin = () => {
         <Modal.Header closeButton>
           <Modal.Title>
             <FontAwesomeIcon icon={faEdit} className="me-2" />
-            Edit User - {editingUser?.character_name || editingUser?.email}
+            Edit User - {editingUser?.character_name}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>

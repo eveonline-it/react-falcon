@@ -369,10 +369,10 @@ const { data: status } = useUsersStatus();
 // Individual user profile
 const { data: profile } = useUserProfile(userId);
 
-// Update user with full control
+// Update user with full control (uses character_id, API endpoint: PUT /users/mgt/{character_id})
 const updateMutation = useUpdateUser();
 updateMutation.mutate({
-  userId: 123,
+  userId: characterId, // Actually expects character_id, not user_id
   data: {
     enabled: true,
     banned: false,
@@ -851,11 +851,12 @@ Complete user management interface with advanced features:
 
 **Core Features:**
 - **User List Management**: Paginated display of all EVE Online character accounts
-- **Advanced Search**: Multi-field search by character name, email, corporation, alliance
+- **Advanced Search**: Multi-field search by character name, corporation, alliance
 - **Status Filtering**: Filter by enabled, banned, invalid status with checkbox controls
 - **Bulk Operations**: Multi-select users for mass enable/disable/ban/unban operations
 - **Individual User Management**: Edit user notes, position, and status individually
-- **Character Integration**: Display EVE Online character portraits and corporate affiliations using official ESI image service
+- **Character Integration**: Display EVE Online character portraits, corporation logos, and alliance logos using official ESI image service
+- **ESI Data Enrichment**: Automatic fetching of missing corporation/alliance data from EVE Online ESI API
 
 **Administrative Functions:**
 - **User Statistics**: Real-time dashboard with counts of total, enabled, disabled, banned users
@@ -867,18 +868,28 @@ Complete user management interface with advanced features:
 
 **User Interface:**
 - **Character Portraits**: EVE Online character portraits displayed in table rows and modals with fallback icons
+- **Corporation Logos**: Official EVE Online corporation logos displayed alongside corporation names
+- **Alliance Logos**: Official EVE Online alliance logos displayed alongside alliance names (when available)
 - **Row Selection**: Individual and bulk user selection with visual feedback
 - **Status Badges**: Color-coded status indicators (Enabled/Disabled/Banned/Invalid)
 - **Action Buttons**: Quick access to view details, edit, refresh, and status changes
 - **Confirmation Modals**: Safety confirmations for all administrative actions
 - **Progress Indicators**: Loading states and progress feedback for all operations
 
-**Character Portrait System:**
-- **ESI Integration**: Uses `https://images.evetech.net/characters/{character_id}/portrait` for official portraits
-- **Multiple Sizes**: 64px for table rows, 256px source for modal display (displayed at 128px)
-- **Fallback Handling**: State-based error handling with default user icons when portraits fail to load
-- **Responsive Design**: Consistent circular portraits with proper sizing and borders
-- **Component Architecture**: Reusable `CharacterPortrait` component with error state management
+**Visual Integration System:**
+- **Character Portraits**: Uses `https://images.evetech.net/characters/{character_id}/portrait` for official character portraits
+  - Multiple sizes: 64px for table rows, 256px source for modal display (displayed at 128px)
+  - Circular design with proper borders and responsive sizing
+  - Fallback to user icons when portraits fail to load
+- **Corporation Logos**: Uses `https://images.evetech.net/corporations/{corporation_id}/logo` for official corporation logos
+  - 24px size in table rows, 20px in modals and detail views
+  - Fallback to building icons when logos unavailable
+  - Displays alongside corporation names for enhanced visual identification
+- **Alliance Logos**: Uses `https://images.evetech.net/alliances/{alliance_id}/logo` for official alliance logos
+  - 24px size in table rows, 20px in modals and detail views
+  - Fallback to globe icons when logos unavailable
+  - Only displayed when alliance information is available
+- **Component Architecture**: Reusable `CharacterPortrait`, `CorporationLogo`, and `AllianceLogo` components with error state management
 
 #### Navigation
 - **Users Admin**: `/admin/users` - Complete user account management and administration

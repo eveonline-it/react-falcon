@@ -3,6 +3,75 @@ import { toast } from 'react-toastify';
 
 const BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.it';
 
+// ESI API helper functions for missing corporation/alliance data
+const fetchESIData = async (url) => {
+  try {
+    const response = await fetch(url);
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (error) {
+    console.warn('ESI API call failed:', error);
+  }
+  return null;
+};
+
+const enrichUserWithESIData = async (user) => {
+  if (!user.character_id) return user;
+  
+  const enrichedUser = { ...user };
+  
+  // Fetch corporation data if missing
+  if (!user.corporation_name && user.corporation_id) {
+    const corpData = await fetchESIData(`https://esi.evetech.net/latest/corporations/${user.corporation_id}/`);
+    if (corpData) {
+      enrichedUser.corporation_name = corpData.name;
+    }
+  }
+  
+  // Fetch alliance data if missing
+  if (!user.alliance_name && user.alliance_id) {
+    const allianceData = await fetchESIData(`https://esi.evetech.net/latest/alliances/${user.alliance_id}/`);
+    if (allianceData) {
+      enrichedUser.alliance_name = allianceData.name;
+    }
+  }
+  
+  // If we don't have corporation/alliance IDs, try to get character public data
+  if (!user.corporation_id || !user.alliance_id) {
+    const characterData = await fetchESIData(`https://esi.evetech.net/latest/characters/${user.character_id}/`);
+    if (characterData) {
+      if (!enrichedUser.corporation_id) {
+        enrichedUser.corporation_id = characterData.corporation_id;
+        // Fetch corporation name
+        const corpData = await fetchESIData(`https://esi.evetech.net/latest/corporations/${characterData.corporation_id}/`);
+        if (corpData) {
+          enrichedUser.corporation_name = corpData.name;
+        }
+      }
+      
+      if (characterData.alliance_id && !enrichedUser.alliance_id) {
+        enrichedUser.alliance_id = characterData.alliance_id;
+        // Fetch alliance name
+        const allianceData = await fetchESIData(`https://esi.evetech.net/latest/alliances/${characterData.alliance_id}/`);
+        if (allianceData) {
+          enrichedUser.alliance_name = allianceData.name;
+        }
+      }
+      
+      // Add other character data if missing
+      if (!enrichedUser.security_status && characterData.security_status !== undefined) {
+        enrichedUser.security_status = characterData.security_status;
+      }
+      if (!enrichedUser.birthday && characterData.birthday) {
+        enrichedUser.birthday = characterData.birthday;
+      }
+    }
+  }
+  
+  return enrichedUser;
+};
+
 const fetchUsers = async (filters = {}) => {
   const params = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
@@ -24,7 +93,23 @@ const fetchUsers = async (filters = {}) => {
     throw new Error(errorData.error || `Failed to fetch users: ${response.status}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log('Users API response:', data); // Debug log to see what we get
+  
+  // Enrich users with missing corporation/alliance data from ESI
+  if (data.users && Array.isArray(data.users)) {
+    // Process first 5 users to avoid too many API calls
+    const enrichPromises = data.users.slice(0, 5).map(user => enrichUserWithESIData(user));
+    const enrichedUsers = await Promise.all(enrichPromises);
+    
+    // Replace the first 5 users with enriched data, keep the rest as-is
+    data.users = [
+      ...enrichedUsers,
+      ...data.users.slice(5)
+    ];
+  }
+  
+  return data;
 };
 
 const fetchUserStats = async () => {
@@ -70,7 +155,9 @@ const fetchUserProfile = async (userId) => {
 };
 
 const updateUser = async ({ userId, data }) => {
-  const response = await fetch(`${BASE_URL}/users/${userId}`, {
+  console.log(`Making PUT request to ${BASE_URL}/users/mgt/${userId} with data:`, data);
+  
+  const response = await fetch(`${BASE_URL}/users/mgt/${userId}`, {
     method: 'PUT',
     credentials: 'include',
     headers: {
@@ -81,10 +168,13 @@ const updateUser = async ({ userId, data }) => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `Failed to update user: ${response.status}`);
+    console.error('Update user failed:', response.status, errorData);
+    throw new Error(errorData.error || errorData.message || `Failed to update user: ${response.status}`);
   }
 
-  return response.json();
+  const result = await response.json();
+  console.log('Update user success:', result);
+  return result;
 };
 
 const refreshUserData = async (userId) => {
@@ -184,7 +274,7 @@ export const useUpdateUser = () => {
         return {
           ...old,
           users: old.users.map((user) =>
-            user.user_id === userId ? { ...user, ...data } : user
+            user.character_id === userId ? { ...user, ...data } : user
           ),
         };
       });
@@ -277,5 +367,14 @@ export const useUsersStatus = () => {
     queryFn: fetchUsersStatus,
     staleTime: 1000 * 60 * 2, // 2 minutes
     enabled: true,
+  });
+};
+
+export const useEnrichedUser = (user) => {
+  return useQuery({
+    queryKey: ['user', 'enriched', user?.character_id],
+    queryFn: () => enrichUserWithESIData(user),
+    staleTime: 1000 * 60 * 10, // 10 minutes - ESI data doesn't change often
+    enabled: !!user?.character_id,
   });
 };
