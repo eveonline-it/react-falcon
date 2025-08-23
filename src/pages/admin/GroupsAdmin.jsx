@@ -135,7 +135,13 @@ const GroupsAdmin = () => {
           data: formData 
         });
       } else {
-        await createMutation.mutateAsync(formData);
+        // For creating groups, only send fields that backend expects
+        const createData = {
+          name: formData.name,
+          description: formData.description,
+          type: formData.type
+        };
+        await createMutation.mutateAsync(createData);
       }
       handleCloseModal();
       refetch();
@@ -413,18 +419,20 @@ const GroupsAdmin = () => {
                               >
                                 <FontAwesomeIcon icon={faEdit} size="xs" />
                               </Button>
-                              <Button
-                                variant="outline-danger"
-                                className="btn-xs"
-                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                                onClick={() => {
-                                  setGroupToDelete(group);
-                                  setShowDeleteConfirm(true);
-                                }}
-                              >
-                                <FontAwesomeIcon icon={faTrash} size="xs" />
-                              </Button>
                             </>
+                          )}
+                          {group.type !== 'system' && (
+                            <Button
+                              variant="outline-danger"
+                              className="btn-xs"
+                              style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                              onClick={() => {
+                                setGroupToDelete(group);
+                                setShowDeleteConfirm(true);
+                              }}
+                            >
+                              <FontAwesomeIcon icon={faTrash} size="xs" />
+                            </Button>
                           )}
                         </td>
                       </tr>
@@ -499,21 +507,23 @@ const GroupsAdmin = () => {
               />
             </Form.Group>
 
-            <Form.Group className="mb-3">
-              <Form.Check
-                type="switch"
-                id="is-active-switch"
-                label={formData.is_active ? "Active" : "Inactive"}
-                checked={formData.is_active}
-                onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
-              />
-              <Form.Text className="text-muted">
-                {formData.is_active ? 
-                  "Group is currently active and visible to users" : 
-                  "Group is inactive and hidden from users"
-                }
-              </Form.Text>
-            </Form.Group>
+            {editingGroup && (
+              <Form.Group className="mb-3">
+                <Form.Check
+                  type="switch"
+                  id="is-active-switch"
+                  label={formData.is_active ? "Active" : "Inactive"}
+                  checked={formData.is_active}
+                  onChange={(e) => setFormData({...formData, is_active: e.target.checked})}
+                />
+                <Form.Text className="text-muted">
+                  {formData.is_active ? 
+                    "Group is currently active and visible to users" : 
+                    "Group is inactive and hidden from users"
+                  }
+                </Form.Text>
+              </Form.Group>
+            )}
 
             {!editingGroup && (
               <Form.Group className="mb-3">

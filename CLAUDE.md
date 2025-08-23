@@ -334,6 +334,7 @@ const removeMemberMutation = useRemoveGroupMember();
 - **Safe Member Management**: Both add and remove operations require explicit confirmation
 - **Interactive Workflows**: Search → Click → Confirm → Add and Click → Confirm → Remove
 - **Status Management**: Create groups as active by default, toggle status during editing
+- **Group Deletion**: Delete button with confirmation modal available for custom, corporation, and alliance groups (system groups protected)
 - Backend error handling workarounds for inconsistent API responses (500 errors on successful operations)
 - Member display format: Character Name, Character ID, Added Date, Actions
 
