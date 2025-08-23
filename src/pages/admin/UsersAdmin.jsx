@@ -302,7 +302,7 @@ const UsersAdmin = () => {
 
   const { data: usersData, isLoading, error, refetch } = useUsers(filters);
   const { data: statsData, isLoading: statsLoading } = useUserStats();
-  const { data: userProfile, isLoading: profileLoading } = useUserProfile(selectedUser?.user_id || selectedUser?.id);
+  const { data: userProfile, isLoading: profileLoading } = useUserProfile(selectedUser?.character_id);
   const { data: enrichedUser, isLoading: enrichedLoading } = useEnrichedUser(selectedUser);
   const { data: usersStatus } = useUsersStatus();
   const updateStatusMutation = useUpdateUserStatus();

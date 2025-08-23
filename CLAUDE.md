@@ -369,8 +369,8 @@ const { data: stats } = useUserStats();
 // Get users module health status
 const { data: status } = useUsersStatus();
 
-// Individual user profile
-const { data: profile } = useUserProfile(userId);
+// Individual user profile (uses character_id, API endpoint: GET /auth/profile/public?character_id={character_id})
+const { data: profile } = useUserProfile(characterId);
 
 // Update user with full control (uses character_id, API endpoint: PUT /users/mgt/{character_id})
 const updateMutation = useUpdateUser();
