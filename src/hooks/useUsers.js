@@ -45,20 +45,28 @@ const fetchUserStats = async () => {
 };
 
 const fetchUserProfile = async (userId) => {
-  const response = await fetch(`${BASE_URL}/auth/profile/${userId}`, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  // Try to get public profile using character_id if available
+  // Since individual user profiles by user_id aren't available in the API,
+  // we'll fall back to using the data already available from the users list
+  try {
+    const response = await fetch(`${BASE_URL}/auth/profile/public?character_id=${userId}`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `Failed to fetch user profile: ${response.status}`);
+    if (response.ok) {
+      return response.json();
+    }
+    
+    // If public profile fails, return null to indicate we should use existing user data
+    return null;
+  } catch (error) {
+    console.warn('User profile fetch failed, will use existing user data:', error);
+    return null;
   }
-
-  return response.json();
 };
 
 const updateUser = async ({ userId, data }) => {
@@ -80,12 +88,17 @@ const updateUser = async ({ userId, data }) => {
 };
 
 const refreshUserData = async (userId) => {
-  const response = await fetch(`${BASE_URL}/auth/profile/refresh/${userId}`, {
+  // The refresh endpoint is for the current authenticated user only
+  // For admin refresh operations, we'll need to use a different approach
+  const response = await fetch(`${BASE_URL}/auth/profile/refresh`, {
     method: 'POST',
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },
+    body: JSON.stringify({
+      force_refresh: true
+    }),
   });
 
   if (!response.ok) {
@@ -219,11 +232,13 @@ export const useRefreshUserData = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: refreshUserData,
-    onSuccess: (data, userId) => {
-      queryClient.invalidateQueries(['user', 'profile', userId]);
+    mutationFn: async (userId) => {
+      // Since individual user refresh isn't available, just refresh the users list
       queryClient.invalidateQueries(['users']);
-      toast.success('User data refreshed successfully!');
+      return { success: true, message: 'Users list refreshed' };
+    },
+    onSuccess: (data, userId) => {
+      toast.success('Users list refreshed successfully!');
     },
     onError: (err) => {
       toast.error(`Failed to refresh user data: ${err.message}`);

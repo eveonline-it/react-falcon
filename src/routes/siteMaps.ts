@@ -1057,7 +1057,7 @@ export const adminRoutes: RouteGroup = {
     },
     {
       name: 'Users',
-      icon: 'user-shield',
+      icon: 'user',
       to: paths.usersAdmin,
       active: true
     },

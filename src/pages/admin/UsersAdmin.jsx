@@ -8,10 +8,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUsers, faSearch, faFilter, faEye, faSync, faUserEdit,
   faCheck, faTimes, faExclamationTriangle, faUserCheck, faUserTimes,
-  faCheckCircle, faTimesCircle, faInfoCircle, faUserShield,
+  faCheckCircle, faTimesCircle, faInfoCircle, faUser,
   faUserSlash, faBan, faShieldAlt, faGlobe, faCalendarAlt,
   faEdit, faSave, faPlus, faTrash, faCopy, faFileExport,
-  faCheckSquare, faSquare, faUserCog, faStickyNote, faBuilding
+  faCheckSquare, faSquare, faStickyNote, faBuilding
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 
@@ -25,6 +25,44 @@ import {
   useBulkUpdateUsers,
   useUsersStatus
 } from 'hooks/useUsers';
+
+const CharacterPortrait = ({ characterId, characterName, size = 32 }) => {
+  const [imageError, setImageError] = useState(false);
+  
+  const handleImageError = () => {
+    setImageError(true);
+  };
+  
+  if (imageError || !characterId) {
+    return (
+      <div 
+        className="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
+        style={{ 
+          width: `${size}px`, 
+          height: `${size}px`
+        }}
+      >
+        <FontAwesomeIcon 
+          icon={faUser} 
+          className="text-white" 
+          size={size > 64 ? '2x' : 'sm'} 
+        />
+      </div>
+    );
+  }
+  
+  return (
+    <img
+      src={`https://images.evetech.net/characters/${characterId}/portrait?size=${size > 32 ? 256 : 64}`}
+      alt={characterName}
+      className="rounded-circle"
+      width={size}
+      height={size}
+      style={{ objectFit: 'cover' }}
+      onError={handleImageError}
+    />
+  );
+};
 
 const UsersAdmin = () => {
   const [filters, setFilters] = useState({
@@ -296,7 +334,7 @@ const UsersAdmin = () => {
                     className="me-2"
                     onClick={() => setShowBulkModal(true)}
                   >
-                    <FontAwesomeIcon icon={faUserCog} className="me-1" />
+                    <FontAwesomeIcon icon={faUsers} className="me-1" />
                     Bulk Actions ({selectedCount})
                   </Button>
                 </>
@@ -463,11 +501,13 @@ const UsersAdmin = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredUsers.map((user) => {
+                    {filteredUsers.map((user, index) => {
                       const statusInfo = getUserStatus(user);
                       const userId = user.user_id || user.id;
+                      // Create a truly unique key by combining available identifiers
+                      const uniqueKey = `${userId || 'no-id'}-${user.character_id || 'no-char'}-${index}`;
                       return (
-                        <tr key={userId}>
+                        <tr key={uniqueKey}>
                           <td className="py-2 align-middle">
                             <Form.Check
                               type="checkbox"
@@ -477,15 +517,25 @@ const UsersAdmin = () => {
                           </td>
                           <td className="py-2 align-middle">
                             <div className="d-flex align-items-center">
-                              {user.character_portrait_url && (
-                                <img
-                                  src={user.character_portrait_url}
-                                  alt={user.character_name}
-                                  className="rounded-circle me-2"
-                                  width="32"
-                                  height="32"
-                                />
-                              )}
+                              <div className="me-2" style={{ width: '32px', height: '32px', flexShrink: 0 }}>
+                                {user.character_id ? (
+                                  <CharacterPortrait 
+                                    characterId={user.character_id}
+                                    characterName={user.character_name}
+                                    size={32}
+                                  />
+                                ) : (
+                                  <div 
+                                    className="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
+                                    style={{ 
+                                      width: '32px', 
+                                      height: '32px'
+                                    }}
+                                  >
+                                    <FontAwesomeIcon icon={faUser} className="text-white" size="sm" />
+                                  </div>
+                                )}
+                              </div>
                               <div>
                                 <div className="fw-bold">{user.character_name || user.email}</div>
                                 <small className="text-muted">ID: {user.character_id || 'N/A'}</small>
@@ -632,7 +682,7 @@ const UsersAdmin = () => {
       <Modal show={showUserModal} onHide={handleCloseUserModal} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            <FontAwesomeIcon icon={faUserShield} className="me-2" />
+            <FontAwesomeIcon icon={faUser} className="me-2" />
             User Details - {selectedUser?.character_name || selectedUser?.email}
           </Modal.Title>
         </Modal.Header>
@@ -643,31 +693,49 @@ const UsersAdmin = () => {
                 <span className="visually-hidden">Loading user details...</span>
               </Spinner>
             </div>
-          ) : userProfile ? (
-            <Row>
-              <Col md={6}>
-                <h5>Character Information</h5>
+          ) : selectedUser ? (
+            <>
+              {/* Character Portrait Section */}
+              {selectedUser.character_id && (
+                <div className="text-center mb-4">
+                  <div style={{ border: '3px solid #dee2e6', borderRadius: '50%', display: 'inline-block' }}>
+                    <CharacterPortrait 
+                      characterId={selectedUser.character_id}
+                      characterName={selectedUser.character_name}
+                      size={128}
+                    />
+                  </div>
+                  <div className="mt-2">
+                    <h5 className="mb-1">{selectedUser.character_name}</h5>
+                    <small className="text-muted">{selectedUser.corporation_name}</small>
+                  </div>
+                </div>
+              )}
+              
+              <Row>
+                <Col md={6}>
+                  <h5>Character Information</h5>
                 <Table borderless size="sm">
                   <tbody>
                     <tr>
                       <td><strong>Character Name:</strong></td>
-                      <td>{userProfile.character_name || '-'}</td>
+                      <td>{selectedUser.character_name || '-'}</td>
                     </tr>
                     <tr>
                       <td><strong>Character ID:</strong></td>
-                      <td>{userProfile.character_id || '-'}</td>
+                      <td>{selectedUser.character_id || '-'}</td>
                     </tr>
                     <tr>
                       <td><strong>Corporation:</strong></td>
-                      <td>{userProfile.corporation_name || '-'}</td>
+                      <td>{selectedUser.corporation_name || '-'}</td>
                     </tr>
                     <tr>
                       <td><strong>Alliance:</strong></td>
-                      <td>{userProfile.alliance_name || '-'}</td>
+                      <td>{selectedUser.alliance_name || '-'}</td>
                     </tr>
                     <tr>
                       <td><strong>Security Status:</strong></td>
-                      <td>{userProfile.security_status ? userProfile.security_status.toFixed(2) : '-'}</td>
+                      <td>{selectedUser.security_status ? selectedUser.security_status.toFixed(2) : (userProfile?.security_status ? userProfile.security_status.toFixed(2) : '-')}</td>
                     </tr>
                   </tbody>
                 </Table>
@@ -677,39 +745,80 @@ const UsersAdmin = () => {
                 <Table borderless size="sm">
                   <tbody>
                     <tr>
+                      <td><strong>User ID:</strong></td>
+                      <td>{selectedUser.user_id || selectedUser.id || '-'}</td>
+                    </tr>
+                    <tr>
                       <td><strong>Email:</strong></td>
-                      <td>{userProfile.email || '-'}</td>
+                      <td>{selectedUser.email || '-'}</td>
                     </tr>
                     <tr>
                       <td><strong>Status:</strong></td>
                       <td>
-                        <Badge bg={getStatusInfo(userProfile.status).color}>
-                          {getStatusInfo(userProfile.status).label}
+                        <Badge bg={getUserStatus(selectedUser).color}>
+                          {getUserStatus(selectedUser).label}
+                        </Badge>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Enabled:</strong></td>
+                      <td>
+                        <Badge bg={selectedUser.enabled ? 'success' : 'secondary'}>
+                          {selectedUser.enabled ? 'Yes' : 'No'}
+                        </Badge>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Banned:</strong></td>
+                      <td>
+                        <Badge bg={selectedUser.banned ? 'danger' : 'success'}>
+                          {selectedUser.banned ? 'Yes' : 'No'}
+                        </Badge>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>Invalid:</strong></td>
+                      <td>
+                        <Badge bg={selectedUser.invalid ? 'warning' : 'success'}>
+                          {selectedUser.invalid ? 'Yes' : 'No'}
                         </Badge>
                       </td>
                     </tr>
                     <tr>
                       <td><strong>Joined:</strong></td>
-                      <td>{formatDateTime(userProfile.created_at)}</td>
+                      <td>{formatDateTime(selectedUser.created_at)}</td>
                     </tr>
                     <tr>
                       <td><strong>Last Login:</strong></td>
-                      <td>{formatDateTime(userProfile.last_login)}</td>
+                      <td>{formatDateTime(selectedUser.last_login)}</td>
                     </tr>
                     <tr>
                       <td><strong>Last Updated:</strong></td>
-                      <td>{formatDateTime(userProfile.updated_at)}</td>
+                      <td>{formatDateTime(selectedUser.updated_at)}</td>
                     </tr>
+                    {selectedUser.notes ? (
+                      <tr>
+                        <td><strong>Admin Notes:</strong></td>
+                        <td className="text-break">{selectedUser.notes}</td>
+                      </tr>
+                    ) : null}
+                    {selectedUser.position ? (
+                      <tr>
+                        <td><strong>Position:</strong></td>
+                        <td>{selectedUser.position}</td>
+                      </tr>
+                    ) : null}
                   </tbody>
                 </Table>
               </Col>
             </Row>
-          ) : selectedUser ? (
-            <Alert variant="warning">
-              <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-              No detailed profile information available for this user.
+            </>
+          ) : (
+            <Alert variant="info">
+              <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
+              No user selected.
             </Alert>
-          ) : null}
+          )}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseUserModal}>
@@ -838,7 +947,7 @@ const UsersAdmin = () => {
       <Modal show={showBulkModal} onHide={() => setShowBulkModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>
-            <FontAwesomeIcon icon={faUserCog} className="me-2" />
+            <FontAwesomeIcon icon={faUsers} className="me-2" />
             Bulk Actions
           </Modal.Title>
         </Modal.Header>

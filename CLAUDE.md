@@ -855,7 +855,7 @@ Complete user management interface with advanced features:
 - **Status Filtering**: Filter by enabled, banned, invalid status with checkbox controls
 - **Bulk Operations**: Multi-select users for mass enable/disable/ban/unban operations
 - **Individual User Management**: Edit user notes, position, and status individually
-- **Character Integration**: Display EVE Online character portraits and corporate affiliations
+- **Character Integration**: Display EVE Online character portraits and corporate affiliations using official ESI image service
 
 **Administrative Functions:**
 - **User Statistics**: Real-time dashboard with counts of total, enabled, disabled, banned users
@@ -866,11 +866,19 @@ Complete user management interface with advanced features:
 - **Data Refresh**: Manual refresh of user data from EVE Online ESI
 
 **User Interface:**
+- **Character Portraits**: EVE Online character portraits displayed in table rows and modals with fallback icons
 - **Row Selection**: Individual and bulk user selection with visual feedback
 - **Status Badges**: Color-coded status indicators (Enabled/Disabled/Banned/Invalid)
 - **Action Buttons**: Quick access to view details, edit, refresh, and status changes
 - **Confirmation Modals**: Safety confirmations for all administrative actions
 - **Progress Indicators**: Loading states and progress feedback for all operations
+
+**Character Portrait System:**
+- **ESI Integration**: Uses `https://images.evetech.net/characters/{character_id}/portrait` for official portraits
+- **Multiple Sizes**: 64px for table rows, 256px source for modal display (displayed at 128px)
+- **Fallback Handling**: State-based error handling with default user icons when portraits fail to load
+- **Responsive Design**: Consistent circular portraits with proper sizing and borders
+- **Component Architecture**: Reusable `CharacterPortrait` component with error state management
 
 #### Navigation
 - **Users Admin**: `/admin/users` - Complete user account management and administration
