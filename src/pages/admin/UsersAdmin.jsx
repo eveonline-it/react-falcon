@@ -24,6 +24,7 @@ import {
   useRefreshUserData,
   useBulkUpdateUsers,
   useUsersStatus,
+  useDeleteUser,
   useEnrichedUser
 } from 'hooks/useUsers';
 
@@ -164,6 +165,8 @@ const UsersAdmin = () => {
   const [bulkAction, setBulkAction] = useState('');
   const [userNotes, setUserNotes] = useState('');
   const [userPosition, setUserPosition] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   const { data: usersData, isLoading, error, refetch } = useUsers(filters);
   const { data: statsData, isLoading: statsLoading } = useUserStats();
@@ -174,6 +177,7 @@ const UsersAdmin = () => {
   const updateUserMutation = useUpdateUser();
   const refreshDataMutation = useRefreshUserData();
   const bulkUpdateMutation = useBulkUpdateUsers();
+  const deleteUserMutation = useDeleteUser();
 
   const users = usersData?.users || [];
   const totalPages = usersData?.total_pages || 1;
@@ -340,6 +344,24 @@ const UsersAdmin = () => {
       refetch();
     } catch (err) {
       console.error('Failed to perform bulk action:', err);
+    }
+  };
+
+  const handleOpenDeleteModal = (user) => {
+    setUserToDelete(user);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+    
+    try {
+      await deleteUserMutation.mutateAsync(userToDelete.character_id);
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+      refetch();
+    } catch (err) {
+      console.error('Failed to delete user:', err);
     }
   };
 
@@ -724,6 +746,19 @@ const UsersAdmin = () => {
                                   disabled={refreshDataMutation.isPending}
                                 >
                                   <FontAwesomeIcon icon={faSync} size="xs" />
+                                </Button>
+                              </OverlayTrigger>
+
+                              <OverlayTrigger
+                                placement="top"
+                                overlay={<Tooltip>Delete User</Tooltip>}
+                              >
+                                <Button
+                                  variant="outline-danger"
+                                  onClick={() => handleOpenDeleteModal(user)}
+                                  disabled={deleteUserMutation.isPending}
+                                >
+                                  <FontAwesomeIcon icon={faTrash} size="xs" />
                                 </Button>
                               </OverlayTrigger>
 
@@ -1205,6 +1240,55 @@ const UsersAdmin = () => {
               <>
                 <FontAwesomeIcon icon={faCheck} className="me-2" />
                 Apply Action
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Delete User Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <FontAwesomeIcon icon={faTrash} className="me-2 text-danger" />
+            Delete User Character
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {userToDelete && (
+            <>
+              <Alert variant="danger">
+                <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
+                <strong>Warning!</strong> This action cannot be undone.
+              </Alert>
+              <p>
+                Are you sure you want to delete the user character <strong>{userToDelete.character_name}</strong>?
+              </p>
+              <p className="text-muted">
+                This will permanently remove the user account and all associated data.
+                Super administrators cannot be deleted.
+              </p>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={handleConfirmDelete}
+            disabled={deleteUserMutation.isPending}
+          >
+            {deleteUserMutation.isPending ? (
+              <>
+                <Spinner as="span" animation="border" size="sm" role="status" className="me-2" />
+                Deleting...
+              </>
+            ) : (
+              <>
+                <FontAwesomeIcon icon={faTrash} className="me-2" />
+                Delete User
               </>
             )}
           </Button>

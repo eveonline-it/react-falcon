@@ -215,6 +215,28 @@ const bulkUpdateUsers = async ({ userIds, data }) => {
   return { results, errors, total: userIds.length };
 };
 
+const deleteUser = async (characterId) => {
+  console.log(`Making DELETE request to ${BASE_URL}/users/mgt/${characterId}`);
+  
+  const response = await fetch(`${BASE_URL}/users/mgt/${characterId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error('Delete user failed:', response.status, errorData);
+    throw new Error(errorData.error || errorData.message || `Failed to delete user: ${response.status}`);
+  }
+
+  const result = await response.json();
+  console.log('Delete user success:', result);
+  return result;
+};
+
 const fetchUsersStatus = async () => {
   const response = await fetch(`${BASE_URL}/users/status`, {
     method: 'GET',
@@ -367,6 +389,43 @@ export const useUsersStatus = () => {
     queryFn: fetchUsersStatus,
     staleTime: 1000 * 60 * 2, // 2 minutes
     enabled: true,
+  });
+};
+
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteUser,
+    onMutate: async (characterId) => {
+      await queryClient.cancelQueries(['users']);
+      
+      const previousUsers = queryClient.getQueryData(['users']);
+      
+      // Optimistically remove user from cache
+      queryClient.setQueryData(['users'], (old) => {
+        if (!old?.users) return old;
+        return {
+          ...old,
+          users: old.users.filter((user) => user.character_id !== characterId),
+          total: (old.total || 0) - 1,
+        };
+      });
+      
+      return { previousUsers };
+    },
+    onError: (err, characterId, context) => {
+      if (context?.previousUsers) {
+        queryClient.setQueryData(['users'], context.previousUsers);
+      }
+      toast.error(`Failed to delete user: ${err.message}`);
+    },
+    onSuccess: (data, characterId) => {
+      queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries(['user-stats']);
+      queryClient.invalidateQueries(['user', 'profile', characterId]);
+      toast.success('User deleted successfully!');
+    },
   });
 };
 

@@ -347,6 +347,7 @@ import {
   useUpdateUserStatus, 
   useRefreshUserData,
   useBulkUpdateUsers,
+  useDeleteUser,
   useUsersStatus 
 } from 'hooks/useUsers';
 
@@ -382,6 +383,10 @@ updateMutation.mutate({
   }
 });
 
+// Delete user character (uses character_id, API endpoint: DELETE /users/mgt/{character_id})
+const deleteMutation = useDeleteUser();
+deleteMutation.mutate(characterId); // Super administrators cannot be deleted
+
 // Bulk user operations
 const bulkMutation = useBulkUpdateUsers();
 bulkMutation.mutate({
@@ -395,7 +400,7 @@ refreshMutation.mutate(userId);
 ```
 
 **Features**:
-- **Complete User CRUD**: Create, read, update operations with comprehensive field support
+- **Complete User CRUD**: Create, read, update, delete operations with comprehensive field support
 - **Advanced Filtering**: Search by name, email, corporation, alliance with status filters  
 - **Bulk Operations**: Mass enable/disable/ban/unban multiple users simultaneously
 - **User Statistics**: Real-time counts of total, enabled, disabled, banned, and invalid users
@@ -855,6 +860,7 @@ Complete user management interface with advanced features:
 - **Status Filtering**: Filter by enabled, banned, invalid status with checkbox controls
 - **Bulk Operations**: Multi-select users for mass enable/disable/ban/unban operations
 - **Individual User Management**: Edit user notes, position, and status individually
+- **User Deletion**: Permanent user character removal with confirmation (super administrators protected)
 - **Character Integration**: Display EVE Online character portraits, corporation logos, and alliance logos using official ESI image service
 - **ESI Data Enrichment**: Automatic fetching of missing corporation/alliance data from EVE Online ESI API
 
@@ -865,6 +871,7 @@ Complete user management interface with advanced features:
 - **Notes System**: Internal admin notes for tracking user issues and communications
 - **Position Management**: Numerical ranking system for user organization
 - **Data Refresh**: Manual refresh of user data from EVE Online ESI
+- **User Deletion**: Secure user character deletion with confirmation modal and safety warnings
 
 **User Interface:**
 - **Character Portraits**: EVE Online character portraits displayed in table rows and modals with fallback icons
@@ -872,7 +879,7 @@ Complete user management interface with advanced features:
 - **Alliance Logos**: Official EVE Online alliance logos displayed alongside alliance names (when available)
 - **Row Selection**: Individual and bulk user selection with visual feedback
 - **Status Badges**: Color-coded status indicators (Enabled/Disabled/Banned/Invalid)
-- **Action Buttons**: Quick access to view details, edit, refresh, and status changes
+- **Action Buttons**: Quick access to view details, edit, refresh, delete, and status changes
 - **Confirmation Modals**: Safety confirmations for all administrative actions
 - **Progress Indicators**: Loading states and progress feedback for all operations
 
