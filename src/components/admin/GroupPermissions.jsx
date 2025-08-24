@@ -14,7 +14,8 @@ import { toast } from 'react-toastify';
 import { 
   useGroupPermissions, 
   useGrantPermissionToGroup, 
-  useRevokePermissionFromGroup 
+  useDeletePermissionFromGroup,
+  useUpdateGroupPermissionStatus
 } from 'hooks/useGroups';
 import { usePermissions } from 'hooks/usePermissions';
 
@@ -29,7 +30,8 @@ const GroupPermissions = ({ group, onClose }) => {
   // Hooks for group permissions
   const { data: groupPermissions, isLoading: permissionsLoading, error: permissionsError } = useGroupPermissions(group?.id);
   const grantMutation = useGrantPermissionToGroup();
-  const revokeMutation = useRevokePermissionFromGroup();
+  const revokeMutation = useDeletePermissionFromGroup();
+  const updateStatusMutation = useUpdateGroupPermissionStatus();
 
   // Hooks for available permissions (for granting)
   const { data: availablePermissions, isLoading: availableLoading } = usePermissions({
@@ -118,6 +120,20 @@ const GroupPermissions = ({ group, onClose }) => {
     }
   };
 
+  const handleStatusChange = async (groupPermission, newStatus) => {
+    if (!group) return;
+
+    try {
+      await updateStatusMutation.mutateAsync({
+        groupId: group.id,
+        permissionId: groupPermission.permission_id || groupPermission.permission?.id || groupPermission.id,
+        isActive: newStatus
+      });
+    } catch (err) {
+      console.error('Failed to update permission status:', err);
+    }
+  };
+
   if (permissionsError) {
     return (
       <Alert variant="danger">
@@ -180,6 +196,7 @@ const GroupPermissions = ({ group, onClose }) => {
                   <th>Resource</th>
                   <th>Action</th>
                   <th>Type</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -214,6 +231,28 @@ const GroupPermissions = ({ group, onClose }) => {
                         >
                           {permission.is_static ? 'Static' : 'Dynamic'}
                         </Badge>
+                      </td>
+                      <td>
+                        <div className="d-flex gap-2">
+                          <Form.Check
+                            type="radio"
+                            name={`status-${groupPermission.id}`}
+                            id={`active-${groupPermission.id}`}
+                            label="Active"
+                            checked={groupPermission.is_active === true}
+                            onChange={() => handleStatusChange(groupPermission, true)}
+                            disabled={updateStatusMutation.isPending}
+                          />
+                          <Form.Check
+                            type="radio"
+                            name={`status-${groupPermission.id}`}
+                            id={`inactive-${groupPermission.id}`}
+                            label="Inactive"
+                            checked={groupPermission.is_active === false}
+                            onChange={() => handleStatusChange(groupPermission, false)}
+                            disabled={updateStatusMutation.isPending}
+                          />
+                        </div>
                       </td>
                       <td>
                         <Button

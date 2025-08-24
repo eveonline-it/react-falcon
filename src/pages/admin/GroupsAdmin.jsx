@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Container, Row, Col, Card, Button, Badge, Form, 
   Alert, Modal, Table, InputGroup, Spinner, OverlayTrigger, Tooltip,
-  Tabs, Tab 
+  Tabs, Tab, Placeholder 
 } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -22,7 +22,8 @@ import {
   useAddGroupMember,
   useRemoveGroupMember,
   useGroupsHealth,
-  useCharacterSearch
+  useCharacterSearch,
+  useGroupMemberCounts
 } from 'hooks/useGroups';
 
 import GroupPermissions from 'components/admin/GroupPermissions';
@@ -61,6 +62,7 @@ const GroupsAdmin = () => {
   const { data: healthData, isLoading: healthLoading } = useGroupsHealth();
   const { data: selectedGroupMembers, isLoading: membersLoading } = useGroupMembers(selectedGroup?.id);
   const { data: characterSearchResults, isLoading: charactersLoading } = useCharacterSearch(characterSearchTerm);
+  
   const createMutation = useCreateGroup();
   const updateMutation = useUpdateGroup();
   const deleteMutation = useDeleteGroup();
@@ -82,15 +84,20 @@ const GroupsAdmin = () => {
     return typeInfo?.color || 'secondary';
   };
 
-  const handleSearch = () => {
-    const filtered = groups.filter(group => 
+  const displayedGroups = useMemo(() => {
+    if (!searchTerm) return groups;
+    
+    return groups.filter(group => 
       group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       group.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    return filtered;
-  };
+  }, [groups, searchTerm]);
 
-  const displayedGroups = searchTerm ? handleSearch() : groups;
+  // Get member counts for all displayed groups
+  const displayedGroupIds = useMemo(() => {
+    return displayedGroups.map(group => group.id);
+  }, [displayedGroups]);
+  const { data: memberCounts, isLoading: memberCountsLoading } = useGroupMemberCounts(displayedGroupIds);
 
   const handleOpenModal = (group = null) => {
     if (group) {
@@ -275,23 +282,37 @@ const GroupsAdmin = () => {
 
   return (
     <Container fluid>
+      {/* Page Header */}
       <Row className="mb-4">
         <Col>
           <div className="d-flex justify-content-between align-items-center">
-            <h1>Groups Management</h1>
-            <Button 
-              variant="primary"
-              onClick={() => handleOpenModal()}
-            >
-              <FontAwesomeIcon icon={faPlus} className="me-2" />
-              Add Group
-            </Button>
+            <div>
+              <h1 className="mb-1">Groups Management</h1>
+              <p className="text-muted mb-0">
+                Manage user groups, permissions, and member assignments
+              </p>
+            </div>
+            {healthData && (
+              <div className="text-end">
+                <Badge 
+                  bg={healthData.status === 'healthy' ? 'success' : 'warning'} 
+                  className="mb-1"
+                >
+                  System: {healthData.status}
+                </Badge>
+                {healthData.last_check && (
+                  <div className="small text-muted">
+                    Last check: {new Date(healthData.last_check).toLocaleString()}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </Col>
       </Row>
 
-      {/* Filters Row */}
-      <Row className="mb-4">
+      {/* Search and Filters */}
+      <Row className="mb-3">
         <Col lg={4}>
           <InputGroup>
             <Form.Control
@@ -303,12 +324,18 @@ const GroupsAdmin = () => {
             <Button variant="outline-secondary">
               <FontAwesomeIcon icon={faSearch} />
             </Button>
+            {searchTerm && (
+              <Button 
+                variant="outline-secondary"
+                onClick={() => setSearchTerm('')}
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </Button>
+            )}
           </InputGroup>
         </Col>
-        <Col lg={8} className="text-end">
-          <Form.Select 
-            size="sm" 
-            className="d-inline-block w-auto me-2"
+        <Col lg={3}>
+          <Form.Select
             value={filters.type}
             onChange={(e) => setFilters({...filters, type: e.target.value})}
           >
@@ -318,35 +345,68 @@ const GroupsAdmin = () => {
             ))}
           </Form.Select>
         </Col>
+        <Col lg={3}>
+          <div className="text-500 small align-self-center">
+            Showing {displayedGroups.length} of {groupsData?.total || 0} groups
+          </div>
+        </Col>
+        <Col lg={2} className="text-end">
+          <Button
+            variant="primary"
+            onClick={() => handleOpenModal()}
+          >
+            <FontAwesomeIcon icon={faPlus} className="me-2" />
+            Add Group
+          </Button>
+        </Col>
       </Row>
 
       {/* Overview Cards */}
-      <Row className="mb-4">
+      <Row className="g-3 mb-3">
         <Col md={3}>
-          <Card>
+          <Card className="h-md-100">
             <Card.Body>
-              <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faUsers} size="2x" className="text-primary me-3" />
-                <div>
-                  <h6 className="mb-0">Total Groups</h6>
-                  <h4 className="mb-0">{groupsData?.total || 0}</h4>
+              {isLoading ? (
+                <div className="d-flex align-items-center">
+                  <Placeholder style={{ width: '48px', height: '48px' }} />
+                  <div className="ms-3">
+                    <Placeholder as="h6" className="mb-1" style={{ width: '80px' }} />
+                    <Placeholder as="h4" className="mb-0" style={{ width: '40px' }} />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="d-flex align-items-center">
+                  <FontAwesomeIcon icon={faUsers} size="2x" className="text-primary me-3" />
+                  <div>
+                    <h6 className="mb-0 text-500">Total Groups</h6>
+                    <h2 className="fw-normal text-700 mb-0">{groupsData?.total || 0}</h2>
+                  </div>
+                </div>
+              )}
             </Card.Body>
           </Card>
         </Col>
         {groupTypes.map(type => (
           <Col md={2} key={type.value}>
-            <Card>
+            <Card className="h-md-100">
               <Card.Body>
-                <div className="d-flex align-items-center">
-                  <Badge bg={type.color} className="me-2 fs-6">
-                    {groups.filter(g => g.type === type.value).length}
-                  </Badge>
-                  <div>
-                    <h6 className="mb-0">{type.label}</h6>
+                {isLoading ? (
+                  <div className="d-flex align-items-center">
+                    <Placeholder style={{ width: '32px', height: '32px' }} />
+                    <div className="ms-2">
+                      <Placeholder as="h6" className="mb-0" style={{ width: '60px' }} />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="d-flex align-items-center">
+                    <Badge bg={type.color} className="fs-6 me-2">
+                      {groups.filter(g => g.type === type.value).length}
+                    </Badge>
+                    <div>
+                      <h6 className="mb-0 text-700">{type.label}</h6>
+                    </div>
+                  </div>
+                )}
               </Card.Body>
             </Card>
           </Col>
@@ -357,106 +417,178 @@ const GroupsAdmin = () => {
       <Row className="mb-4">
         <Col lg={12}>
           <Card>
+            <Card.Header>
+              <h6 className="mb-0">Groups Directory</h6>
+            </Card.Header>
             <Card.Body>
               {isLoading ? (
-                <div className="text-center py-5">
-                  <Spinner animation="border" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </Spinner>
+                <div>
+                  {/* Table Header Skeleton */}
+                  <div className="px-3 py-2 bg-light border-bottom">
+                    <Row>
+                      <Col md={2}><Placeholder style={{ width: '60px' }} /></Col>
+                      <Col md={3}><Placeholder style={{ width: '80px' }} /></Col>
+                      <Col md={1}><Placeholder style={{ width: '40px' }} /></Col>
+                      <Col md={2}><Placeholder style={{ width: '50px' }} /></Col>
+                      <Col md={1}><Placeholder style={{ width: '60px' }} /></Col>
+                      <Col md={1}><Placeholder style={{ width: '70px' }} /></Col>
+                      <Col md={2}><Placeholder style={{ width: '80px' }} /></Col>
+                    </Row>
+                  </div>
+                  {/* Table Body Skeleton */}
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <div key={index} className="px-3 py-3 border-bottom">
+                      <Row className="align-items-center">
+                        <Col md={2}>
+                          <div className="d-flex align-items-center">
+                            <Placeholder className="bg-secondary me-2" style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+                            <Placeholder style={{ width: '120px' }} />
+                          </div>
+                        </Col>
+                        <Col md={3}><Placeholder style={{ width: '180px' }} /></Col>
+                        <Col md={1}><Placeholder className="bg-primary" style={{ width: '60px', height: '24px', borderRadius: '12px' }} /></Col>
+                        <Col md={2}><Placeholder className="bg-success" style={{ width: '70px', height: '24px', borderRadius: '12px' }} /></Col>
+                        <Col md={1}><Placeholder className="bg-info" style={{ width: '30px', height: '20px' }} /></Col>
+                        <Col md={1}><Placeholder style={{ width: '80px' }} /></Col>
+                        <Col md={2}>
+                          <div className="d-flex gap-1">
+                            <Placeholder className="bg-light" style={{ width: '28px', height: '28px', borderRadius: '4px' }} />
+                            <Placeholder className="bg-light" style={{ width: '28px', height: '28px', borderRadius: '4px' }} />
+                            <Placeholder className="bg-light" style={{ width: '28px', height: '28px', borderRadius: '4px' }} />
+                          </div>
+                        </Col>
+                      </Row>
+                    </div>
+                  ))}
                 </div>
               ) : displayedGroups.length === 0 ? (
                 <Alert variant="info">
                   <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
-                  No groups found
+                  {searchTerm ? `No groups match your search for "${searchTerm}"` : 'No groups found'}
                 </Alert>
               ) : (
-                <Table hover responsive size="sm" className="small">
+                <Table hover responsive>
                   <thead>
                     <tr>
-                      <th className="py-2 align-middle">Name</th>
-                      <th className="py-2 align-middle">Description</th>
-                      <th className="py-2 align-middle">Type</th>
-                      <th className="py-2 align-middle">Status</th>
-                      <th className="py-2 align-middle">Created</th>
-                      <th className="py-2 align-middle">Actions</th>
+                      <th>Name</th>
+                      <th>Description</th>
+                      <th>Type</th>
+                      <th>Status</th>
+                      <th>Members</th>
+                      <th>Created</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {displayedGroups.map((group) => (
                       <tr key={group.id}>
-                        <td className="py-2 align-middle">
-                          <div className="fw-bold">
-                            <FontAwesomeIcon icon={faUsers} className="me-1 text-muted" size="xs" />
-                            {group.name}
+                        <td className="align-middle">
+                          <div className="d-flex align-items-center">
+                            <FontAwesomeIcon icon={faUsers} className="text-300 me-2" size="sm" />
+                            <div>
+                              <div className="fw-semi-bold">{group.name}</div>
+                              <div className="fs-11 text-500">ID: {group.id}</div>
+                            </div>
                           </div>
                         </td>
-                        <td className="py-2 align-middle">
-                          <span className="text-truncate d-inline-block" style={{ maxWidth: '200px' }}>
-                            {group.description || '-'}
-                          </span>
+                        <td className="align-middle">
+                          <div className="text-truncate" style={{ maxWidth: '200px' }}>
+                            {group.description || <span className="text-400">No description</span>}
+                          </div>
                         </td>
-                        <td className="py-2 align-middle">
-                          <Badge bg={getTypeColor(group.type)} className="small">
+                        <td className="align-middle">
+                          <Badge bg={getTypeColor(group.type)}>
                             {group.type}
                           </Badge>
                         </td>
-                        <td className="py-2 align-middle">
+                        <td className="align-middle">
                           {group.is_active ? (
-                            <Badge bg="success" className="small">
-                              <FontAwesomeIcon icon={faCheckCircle} className="me-1" size="xs" />
+                            <Badge bg="success">
+                              <FontAwesomeIcon icon={faCheckCircle} className="me-1" />
                               Active
                             </Badge>
                           ) : (
-                            <Badge bg="secondary" className="small">
-                              <FontAwesomeIcon icon={faTimesCircle} className="me-1" size="xs" />
+                            <Badge bg="secondary">
+                              <FontAwesomeIcon icon={faTimesCircle} className="me-1" />
                               Inactive
                             </Badge>
                           )}
                         </td>
-                        <td className="py-2 align-middle">
-                          {group.created_at ? new Date(group.created_at).toLocaleDateString() : '-'}
+                        <td className="align-middle">
+                          <div className="d-flex align-items-center">
+                            <FontAwesomeIcon icon={faUsers} className="text-300 me-1" size="xs" />
+                            <span className="fw-semi-bold">
+                              {memberCountsLoading ? (
+                                <Spinner size="sm" animation="border" />
+                              ) : (
+                                memberCounts?.[group.id] ?? 0
+                              )}
+                            </span>
+                          </div>
                         </td>
-                        <td className="py-2 align-middle">
-                          <Button
-                            variant="outline-info"
-                            className="me-1 btn-xs"
-                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                            onClick={() => handleOpenMembersModal(group)}
+                        <td className="align-middle">
+                          <span className="text-500">
+                            {group.created_at ? new Date(group.created_at).toLocaleDateString() : '-'}
+                          </span>
+                        </td>
+                        <td className="align-middle">
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip>View Members</Tooltip>}
                           >
-                            <FontAwesomeIcon icon={faUsers} size="xs" />
-                          </Button>
-                          <Button
-                            variant="outline-warning"
-                            className="me-1 btn-xs"
-                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                            onClick={() => handleOpenPermissionsModal(group)}
+                            <Button
+                              variant="outline-info"
+                              size="sm"
+                              className="me-1"
+                              onClick={() => handleOpenMembersModal(group)}
+                            >
+                              <FontAwesomeIcon icon={faUsers} size="xs" />
+                            </Button>
+                          </OverlayTrigger>
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={<Tooltip>Manage Permissions</Tooltip>}
                           >
-                            <FontAwesomeIcon icon={faKey} size="xs" />
-                          </Button>
+                            <Button
+                              variant="outline-warning"
+                              size="sm"
+                              className="me-1"
+                              onClick={() => handleOpenPermissionsModal(group)}
+                            >
+                              <FontAwesomeIcon icon={faKey} size="xs" />
+                            </Button>
+                          </OverlayTrigger>
                           {group.type === 'custom' && (
-                            <>
+                            <OverlayTrigger
+                              placement="top"
+                              overlay={<Tooltip>Edit Group</Tooltip>}
+                            >
                               <Button
                                 variant="outline-primary"
-                                className="me-1 btn-xs"
-                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                                size="sm"
+                                className="me-1"
                                 onClick={() => handleOpenModal(group)}
                               >
                                 <FontAwesomeIcon icon={faEdit} size="xs" />
                               </Button>
-                            </>
+                            </OverlayTrigger>
                           )}
                           {group.type !== 'system' && (
-                            <Button
-                              variant="outline-danger"
-                              className="btn-xs"
-                              style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                              onClick={() => {
-                                setGroupToDelete(group);
-                                setShowDeleteConfirm(true);
-                              }}
+                            <OverlayTrigger
+                              placement="top"
+                              overlay={<Tooltip>Delete Group</Tooltip>}
                             >
-                              <FontAwesomeIcon icon={faTrash} size="xs" />
-                            </Button>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => {
+                                  setGroupToDelete(group);
+                                  setShowDeleteConfirm(true);
+                                }}
+                              >
+                                <FontAwesomeIcon icon={faTrash} size="xs" />
+                              </Button>
+                            </OverlayTrigger>
                           )}
                         </td>
                       </tr>
@@ -464,33 +596,32 @@ const GroupsAdmin = () => {
                   </tbody>
                 </Table>
               )}
-              
-              {totalPages > 1 && (
-                <div className="d-flex justify-content-center mt-3">
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    disabled={filters.page <= 1}
-                    onClick={() => setFilters({...filters, page: filters.page - 1})}
-                    className="me-2"
-                  >
-                    Previous
-                  </Button>
-                  <span className="align-self-center mx-3">
-                    Page {filters.page} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    disabled={filters.page >= totalPages}
-                    onClick={() => setFilters({...filters, page: filters.page + 1})}
-                    className="ms-2"
-                  >
-                    Next
-                  </Button>
-                </div>
-              )}
             </Card.Body>
+            {totalPages > 1 && (
+              <div className="d-flex justify-content-center mt-3">
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  disabled={filters.page <= 1}
+                  onClick={() => setFilters({...filters, page: filters.page - 1})}
+                  className="me-2"
+                >
+                  Previous
+                </Button>
+                <span className="align-self-center mx-3">
+                  Page {filters.page} of {totalPages}
+                </span>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  disabled={filters.page >= totalPages}
+                  onClick={() => setFilters({...filters, page: filters.page + 1})}
+                  className="ms-2"
+                >
+                  Next
+                </Button>
+              </div>
+            )}
           </Card>
         </Col>
       </Row>
@@ -860,6 +991,7 @@ const GroupsAdmin = () => {
           )}
         </Modal.Body>
       </Modal>
+
     </Container>
   );
 };
