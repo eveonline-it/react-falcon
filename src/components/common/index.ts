@@ -32,7 +32,7 @@ export { default as Section } from './Section';
 export { default as StarRating } from './StarRating';
 export { default as SubtleBadge } from './SubtleBadge';
 export { default as TinymceEditor } from './TinymceEditor';
-export { default as Toast, CloseButton as ToastCloseButton, Fade as ToastFade } from './Toast';
+export { CloseButton as ToastCloseButton, Fade as ToastFade } from './Toast';
 export { default as TooltipBadge } from './TooltipBadge';
 export { default as Treeview } from './Treeview';
 export { default as VerifiedBadge } from './VerifiedBadge';
@@ -47,3 +47,6 @@ export { default as IndeterminateCheckbox } from './advance-table/IndeterminateC
 // Icon Components
 export { default as IconGroup } from './icon/IconGroup';
 export { default as IconItem } from './icon/IconItem';
+
+// EVE Online Integration Components
+export { CharacterPortrait, CorporationLogo, AllianceLogo, GroupsBadges } from './eve';

@@ -21,55 +21,117 @@ const enrichUserWithESIData = async (user) => {
   
   const enrichedUser = { ...user };
   
-  // Fetch corporation data if missing
-  if (!user.corporation_name && user.corporation_id) {
-    const corpData = await fetchESIData(`https://esi.evetech.net/latest/corporations/${user.corporation_id}/`);
-    if (corpData) {
-      enrichedUser.corporation_name = corpData.name;
+  try {
+    // Collect all API calls we need to make
+    const apiCalls = [];
+    
+    // Add corporation call if needed
+    if (!user.corporation_name && user.corporation_id) {
+      apiCalls.push({
+        type: 'corporation',
+        id: user.corporation_id,
+        url: `https://esi.evetech.net/latest/corporations/${user.corporation_id}/`
+      });
     }
-  }
-  
-  // Fetch alliance data if missing
-  if (!user.alliance_name && user.alliance_id) {
-    const allianceData = await fetchESIData(`https://esi.evetech.net/latest/alliances/${user.alliance_id}/`);
-    if (allianceData) {
-      enrichedUser.alliance_name = allianceData.name;
+    
+    // Add alliance call if needed
+    if (!user.alliance_name && user.alliance_id) {
+      apiCalls.push({
+        type: 'alliance',
+        id: user.alliance_id,
+        url: `https://esi.evetech.net/latest/alliances/${user.alliance_id}/`
+      });
     }
-  }
-  
-  // If we don't have corporation/alliance IDs, try to get character public data
-  if (!user.corporation_id || !user.alliance_id) {
-    const characterData = await fetchESIData(`https://esi.evetech.net/latest/characters/${user.character_id}/`);
-    if (characterData) {
-      if (!enrichedUser.corporation_id) {
-        enrichedUser.corporation_id = characterData.corporation_id;
-        // Fetch corporation name
-        const corpData = await fetchESIData(`https://esi.evetech.net/latest/corporations/${characterData.corporation_id}/`);
-        if (corpData) {
-          enrichedUser.corporation_name = corpData.name;
+    
+    // Add character call if we need IDs
+    if (!user.corporation_id || !user.alliance_id) {
+      apiCalls.push({
+        type: 'character',
+        id: user.character_id,
+        url: `https://esi.evetech.net/latest/characters/${user.character_id}/`
+      });
+    }
+    
+    // Execute all calls in parallel
+    if (apiCalls.length > 0) {
+      const results = await Promise.allSettled(
+        apiCalls.map(async call => ({
+          type: call.type,
+          id: call.id,
+          data: await fetchESIData(call.url)
+        }))
+      );
+      
+      // Process successful results
+      let characterData = null;
+      const additionalCalls = [];
+      
+      for (const result of results) {
+        if (result.status === 'fulfilled' && result.value.data) {
+          const { type, data } = result.value;
+          
+          if (type === 'corporation') {
+            enrichedUser.corporation_name = data.name;
+          } else if (type === 'alliance') {
+            enrichedUser.alliance_name = data.name;
+          } else if (type === 'character') {
+            characterData = data;
+            
+            // Update IDs from character data
+            if (!enrichedUser.corporation_id && data.corporation_id) {
+              enrichedUser.corporation_id = data.corporation_id;
+              additionalCalls.push({
+                type: 'corporation',
+                url: `https://esi.evetech.net/latest/corporations/${data.corporation_id}/`
+              });
+            }
+            
+            if (!enrichedUser.alliance_id && data.alliance_id) {
+              enrichedUser.alliance_id = data.alliance_id;
+              additionalCalls.push({
+                type: 'alliance',
+                url: `https://esi.evetech.net/latest/alliances/${data.alliance_id}/`
+              });
+            }
+            
+            // Add character-specific data
+            if (data.security_status !== undefined) {
+              enrichedUser.security_status = data.security_status;
+            }
+            if (data.birthday) {
+              enrichedUser.birthday = data.birthday;
+            }
+          }
         }
       }
       
-      if (characterData.alliance_id && !enrichedUser.alliance_id) {
-        enrichedUser.alliance_id = characterData.alliance_id;
-        // Fetch alliance name
-        const allianceData = await fetchESIData(`https://esi.evetech.net/latest/alliances/${characterData.alliance_id}/`);
-        if (allianceData) {
-          enrichedUser.alliance_name = allianceData.name;
+      // Execute additional calls for missing corp/alliance names in parallel
+      if (additionalCalls.length > 0) {
+        const additionalResults = await Promise.allSettled(
+          additionalCalls.map(async call => ({
+            type: call.type,
+            data: await fetchESIData(call.url)
+          }))
+        );
+        
+        for (const result of additionalResults) {
+          if (result.status === 'fulfilled' && result.value.data) {
+            const { type, data } = result.value;
+            if (type === 'corporation') {
+              enrichedUser.corporation_name = data.name;
+            } else if (type === 'alliance') {
+              enrichedUser.alliance_name = data.name;
+            }
+          }
         }
       }
-      
-      // Add other character data if missing
-      if (!enrichedUser.security_status && characterData.security_status !== undefined) {
-        enrichedUser.security_status = characterData.security_status;
-      }
-      if (!enrichedUser.birthday && characterData.birthday) {
-        enrichedUser.birthday = characterData.birthday;
-      }
     }
+    
+    return enrichedUser;
+  } catch (error) {
+    console.error('Error enriching user data:', error);
+    return user; // Return original user data on error
   }
-  
-  return enrichedUser;
 };
 
 const fetchUsers = async (filters = {}) => {
@@ -96,18 +158,7 @@ const fetchUsers = async (filters = {}) => {
   const data = await response.json();
   console.log('Users API response:', data); // Debug log to see what we get
   
-  // Enrich users with missing corporation/alliance data from ESI
-  if (data.users && Array.isArray(data.users)) {
-    // Process first 5 users to avoid too many API calls
-    const enrichPromises = data.users.slice(0, 5).map(user => enrichUserWithESIData(user));
-    const enrichedUsers = await Promise.all(enrichPromises);
-    
-    // Replace the first 5 users with enriched data, keep the rest as-is
-    data.users = [
-      ...enrichedUsers,
-      ...data.users.slice(5)
-    ];
-  }
+  // Note: ESI enrichment has been moved to background queries for better performance
   
   return data;
 };

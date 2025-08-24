@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Container, Row, Col, Card, Button, Badge, Form, 
   Alert, Modal, Table, InputGroup, Spinner, OverlayTrigger, Tooltip,
@@ -14,6 +14,7 @@ import {
   faCheckSquare, faSquare, faStickyNote, faBuilding, faUsersCog
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
+import { CharacterPortrait, CorporationLogo, AllianceLogo, GroupsBadges } from 'components/common';
 
 import {
   useUsers,
@@ -29,250 +30,6 @@ import {
   useUserGroups
 } from 'hooks/useUsers';
 
-const CharacterPortrait = ({ characterId, characterName, size = 32 }) => {
-  const [imageError, setImageError] = useState(false);
-  
-  const handleImageError = () => {
-    setImageError(true);
-  };
-  
-  if (imageError || !characterId) {
-    return (
-      <div 
-        className="rounded-circle bg-secondary d-flex align-items-center justify-content-center"
-        style={{ 
-          width: `${size}px`, 
-          height: `${size}px`
-        }}
-      >
-        <FontAwesomeIcon 
-          icon={faUser} 
-          className="text-white" 
-          size={size > 64 ? '2x' : 'sm'} 
-        />
-      </div>
-    );
-  }
-  
-  return (
-    <img
-      src={`https://images.evetech.net/characters/${characterId}/portrait?size=${size > 32 ? 256 : 64}`}
-      alt={characterName}
-      className="rounded-circle"
-      width={size}
-      height={size}
-      style={{ objectFit: 'cover' }}
-      onError={handleImageError}
-    />
-  );
-};
-
-const CorporationLogo = ({ corporationId, corporationName, size = 24 }) => {
-  const [imageError, setImageError] = useState(false);
-  
-  const handleImageError = () => {
-    setImageError(true);
-  };
-  
-  if (imageError || !corporationId) {
-    return (
-      <div 
-        className="rounded bg-light border d-flex align-items-center justify-content-center"
-        style={{ 
-          width: `${size}px`, 
-          height: `${size}px`
-        }}
-      >
-        <FontAwesomeIcon 
-          icon={faBuilding} 
-          className="text-muted" 
-          size="xs" 
-        />
-      </div>
-    );
-  }
-  
-  return (
-    <img
-      src={`https://images.evetech.net/corporations/${corporationId}/logo?size=${size > 24 ? 128 : 64}`}
-      alt={corporationName}
-      className="rounded border"
-      width={size}
-      height={size}
-      style={{ objectFit: 'cover' }}
-      onError={handleImageError}
-    />
-  );
-};
-
-const AllianceLogo = ({ allianceId, allianceName, size = 24 }) => {
-  const [imageError, setImageError] = useState(false);
-  
-  const handleImageError = () => {
-    setImageError(true);
-  };
-  
-  if (imageError || !allianceId) {
-    return (
-      <div 
-        className="rounded bg-light border d-flex align-items-center justify-content-center"
-        style={{ 
-          width: `${size}px`, 
-          height: `${size}px`
-        }}
-      >
-        <FontAwesomeIcon 
-          icon={faGlobe} 
-          className="text-muted" 
-          size="xs" 
-        />
-      </div>
-    );
-  }
-  
-  return (
-    <img
-      src={`https://images.evetech.net/alliances/${allianceId}/logo?size=${size > 24 ? 128 : 64}`}
-      alt={allianceName}
-      className="rounded border"
-      width={size}
-      height={size}
-      style={{ objectFit: 'cover' }}
-      onError={handleImageError}
-    />
-  );
-};
-
-const GroupsBadges = ({ userId, compact = false }) => {
-  const { data: userGroupsData, isLoading } = useUserGroups(userId);
-  
-  if (isLoading) {
-    return <Spinner size="sm" animation="border" className="text-muted" />;
-  }
-  
-  const groups = userGroupsData?.groups || [];
-  
-  if (!groups || !groups.length) {
-    return compact ? (
-      <span className="text-muted small">-</span>
-    ) : (
-      <small className="text-muted">No groups</small>
-    );
-  }
-  
-  if (compact) {
-    return (
-      <OverlayTrigger
-        placement="top"
-        overlay={
-          <Tooltip>
-            <div>
-              {groups.map((group, index) => (
-                <div key={group.id}>
-                  <FontAwesomeIcon icon={faUsersCog} className="me-1" />
-                  {group.name}
-                </div>
-              ))}
-            </div>
-          </Tooltip>
-        }
-      >
-        <div className="d-flex align-items-center">
-          <FontAwesomeIcon icon={faUsersCog} className="me-1 text-primary" size="xs" />
-          <small className="text-truncate" style={{ maxWidth: '60px' }}>
-            {groups.length === 1 ? groups[0].name : `${groups.length} groups`}
-          </small>
-        </div>
-      </OverlayTrigger>
-    );
-  }
-  
-  return (
-    <div className="d-flex flex-wrap gap-2">
-      {groups.map((group) => {
-        // Determine badge style based on group type
-        let badgeVariant = 'primary';
-        let badgeIcon = faUsersCog;
-        
-        switch (group.type) {
-          case 'system':
-            badgeVariant = 'success';
-            badgeIcon = faShieldAlt;
-            break;
-          case 'corporation':
-            badgeVariant = 'info';
-            badgeIcon = faBuilding;
-            break;
-          case 'alliance':
-            badgeVariant = 'warning';
-            badgeIcon = faGlobe;
-            break;
-          case 'custom':
-            badgeVariant = 'secondary';
-            badgeIcon = faUsersCog;
-            break;
-          default:
-            badgeVariant = 'primary';
-            badgeIcon = faUsersCog;
-        }
-        
-        return (
-          <Card 
-            key={group.id} 
-            className="border-0 shadow-sm" 
-            style={{ minWidth: '180px' }}
-          >
-            <Card.Body className="p-2">
-              <div className="d-flex align-items-center justify-content-between">
-                <div className="d-flex align-items-center flex-grow-1">
-                  <Badge 
-                    bg={badgeVariant} 
-                    className="me-2 d-flex align-items-center"
-                    style={{ fontSize: '0.75rem' }}
-                  >
-                    <FontAwesomeIcon icon={badgeIcon} className="me-1" size="xs" />
-                    {group.type}
-                  </Badge>
-                  <div>
-                    <div className="fw-semibold small text-truncate" style={{ maxWidth: '120px' }}>
-                      {group.name}
-                    </div>
-                    {group.description && (
-                      <div className="text-muted" style={{ fontSize: '0.7rem' }}>
-                        {group.description.length > 30 
-                          ? `${group.description.substring(0, 30)}...` 
-                          : group.description}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {!group.is_active && (
-                  <Badge bg="danger" className="ms-1" style={{ fontSize: '0.6rem' }}>
-                    Inactive
-                  </Badge>
-                )}
-              </div>
-              {(group.eve_entity_id || group.system_name) && (
-                <div className="mt-1">
-                  {group.eve_entity_id && (
-                    <small className="text-muted d-block">
-                      EVE ID: {group.eve_entity_id}
-                    </small>
-                  )}
-                  {group.system_name && (
-                    <small className="text-muted d-block">
-                      System: {group.system_name}
-                    </small>
-                  )}
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        );
-      })}
-    </div>
-  );
-};
 
 const UsersAdmin = () => {
   const [filters, setFilters] = useState({
@@ -343,6 +100,21 @@ const UsersAdmin = () => {
   const handleSearch = () => {
     setFilters(prev => ({ ...prev, search: searchTerm, page: 1 }));
   };
+
+  // Debounced auto-search functionality
+  const debouncedSearch = useCallback(() => {
+    const timer = setTimeout(() => {
+      setFilters(prev => ({ ...prev, search: searchTerm, page: 1 }));
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Auto-trigger search when searchTerm changes
+  useEffect(() => {
+    const cleanup = debouncedSearch();
+    return cleanup;
+  }, [debouncedSearch]);
 
   const handleOpenUserModal = (user) => {
     console.log('Selected user data:', user); // Debug log to see available fields
@@ -600,17 +372,31 @@ const UsersAdmin = () => {
       <Row className="mb-4">
         <Col lg={5}>
           <InputGroup>
+            <InputGroup.Text>
+              <FontAwesomeIcon icon={faSearch} className="text-muted" aria-hidden="true" />
+            </InputGroup.Text>
             <Form.Control
               type="text"
-              placeholder="Search users by character name, corporation, alliance..."
+              placeholder="Search users by character name, corporation, alliance... (auto-search)"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              aria-label="Search users by character name, corporation, or alliance"
+              aria-describedby="search-help"
             />
-            <Button variant="outline-secondary" onClick={handleSearch}>
-              <FontAwesomeIcon icon={faSearch} />
-            </Button>
+            {searchTerm && (
+              <Button 
+                variant="outline-secondary" 
+                onClick={() => setSearchTerm('')}
+                title="Clear search"
+                aria-label="Clear search input"
+              >
+                <FontAwesomeIcon icon={faTimes} aria-hidden="true" />
+              </Button>
+            )}
           </InputGroup>
+          <Form.Text id="search-help" className="sr-only">
+            Search automatically starts as you type. Results are filtered by character name, corporation, or alliance.
+          </Form.Text>
         </Col>
         <Col lg={7} className="text-end">
           <Form.Check
@@ -722,25 +508,40 @@ const UsersAdmin = () => {
                   No users found
                 </Alert>
               ) : (
-                <Table hover responsive size="sm" className="small">
+                <Table 
+                  hover 
+                  responsive 
+                  size="sm" 
+                  className="small"
+                  aria-label="Users management table"
+                  role="table"
+                >
+                  <caption className="sr-only">
+                    Table showing EVE Online users with their character information, status, corporation, alliance, groups, join dates, and available actions. Use checkboxes to select multiple users for bulk operations.
+                  </caption>
                   <thead>
-                    <tr>
-                      <th className="py-2 align-middle" style={{ width: '40px' }}>
+                    <tr role="row">
+                      <th 
+                        className="py-2 align-middle d-none d-sm-table-cell" 
+                        style={{ width: '40px' }}
+                        scope="col"
+                      >
                         <Form.Check
                           type="checkbox"
                           checked={filteredUsers.length > 0 && filteredUsers.every(user => selectedUsers.has(user.user_id || user.id))}
                           onChange={(e) => handleSelectAll(e.target.checked)}
+                          aria-label="Select all users"
                         />
                       </th>
-                      <th className="py-2 align-middle">Character</th>
-                      <th className="py-2 align-middle">Status</th>
-                      <th className="py-2 align-middle">Corporation</th>
-                      <th className="py-2 align-middle">Alliance</th>
-                      <th className="py-2 align-middle">Groups</th>
-                      <th className="py-2 align-middle">Joined</th>
-                      <th className="py-2 align-middle">Last Login</th>
-                      <th className="py-2 align-middle">Notes</th>
-                      <th className="py-2 align-middle">Actions</th>
+                      <th className="py-2 align-middle" scope="col">Character</th>
+                      <th className="py-2 align-middle" scope="col">Status</th>
+                      <th className="py-2 align-middle d-none d-md-table-cell" scope="col">Corporation</th>
+                      <th className="py-2 align-middle d-none d-lg-table-cell" scope="col">Alliance</th>
+                      <th className="py-2 align-middle d-none d-xl-table-cell" scope="col">Groups</th>
+                      <th className="py-2 align-middle d-none d-lg-table-cell" scope="col">Joined</th>
+                      <th className="py-2 align-middle d-none d-xl-table-cell" scope="col">Last Login</th>
+                      <th className="py-2 align-middle d-none d-lg-table-cell" scope="col">Notes</th>
+                      <th className="py-2 align-middle" scope="col">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -750,12 +551,13 @@ const UsersAdmin = () => {
                       // Create a truly unique key by combining available identifiers
                       const uniqueKey = `${userId || 'no-id'}-${user.character_id || 'no-char'}-${index}`;
                       return (
-                        <tr key={uniqueKey}>
-                          <td className="py-2 align-middle">
+                        <tr key={uniqueKey} role="row">
+                          <td className="py-2 align-middle d-none d-sm-table-cell" role="cell">
                             <Form.Check
                               type="checkbox"
                               checked={selectedUsers.has(userId)}
                               onChange={(e) => handleSelectUser(userId, e.target.checked)}
+                              aria-label={`Select user ${user.character_name || 'Unknown'}`}
                             />
                           </td>
                           <td className="py-2 align-middle">
@@ -779,19 +581,32 @@ const UsersAdmin = () => {
                                   </div>
                                 )}
                               </div>
-                              <div>
+                              <div className="flex-grow-1">
                                 <div className="fw-bold">{user.character_name}</div>
-                                <small className="text-muted">ID: {user.character_id || 'N/A'}</small>
+                                <div className="d-flex flex-wrap gap-1 align-items-center mt-1">
+                                  <small className="text-muted">ID: {user.character_id || 'N/A'}</small>
+                                  <Badge bg={statusInfo.color} className="d-sm-none" style={{fontSize: '0.65rem'}}>
+                                    <FontAwesomeIcon icon={statusInfo.icon} className="me-1" size="xs" />
+                                    {statusInfo.label}
+                                  </Badge>
+                                </div>
+                                <div className="d-md-none mt-1">
+                                  <small className="text-muted">
+                                    {user.corporation_name && (
+                                      <><FontAwesomeIcon icon={faBuilding} className="me-1" />{user.corporation_name}</>
+                                    )}
+                                  </small>
+                                </div>
                               </div>
                             </div>
                           </td>
-                          <td className="py-2 align-middle">
+                          <td className="py-2 align-middle d-none d-sm-table-cell">
                             <Badge bg={statusInfo.color} className="small">
                               <FontAwesomeIcon icon={statusInfo.icon} className="me-1" size="xs" />
                               {statusInfo.label}
                             </Badge>
                           </td>
-                          <td className="py-2 align-middle">
+                          <td className="py-2 align-middle d-none d-md-table-cell">
                             <div className="d-flex align-items-center">
                               {user.corporation_id && (
                                 <div className="me-2" style={{ width: '24px', height: '24px', flexShrink: 0 }}>
@@ -807,7 +622,7 @@ const UsersAdmin = () => {
                               </span>
                             </div>
                           </td>
-                          <td className="py-2 align-middle">
+                          <td className="py-2 align-middle d-none d-lg-table-cell">
                             <div className="d-flex align-items-center">
                               {user.alliance_id && (
                                 <div className="me-2" style={{ width: '24px', height: '24px', flexShrink: 0 }}>
@@ -823,16 +638,16 @@ const UsersAdmin = () => {
                               </span>
                             </div>
                           </td>
-                          <td className="py-2 align-middle">
+                          <td className="py-2 align-middle d-none d-xl-table-cell">
                             <GroupsBadges userId={user.user_id || user.id} compact={true} />
                           </td>
-                          <td className="py-2 align-middle">
+                          <td className="py-2 align-middle d-none d-lg-table-cell">
                             {formatDate(user.created_at)}
                           </td>
-                          <td className="py-2 align-middle">
+                          <td className="py-2 align-middle d-none d-xl-table-cell">
                             {formatDate(user.last_login)}
                           </td>
-                          <td className="py-2 align-middle">
+                          <td className="py-2 align-middle d-none d-lg-table-cell">
                             <span className="text-truncate d-inline-block" style={{ maxWidth: '150px' }}>
                               {user.notes ? (
                                 <OverlayTrigger placement="top" overlay={<Tooltip>{user.notes}</Tooltip>}>
@@ -847,62 +662,104 @@ const UsersAdmin = () => {
                             </span>
                           </td>
                           <td className="py-2 align-middle">
-                            <ButtonGroup size="sm">
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip>View Details</Tooltip>}
-                              >
-                                <Button
-                                  variant="outline-info"
-                                  onClick={() => handleOpenUserModal(user)}
+                            {/* Desktop Actions */}
+                            <div className="d-none d-md-flex">
+                              <ButtonGroup size="sm">
+                                <OverlayTrigger
+                                  placement="top"
+                                  overlay={<Tooltip>View Details</Tooltip>}
                                 >
-                                  <FontAwesomeIcon icon={faEye} size="xs" />
-                                </Button>
-                              </OverlayTrigger>
+                                  <Button
+                                    variant="outline-info"
+                                    onClick={() => handleOpenUserModal(user)}
+                                    aria-label={`View details for ${user.character_name || 'Unknown'}`}
+                                  >
+                                    <FontAwesomeIcon icon={faEye} size="xs" aria-hidden="true" />
+                                  </Button>
+                                </OverlayTrigger>
 
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip>Edit User</Tooltip>}
-                              >
-                                <Button
-                                  variant="outline-warning"
-                                  onClick={() => handleOpenEditModal(user)}
+                                <OverlayTrigger
+                                  placement="top"
+                                  overlay={<Tooltip>Edit User</Tooltip>}
                                 >
-                                  <FontAwesomeIcon icon={faEdit} size="xs" />
-                                </Button>
-                              </OverlayTrigger>
+                                  <Button
+                                    variant="outline-warning"
+                                    onClick={() => handleOpenEditModal(user)}
+                                    aria-label={`Edit user ${user.character_name || 'Unknown'}`}
+                                  >
+                                    <FontAwesomeIcon icon={faEdit} size="xs" aria-hidden="true" />
+                                  </Button>
+                                </OverlayTrigger>
 
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip>Refresh Data</Tooltip>}
-                              >
-                                <Button
-                                  variant="outline-secondary"
-                                  onClick={() => handleRefreshUserData(userId)}
-                                  disabled={refreshDataMutation.isPending}
+                                <OverlayTrigger
+                                  placement="top"
+                                  overlay={<Tooltip>Refresh Data</Tooltip>}
                                 >
-                                  <FontAwesomeIcon icon={faSync} size="xs" />
-                                </Button>
-                              </OverlayTrigger>
+                                  <Button
+                                    variant="outline-secondary"
+                                    onClick={() => handleRefreshUserData(userId)}
+                                    disabled={refreshDataMutation.isPending}
+                                    aria-label={`Refresh data for ${user.character_name || 'Unknown'}`}
+                                  >
+                                    <FontAwesomeIcon icon={faSync} size="xs" aria-hidden="true" />
+                                  </Button>
+                                </OverlayTrigger>
 
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip>Delete User</Tooltip>}
-                              >
-                                <Button
-                                  variant="outline-danger"
-                                  onClick={() => handleOpenDeleteModal(user)}
-                                  disabled={deleteUserMutation.isPending}
+                                <OverlayTrigger
+                                  placement="top"
+                                  overlay={<Tooltip>Delete User</Tooltip>}
                                 >
-                                  <FontAwesomeIcon icon={faTrash} size="xs" />
-                                </Button>
-                              </OverlayTrigger>
+                                  <Button
+                                    variant="outline-danger"
+                                    onClick={() => handleOpenDeleteModal(user)}
+                                    disabled={deleteUserMutation.isPending}
+                                    aria-label={`Delete user ${user.character_name || 'Unknown'}`}
+                                  >
+                                    <FontAwesomeIcon icon={faTrash} size="xs" aria-hidden="true" />
+                                  </Button>
+                                </OverlayTrigger>
 
+                                <Dropdown>
+                                  <Dropdown.Toggle 
+                                    variant="outline-primary" 
+                                    size="sm"
+                                    aria-label={`Change status for ${user.character_name || 'Unknown'}`}
+                                  >
+                                    <FontAwesomeIcon icon={faUserEdit} size="xs" aria-hidden="true" />
+                                  </Dropdown.Toggle>
+                                  <Dropdown.Menu>
+                                    {userStatuses.map(status => (
+                                      <Dropdown.Item
+                                        key={status.value}
+                                        onClick={() => handleStatusChange(user, status.value)}
+                                        className={user.status === status.value ? 'active' : ''}
+                                      >
+                                        <FontAwesomeIcon icon={status.icon} className="me-2" />
+                                        {status.label}
+                                      </Dropdown.Item>
+                                    ))}
+                                  </Dropdown.Menu>
+                                </Dropdown>
+                              </ButtonGroup>
+                            </div>
+
+                            {/* Mobile Actions */}
+                            <div className="d-md-none">
                               <Dropdown>
                                 <Dropdown.Toggle variant="outline-primary" size="sm">
                                   <FontAwesomeIcon icon={faUserEdit} size="xs" />
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu>
+                                  <Dropdown.Item onClick={() => handleOpenUserModal(user)}>
+                                    <FontAwesomeIcon icon={faEye} className="me-2" />
+                                    View Details
+                                  </Dropdown.Item>
+                                  <Dropdown.Item onClick={() => handleOpenEditModal(user)}>
+                                    <FontAwesomeIcon icon={faEdit} className="me-2" />
+                                    Edit User
+                                  </Dropdown.Item>
+                                  <Dropdown.Divider />
+                                  <Dropdown.Header>Change Status</Dropdown.Header>
                                   {userStatuses.map(status => (
                                     <Dropdown.Item
                                       key={status.value}
@@ -913,9 +770,25 @@ const UsersAdmin = () => {
                                       {status.label}
                                     </Dropdown.Item>
                                   ))}
+                                  <Dropdown.Divider />
+                                  <Dropdown.Item 
+                                    onClick={() => handleRefreshUserData(userId)}
+                                    disabled={refreshDataMutation.isPending}
+                                  >
+                                    <FontAwesomeIcon icon={faSync} className="me-2" />
+                                    Refresh Data
+                                  </Dropdown.Item>
+                                  <Dropdown.Item 
+                                    onClick={() => handleOpenDeleteModal(user)}
+                                    disabled={deleteUserMutation.isPending}
+                                    className="text-danger"
+                                  >
+                                    <FontAwesomeIcon icon={faTrash} className="me-2" />
+                                    Delete User
+                                  </Dropdown.Item>
                                 </Dropdown.Menu>
                               </Dropdown>
-                            </ButtonGroup>
+                            </div>
                           </td>
                         </tr>
                       );
