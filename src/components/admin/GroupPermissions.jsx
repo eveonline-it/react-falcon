@@ -40,9 +40,21 @@ const GroupPermissions = ({ group, onClose }) => {
   const permissions = groupPermissions?.permissions || [];
   const availablePerms = availablePermissions?.permissions || [];
 
+  // Debug logging to help identify data structure issues
+  React.useEffect(() => {
+    if (groupPermissions && availablePermissions) {
+      console.log('Group permissions data:', {
+        groupPermissions,
+        firstPermission: permissions[0],
+        availablePermissions,
+        firstAvailable: availablePerms[0]
+      });
+    }
+  }, [groupPermissions, availablePermissions]);
+
   // Get permissions not already granted to this group
   const unassignedPermissions = availablePerms.filter(
-    perm => !permissions.find(gp => gp.id === perm.id)
+    perm => !permissions.find(gp => gp.permission_id === perm.id || gp.permission?.id === perm.id)
   );
 
   // Filter available permissions for the grant modal
@@ -97,7 +109,7 @@ const GroupPermissions = ({ group, onClose }) => {
     try {
       await revokeMutation.mutateAsync({
         groupId: group.id,
-        permissionId: permissionToRevoke.id
+        permissionId: permissionToRevoke.permission_id || permissionToRevoke.permission?.id || permissionToRevoke.id
       });
       setShowRevokeConfirm(false);
       setPermissionToRevoke(null);
@@ -172,50 +184,53 @@ const GroupPermissions = ({ group, onClose }) => {
                 </tr>
               </thead>
               <tbody>
-                {permissions.map((permission) => (
-                  <tr key={permission.id}>
-                    <td>
-                      <div>
-                        <div className="fw-bold">{permission.name}</div>
-                        {permission.description && (
-                          <small className="text-muted">{permission.description}</small>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <Badge bg={getServiceColor(permission.service)} className="small">
-                        {permission.service}
-                      </Badge>
-                    </td>
-                    <td>
-                      <code className="small">{permission.resource || '-'}</code>
-                    </td>
-                    <td>
-                      <code className="small">{permission.action || '-'}</code>
-                    </td>
-                    <td>
-                      <Badge 
-                        bg={permission.is_static ? 'secondary' : 'success'} 
-                        className="small"
-                      >
-                        {permission.is_static ? 'Static' : 'Dynamic'}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => {
-                          setPermissionToRevoke(permission);
-                          setShowRevokeConfirm(true);
-                        }}
-                        disabled={revokeMutation.isPending}
-                      >
-                        <FontAwesomeIcon icon={faTrash} size="xs" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {permissions.map((groupPermission) => {
+                  const permission = groupPermission.permission || groupPermission;
+                  return (
+                    <tr key={groupPermission.id}>
+                      <td>
+                        <div>
+                          <div className="fw-bold">{permission.name}</div>
+                          {permission.description && (
+                            <small className="text-muted">{permission.description}</small>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <Badge bg={getServiceColor(permission.service)} className="small">
+                          {permission.service}
+                        </Badge>
+                      </td>
+                      <td>
+                        <code className="small">{permission.resource || '-'}</code>
+                      </td>
+                      <td>
+                        <code className="small">{permission.action || '-'}</code>
+                      </td>
+                      <td>
+                        <Badge 
+                          bg={permission.is_static ? 'secondary' : 'success'} 
+                          className="small"
+                        >
+                          {permission.is_static ? 'Static' : 'Dynamic'}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => {
+                            setPermissionToRevoke(groupPermission);
+                            setShowRevokeConfirm(true);
+                          }}
+                          disabled={revokeMutation.isPending}
+                        >
+                          <FontAwesomeIcon icon={faTrash} size="xs" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </Table>
           )}
@@ -362,7 +377,7 @@ const GroupPermissions = ({ group, onClose }) => {
         <Modal.Body>
           <Alert variant="warning">
             <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-            Are you sure you want to revoke the permission <strong>{permissionToRevoke?.name}</strong> from group <strong>{group?.name}</strong>?
+            Are you sure you want to revoke the permission <strong>{permissionToRevoke?.permission?.name || permissionToRevoke?.name}</strong> from group <strong>{group?.name}</strong>?
             <div className="mt-2 small">
               This will remove the permission from all members of this group.
             </div>
