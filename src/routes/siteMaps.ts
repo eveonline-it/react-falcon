@@ -242,6 +242,11 @@ export const pagesRoutes: RouteGroup = {
           active: true
         },
         {
+          name: 'Characters',
+          to: paths.userCharacters,
+          active: true
+        },
+        {
           name: 'Settings',
           to: paths.userSettings,
           active: true

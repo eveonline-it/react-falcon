@@ -1,0 +1,103 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
+
+const BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.it';
+
+// Fetch user characters
+const fetchUserCharacters = async (userId) => {
+  if (!userId) {
+    throw new Error('User ID is required');
+  }
+  
+  const response = await fetch(`${BASE_URL}/users/${userId}/characters`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to fetch user characters: ${response.status}`);
+  }
+
+  const data = await response.json();
+  console.log('User characters API response:', data);
+  
+  // Handle different response structures
+  if (Array.isArray(data)) {
+    return data;
+  } else if (data && data.characters && Array.isArray(data.characters)) {
+    return data.characters;
+  } else if (data && Array.isArray(data.data)) {
+    return data.data;
+  }
+  
+  // If no array found, return empty array
+  console.log('No characters found or unexpected response structure');
+  return [];
+};
+
+// Update character positions
+const updateCharacterPositions = async ({ userId, updates }) => {
+  if (!userId || !updates || !Array.isArray(updates)) {
+    throw new Error('User ID and updates array are required');
+  }
+  
+  console.log(`Making PUT request to ${BASE_URL}/users/${userId}/characters/positions with updates:`, updates);
+  
+  const response = await fetch(`${BASE_URL}/users/${userId}/characters/positions`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ updates }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    console.error('Update character positions failed:', response.status, errorData);
+    throw new Error(errorData.error || errorData.message || `Failed to update character positions: ${response.status}`);
+  }
+
+  const result = await response.json();
+  console.log('Update character positions success:', result);
+  return result;
+};
+
+// Hook for fetching user characters
+export const useUserCharacters = (userId, options = {}) => {
+  return useQuery({
+    queryKey: ['user', userId, 'characters'],
+    queryFn: () => fetchUserCharacters(userId),
+    enabled: !!userId,
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+    refetchOnWindowFocus: false,
+    ...options,
+  });
+};
+
+// Hook for updating character positions
+export const useUpdateCharacterPositions = (options = {}) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: updateCharacterPositions,
+    onSuccess: (updatedData, { userId }) => {
+      // Invalidate and refetch user characters
+      queryClient.invalidateQueries({ 
+        queryKey: ['user', userId, 'characters'],
+        refetchType: 'active',
+      });
+      
+      console.log('Character positions updated successfully');
+    },
+    onError: (error) => {
+      console.error('Failed to update character positions:', error);
+      toast.error(`Failed to update character positions: ${error.message}`);
+    },
+    ...options,
+  });
+};

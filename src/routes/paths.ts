@@ -105,6 +105,7 @@ export interface AppPaths {
   reports: string;
   userProfile: string;
   userSettings: string;
+  userCharacters: string;
   pricingDefault: string;
   pricingAlt: string;
   faqAlt: string;
@@ -267,6 +268,7 @@ const paths: AppPaths = {
   reports: `/${rootPaths.supportDeskRoot}/reports`,
   userProfile: `/${rootPaths.userRoot}/profile`,
   userSettings: `/${rootPaths.userRoot}/settings`,
+  userCharacters: `/${rootPaths.userRoot}/characters`,
   pricingDefault: `/${rootPaths.pricingRoot}/pricing-default`,
   pricingAlt: `/${rootPaths.pricingRoot}/pricing-alt`,
   faqAlt: `/${rootPaths.faqRoot}/faq-alt`,
