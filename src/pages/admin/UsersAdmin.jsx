@@ -617,9 +617,12 @@ const UsersAdmin = () => {
                                   />
                                 </div>
                               )}
-                              <span className="text-truncate" style={{ maxWidth: '130px' }}>
-                                {user.corporation_name || '-'}
-                              </span>
+                              <div className="d-flex flex-column text-truncate" style={{ maxWidth: '130px' }}>
+                                <span>{user.corporation_name || '-'}</span>
+                                {user.corporation_ticker && (
+                                  <small className="text-muted">[{user.corporation_ticker}]</small>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="py-2 align-middle d-none d-lg-table-cell">
@@ -633,9 +636,12 @@ const UsersAdmin = () => {
                                   />
                                 </div>
                               )}
-                              <span className="text-truncate" style={{ maxWidth: '130px' }}>
-                                {user.alliance_name || '-'}
-                              </span>
+                              <div className="d-flex flex-column text-truncate" style={{ maxWidth: '130px' }}>
+                                <span>{user.alliance_name || '-'}</span>
+                                {user.alliance_ticker && (
+                                  <small className="text-muted">[{user.alliance_ticker}]</small>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="py-2 align-middle d-none d-xl-table-cell">
@@ -856,28 +862,28 @@ const UsersAdmin = () => {
                   </div>
                   <div className="mt-2">
                     <h5 className="mb-1">{selectedUser.character_name}</h5>
-                    {selectedUser.corporation_name && (
+                    {(enrichedUser?.corporation_name || selectedUser.corporation_name) && (
                       <div className="d-flex align-items-center justify-content-center mb-1">
-                        {selectedUser.corporation_id && (
+                        {(enrichedUser?.corporation_id || selectedUser.corporation_id) && (
                           <CorporationLogo 
-                            corporationId={selectedUser.corporation_id}
-                            corporationName={selectedUser.corporation_name}
+                            corporationId={enrichedUser?.corporation_id || selectedUser.corporation_id}
+                            corporationName={enrichedUser?.corporation_name || selectedUser.corporation_name}
                             size={20}
                           />
                         )}
-                        <small className="text-muted ms-2">{selectedUser.corporation_name}</small>
+                        <small className="text-muted ms-2">{enrichedUser?.corporation_name || selectedUser.corporation_name}</small>
                       </div>
                     )}
-                    {selectedUser.alliance_name && (
+                    {(enrichedUser?.alliance_name || selectedUser.alliance_name) && (
                       <div className="d-flex align-items-center justify-content-center">
-                        {selectedUser.alliance_id && (
+                        {(enrichedUser?.alliance_id || selectedUser.alliance_id) && (
                           <AllianceLogo 
-                            allianceId={selectedUser.alliance_id}
-                            allianceName={selectedUser.alliance_name}
+                            allianceId={enrichedUser?.alliance_id || selectedUser.alliance_id}
+                            allianceName={enrichedUser?.alliance_name || selectedUser.alliance_name}
                             size={18}
                           />
                         )}
-                        <small className="text-muted ms-2">{selectedUser.alliance_name}</small>
+                        <small className="text-muted ms-2">{enrichedUser?.alliance_name || selectedUser.alliance_name}</small>
                       </div>
                     )}
                   </div>
@@ -901,16 +907,16 @@ const UsersAdmin = () => {
                         <td><strong>Corporation ID:</strong></td>
                         <td>
                           <div className="d-flex align-items-center">
-                            {selectedUser.corporation_id && (
+                            {(enrichedUser?.corporation_id || selectedUser.corporation_id) && (
                               <div className="me-2">
                                 <CorporationLogo 
-                                  corporationId={selectedUser.corporation_id}
-                                  corporationName={selectedUser.corporation_name}
+                                  corporationId={enrichedUser?.corporation_id || selectedUser.corporation_id}
+                                  corporationName={enrichedUser?.corporation_name || selectedUser.corporation_name}
                                   size={16}
                                 />
                               </div>
                             )}
-                            <span>{selectedUser.corporation_id || 'Not available'}</span>
+                            <span>{enrichedUser?.corporation_id || selectedUser.corporation_id || 'Not available'}</span>
                           </div>
                         </td>
                       </tr>
@@ -918,33 +924,50 @@ const UsersAdmin = () => {
                         <td><strong>Corporation Name:</strong></td>
                         <td>
                           <div className="d-flex align-items-center">
-                            {selectedUser.corporation_id && (
+                            {(enrichedUser?.corporation_id || selectedUser.corporation_id) && (
                               <div className="me-2">
                                 <CorporationLogo 
-                                  corporationId={selectedUser.corporation_id}
-                                  corporationName={selectedUser.corporation_name}
+                                  corporationId={enrichedUser?.corporation_id || selectedUser.corporation_id}
+                                  corporationName={enrichedUser?.corporation_name || selectedUser.corporation_name}
                                   size={20}
                                 />
                               </div>
                             )}
-                            <span>{selectedUser.corporation_name || 'Not available'}</span>
+                            <div className="d-flex flex-column">
+                              <span>{enrichedUser?.corporation_name || selectedUser.corporation_name || 'Not available'}</span>
+                              {(enrichedUser?.corporation_ticker || selectedUser.corporation_ticker) && (
+                                <small className="text-muted">[{enrichedUser?.corporation_ticker || selectedUser.corporation_ticker}]</small>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>
+                      {(enrichedUser?.corporation_member_count || selectedUser.corporation_member_count) && (
+                        <tr>
+                          <td><strong>Corporation Members:</strong></td>
+                          <td>{(enrichedUser?.corporation_member_count || selectedUser.corporation_member_count).toLocaleString()}</td>
+                        </tr>
+                      )}
+                      {(enrichedUser?.corporation_tax_rate !== undefined || selectedUser.corporation_tax_rate !== undefined) && (
+                        <tr>
+                          <td><strong>Corporation Tax Rate:</strong></td>
+                          <td>{((enrichedUser?.corporation_tax_rate ?? selectedUser.corporation_tax_rate) * 100).toFixed(1)}%</td>
+                        </tr>
+                      )}
                       <tr>
                         <td><strong>Alliance ID:</strong></td>
                         <td>
                           <div className="d-flex align-items-center">
-                            {selectedUser.alliance_id && (
+                            {(enrichedUser?.alliance_id || selectedUser.alliance_id) && (
                               <div className="me-2">
                                 <AllianceLogo 
-                                  allianceId={selectedUser.alliance_id}
-                                  allianceName={selectedUser.alliance_name}
+                                  allianceId={enrichedUser?.alliance_id || selectedUser.alliance_id}
+                                  allianceName={enrichedUser?.alliance_name || selectedUser.alliance_name}
                                   size={16}
                                 />
                               </div>
                             )}
-                            <span>{selectedUser.alliance_id || 'Not available'}</span>
+                            <span>{enrichedUser?.alliance_id || selectedUser.alliance_id || 'Not available'}</span>
                           </div>
                         </td>
                       </tr>
@@ -952,31 +975,52 @@ const UsersAdmin = () => {
                         <td><strong>Alliance Name:</strong></td>
                         <td>
                           <div className="d-flex align-items-center">
-                            {selectedUser.alliance_id && (
+                            {(enrichedUser?.alliance_id || selectedUser.alliance_id) && (
                               <div className="me-2">
                                 <AllianceLogo 
-                                  allianceId={selectedUser.alliance_id}
-                                  allianceName={selectedUser.alliance_name}
+                                  allianceId={enrichedUser?.alliance_id || selectedUser.alliance_id}
+                                  allianceName={enrichedUser?.alliance_name || selectedUser.alliance_name}
                                   size={20}
                                 />
                               </div>
                             )}
-                            <span>{selectedUser.alliance_name || 'Not available'}</span>
+                            <div className="d-flex flex-column">
+                              <span>{enrichedUser?.alliance_name || selectedUser.alliance_name || 'Not available'}</span>
+                              {(enrichedUser?.alliance_ticker || selectedUser.alliance_ticker) && (
+                                <small className="text-muted">[{enrichedUser?.alliance_ticker || selectedUser.alliance_ticker}]</small>
+                              )}
+                            </div>
                           </div>
                         </td>
                       </tr>
                       <tr>
                         <td><strong>Security Status:</strong></td>
                         <td>
-                          {selectedUser.security_status !== undefined && selectedUser.security_status !== null 
-                            ? selectedUser.security_status.toFixed(2) 
+                          {(enrichedUser?.security_status !== undefined && enrichedUser?.security_status !== null) || (selectedUser.security_status !== undefined && selectedUser.security_status !== null)
+                            ? (enrichedUser?.security_status ?? selectedUser.security_status).toFixed(2) 
                             : 'Not available'}
                         </td>
                       </tr>
                       <tr>
                         <td><strong>Birthday:</strong></td>
-                        <td>{selectedUser.birthday ? formatDate(selectedUser.birthday) : 'Not available'}</td>
+                        <td>{(enrichedUser?.birthday || selectedUser.birthday) ? formatDate(enrichedUser?.birthday || selectedUser.birthday) : 'Not available'}</td>
                       </tr>
+                      {(enrichedUser?.gender || selectedUser.gender) && (
+                        <tr>
+                          <td><strong>Gender:</strong></td>
+                          <td>{enrichedUser?.gender || selectedUser.gender}</td>
+                        </tr>
+                      )}
+                      {(enrichedUser?.description || selectedUser.description) && (
+                        <tr>
+                          <td><strong>Description:</strong></td>
+                          <td>
+                            <div style={{ maxWidth: '300px', wordWrap: 'break-word', whiteSpace: 'pre-wrap' }}>
+                              {enrichedUser?.description || selectedUser.description}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </Table>
                 </Col>
