@@ -43,3 +43,6 @@ public/tinymce
 
 # OS files
 Thumbs.db
+
+# CLAUDE
+CLAUDE-*.md
