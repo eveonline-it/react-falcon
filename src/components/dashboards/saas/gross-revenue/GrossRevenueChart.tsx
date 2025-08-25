@@ -30,10 +30,11 @@ const months = [
 
 const dates = month => {
   return getDates(
-    dayjs().month(months.indexOf(month)).date(1),
+    dayjs().month(months.indexOf(month)).date(1).toDate(),
     dayjs()
       .month(Number(months.indexOf(month)) + 1)
-      .date(0),
+      .date(0)
+      .toDate(),
     1000 * 60 * 60 * 24 * 3
   );
 };

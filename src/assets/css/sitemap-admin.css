@@ -1,0 +1,84 @@
+.route-list {
+  transition: background-color 0.2s ease;
+  border-radius: 0.25rem;
+}
+
+.route-list.bg-light {
+  background-color: rgba(0, 123, 255, 0.1) !important;
+  border: 2px dashed #007bff;
+}
+
+.cursor-move {
+  cursor: move !important;
+}
+
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+/* Dark mode styles */
+[data-bs-theme="dark"] .route-list.bg-light {
+  background-color: rgba(13, 110, 253, 0.15) !important;
+  border-color: #0d6efd;
+}
+
+/* Drag handle hover effect */
+.fa-bars:hover {
+  color: #007bff !important;
+}
+
+[data-bs-theme="dark"] .fa-bars:hover {
+  color: #0d6efd !important;
+}
+
+/* Table drag effects */
+.table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover .fa-bars {
+  opacity: 1;
+  color: #007bff;
+}
+
+.fa-bars {
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+
+/* Group expansion animation */
+.card-header .fa-chevron-right,
+.card-header .fa-chevron-down {
+  transition: transform 0.2s ease;
+}
+
+/* Badge animations */
+.badge {
+  transition: all 0.2s ease;
+}
+
+/* Switch animation improvements */
+.form-check-input {
+  transition: all 0.2s ease;
+}
+
+/* Modal form improvements */
+.modal-body .form-group {
+  margin-bottom: 1rem;
+}
+
+.modal-body .form-label {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+  
+  .btn-group .btn {
+    padding: 0.25rem 0.5rem;
+  }
+}

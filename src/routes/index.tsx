@@ -78,7 +78,7 @@ const DarkMode = lazy(() => import('docs/documentation/DarkMode'));
 const Plugins = lazy(() => import('docs/documentation/Plugins'));
 const Styling = lazy(() => import('docs/documentation/Styling'));
 const DesignFile = lazy(() => import('docs/documentation/DesignFile'));
-const Starter = lazy(() => import('pages/Starter'));
+const TestSitemap = lazy(() => import('pages/Starter'));
 const AnimatedIcons = lazy(() => import('docs/components/AnimatedIcons'));
 const DatePicker = lazy(() => import('docs/components/DatePicker'));
 const FontAwesome = lazy(() => import('docs/components/FontAwesome'));
@@ -175,6 +175,7 @@ const AllianceAdmin = lazy(() => import('pages/admin/AllianceAdmin'));
 const GroupsAdmin = lazy(() => import('pages/admin/GroupsAdmin'));
 const UsersAdmin = lazy(() => import('pages/admin/UsersAdmin'));
 const PermissionsAdmin = lazy(() => import('pages/admin/PermissionsAdmin'));
+const SitemapAdmin = lazy(() => import('pages/admin/SitemapAdmin'));
 const Characters = lazy(() => import('pages/user/Characters'));
 
 const routes: RouteObject[] = [
@@ -377,8 +378,8 @@ const routes: RouteObject[] = [
             path: rootPaths.pagesRoot,
             children: [
               {
-                path: paths.starter,
-                element: <Starter />
+                path: paths.testSitemap,
+                element: <TestSitemap />
               }
             ]
           },
@@ -1101,6 +1102,14 @@ const routes: RouteObject[] = [
                 element: (
                   <Suspense key="permissions-admin" fallback={<FalconLoader />}>
                     <PermissionsAdmin />
+                  </Suspense>
+                )
+              },
+              {
+                path: paths.sitemapAdmin,
+                element: (
+                  <Suspense key="sitemap-admin" fallback={<FalconLoader />}>
+                    <SitemapAdmin />
                   </Suspense>
                 )
               }

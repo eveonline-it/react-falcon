@@ -1,4 +1,5 @@
 import paths, { rootPaths } from './paths';
+import { sitemapService } from '../services/sitemapService';
 
 export interface Badge {
   type: string;
@@ -208,9 +209,9 @@ export const pagesRoutes: RouteGroup = {
   label: 'pages',
   children: [
     {
-      name: 'Starter',
-      icon: 'flag',
-      to: paths.starter,
+      name: 'Test Sitemap',
+      icon: 'vial',
+      to: paths.testSitemap,
       active: true
     },
     {
@@ -1079,6 +1080,12 @@ export const adminRoutes: RouteGroup = {
       active: true
     },
     {
+      name: 'Sitemap',
+      icon: 'map',
+      to: paths.sitemapAdmin,
+      active: true
+    },
+    {
       name: 'Settings',
       icon: 'cog',
       active: true,
@@ -1170,7 +1177,8 @@ export const documentationRoutes: RouteGroup = {
   ]
 };
 
-const routeGroups: RouteGroup[] = [
+// Static fallback route groups
+const staticRouteGroups: RouteGroup[] = [
   dashboardRoutes,
   adminRoutes,
   appRoutes,
@@ -1178,5 +1186,50 @@ const routeGroups: RouteGroup[] = [
   modulesRoutes,
   documentationRoutes
 ];
+
+// Dynamic route groups from backend
+let dynamicRouteGroups: RouteGroup[] | null = null;
+let isLoadingDynamicRoutes = false;
+
+export async function loadDynamicRouteGroups(): Promise<RouteGroup[]> {
+  if (dynamicRouteGroups) {
+    return dynamicRouteGroups;
+  }
+
+  if (isLoadingDynamicRoutes) {
+    // Wait for ongoing load to complete
+    while (isLoadingDynamicRoutes) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    return dynamicRouteGroups || staticRouteGroups;
+  }
+
+  isLoadingDynamicRoutes = true;
+
+  try {
+    dynamicRouteGroups = await sitemapService.generateRouteGroups();
+    console.info('Successfully loaded dynamic route groups from backend');
+    return dynamicRouteGroups;
+  } catch (error) {
+    console.warn('Failed to load dynamic routes, falling back to static routes:', error);
+    dynamicRouteGroups = staticRouteGroups;
+    return staticRouteGroups;
+  } finally {
+    isLoadingDynamicRoutes = false;
+  }
+}
+
+// Get route groups (sync function that returns static routes if dynamic not loaded)
+export function getRouteGroups(): RouteGroup[] {
+  return dynamicRouteGroups || staticRouteGroups;
+}
+
+// Initialize dynamic routes on module load (non-blocking)
+loadDynamicRouteGroups().catch(error => {
+  console.warn('Initial dynamic route loading failed:', error);
+});
+
+// For backward compatibility, export static routes by default
+const routeGroups: RouteGroup[] = staticRouteGroups;
 
 export default routeGroups;

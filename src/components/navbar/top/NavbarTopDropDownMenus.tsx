@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import NavbarDropdown from './NavbarDropdown';
 import {
   dashboardRoutes,
   appRoutes,
   pagesRoutes,
   modulesRoutes,
-  documentationRoutes
+  documentationRoutes,
+  loadDynamicRouteGroups,
+  RouteGroup
 } from 'routes/siteMaps';
+import { sitemapService } from '../../../services/sitemapService';
 import { Dropdown } from 'react-bootstrap';
 import { Link } from 'react-router';
 import { flatRoutes } from 'helpers/utils';
@@ -16,10 +19,64 @@ import NavbarDropdownModules from './NavbarDropdownModules';
 import { useAppContext } from 'providers/AppProvider';
 
 const NavbarTopDropDownMenus = () => {
+  const [routeGroups, setRouteGroups] = useState<RouteGroup[]>([
+    dashboardRoutes,
+    appRoutes,
+    pagesRoutes,
+    modulesRoutes,
+    documentationRoutes
+  ]);
+  const [isLoadingRoutes, setIsLoadingRoutes] = useState(false);
+
   const {
     config: { navbarCollapsed, showBurgerMenu },
     setConfig
   } = useAppContext();
+
+  // Load dynamic routes from backend
+  const loadRoutes = async () => {
+    if (isLoadingRoutes) return;
+    
+    setIsLoadingRoutes(true);
+    try {
+      const dynamicRoutes = await loadDynamicRouteGroups();
+      setRouteGroups(dynamicRoutes);
+    } catch (error) {
+      console.warn('Failed to load dynamic routes in NavbarTopDropDownMenus, using static fallback:', error);
+      // Keep static routes as fallback
+    } finally {
+      setIsLoadingRoutes(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRoutes();
+  }, []);
+
+  // Subscribe to sitemap changes to reload navigation
+  useEffect(() => {
+    const unsubscribe = sitemapService.subscribe(() => {
+      console.log('🔄 Sitemap changed, reloading top navigation...');
+      loadRoutes();
+    });
+
+    // Cleanup subscription on unmount
+    return unsubscribe;
+  }, []);
+
+  // Helper function to get a route group by label
+  const getRouteGroup = (label: string): RouteGroup | undefined => {
+    return routeGroups.find(group => 
+      group.label.toLowerCase() === label.toLowerCase()
+    );
+  };
+
+  // Get individual route groups with fallbacks
+  const currentDashboardRoutes = getRouteGroup('dashboard') || dashboardRoutes;
+  const currentAppRoutes = getRouteGroup('app') || getRouteGroup('applications') || appRoutes;
+  const currentPagesRoutes = getRouteGroup('pages') || pagesRoutes;
+  const currentModulesRoutes = getRouteGroup('modules') || modulesRoutes;
+  const currentDocumentationRoutes = getRouteGroup('documentation') || documentationRoutes;
 
   const handleDropdownItemClick = () => {
     if (navbarCollapsed) {
@@ -32,7 +89,7 @@ const NavbarTopDropDownMenus = () => {
   return (
     <>
       <NavbarDropdown title="dashboard">
-        {dashboardRoutes.children[0].children.map(route => (
+        {currentDashboardRoutes.children[0]?.children?.map(route => (
           <Dropdown.Item
             key={route.name}
             as={Link}
@@ -46,18 +103,18 @@ const NavbarTopDropDownMenus = () => {
       </NavbarDropdown>
 
       <NavbarDropdown title="app">
-        <NavbarDropdownApp items={appRoutes.children} />
+        <NavbarDropdownApp items={currentAppRoutes.children} />
       </NavbarDropdown>
 
       <NavbarDropdown title="pages">
-        <NavbarDropdownPages items={pagesRoutes.children} />
+        <NavbarDropdownPages items={currentPagesRoutes.children} />
       </NavbarDropdown>
       <NavbarDropdown title="modules">
-        <NavbarDropdownModules items={modulesRoutes.children} />
+        <NavbarDropdownModules items={currentModulesRoutes.children} />
       </NavbarDropdown>
 
       <NavbarDropdown title="documentation">
-        {flatRoutes(documentationRoutes.children).map(route => (
+        {flatRoutes(currentDocumentationRoutes.children).map(route => (
           <Dropdown.Item
             key={route.name}
             as={Link}

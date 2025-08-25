@@ -73,7 +73,7 @@ export interface AppPaths {
   migration: string;
   widgets: string;
   landing: string;
-  starter: string;
+  testSitemap: string;
   error404: string;
   error500: string;
   login: string;
@@ -229,6 +229,7 @@ export interface AppPaths {
   groupsAdmin: string;
   usersAdmin: string;
   permissionsAdmin: string;
+  sitemapAdmin: string;
 }
 
 const paths: AppPaths = {
@@ -236,7 +237,7 @@ const paths: AppPaths = {
   migration: '/migration',
   widgets: '/widgets',
   landing: '/landing',
-  starter: `/${rootPaths.pagesRoot}/starter`,
+  testSitemap: `/${rootPaths.pagesRoot}/test-sitemap`,
   error404: `/${rootPaths.errorsRoot}/404`,
   error500: `/${rootPaths.errorsRoot}/500`,
   login: `/${rootPaths.authRoot}/login`,
@@ -391,7 +392,8 @@ const paths: AppPaths = {
   alliancesAdmin: `/${rootPaths.adminRoot}/alliances`,
   groupsAdmin: `/${rootPaths.adminRoot}/groups`,
   usersAdmin: `/${rootPaths.adminRoot}/users`,
-  permissionsAdmin: `/${rootPaths.adminRoot}/permissions`
+  permissionsAdmin: `/${rootPaths.adminRoot}/permissions`,
+  sitemapAdmin: `/${rootPaths.adminRoot}/sitemap`
 };
 
 export default paths;

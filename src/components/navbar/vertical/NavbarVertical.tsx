@@ -1,4 +1,4 @@
-import React, { useEffect, Fragment } from 'react';
+import React, { useEffect, useState, Fragment } from 'react';
 import classNames from 'classnames';
 import { Nav, Navbar, Row, Col } from 'react-bootstrap';
 import { navbarBreakPoint, topNavbarBreakpoint } from 'config';
@@ -6,7 +6,8 @@ import Flex from 'components/common/Flex';
 import Logo from 'components/common/Logo';
 import NavbarVerticalMenu from './NavbarVerticalMenu';
 import ToggleButton from './ToggleButton';
-import routes from 'routes/siteMaps';
+import staticRoutes, { loadDynamicRouteGroups, RouteGroup } from 'routes/siteMaps';
+import { sitemapService } from '../../../services/sitemapService';
 import { capitalize } from 'helpers/utils';
 import NavbarTopDropDownMenus from 'components/navbar/top/NavbarTopDropDownMenus';
 import PurchaseCard from './PurchaseCard';
@@ -14,6 +15,9 @@ import bgNavbar from 'assets/img/generic/bg-navbar.png';
 import { useAppContext } from 'providers/AppProvider';
 
 const NavbarVertical = () => {
+  const [routes, setRoutes] = useState<RouteGroup[]>(staticRoutes);
+  const [isLoadingRoutes, setIsLoadingRoutes] = useState(false);
+
   const {
     config: {
       navbarPosition,
@@ -35,6 +39,37 @@ const NavbarVertical = () => {
       HTMLClassList.remove('navbar-vertical-collapsed-hover');
     };
   }, [isNavbarVerticalCollapsed, HTMLClassList]);
+
+  // Load dynamic routes from backend
+  const loadRoutes = async () => {
+    if (isLoadingRoutes) return;
+    
+    setIsLoadingRoutes(true);
+    try {
+      const dynamicRoutes = await loadDynamicRouteGroups();
+      setRoutes(dynamicRoutes);
+    } catch (error) {
+      console.warn('Failed to load dynamic routes in NavbarVertical, using static fallback:', error);
+      // Keep static routes as fallback
+    } finally {
+      setIsLoadingRoutes(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRoutes();
+  }, []); // Only run once on mount
+
+  // Subscribe to sitemap changes to reload navigation
+  useEffect(() => {
+    const unsubscribe = sitemapService.subscribe(() => {
+      console.log('🔄 Sitemap changed, reloading navigation...');
+      loadRoutes();
+    });
+
+    // Cleanup subscription on unmount
+    return unsubscribe;
+  }, []);
 
   //Control mouseEnter event
   let time = null;
