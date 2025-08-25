@@ -125,6 +125,85 @@ const response = await fetch(url, {
 // ❌ NEVER use Bearer tokens in this project
 ```
 
+## MongoDB Direct Access (MCP Server)
+
+### Development & Debugging Tool
+The project includes a MongoDB MCP server that provides **direct access to the backend database** for development, testing, and debugging purposes. This powerful integration allows:
+
+- **Direct database queries** without going through the API layer
+- **Access to user access tokens** and all user data for authentication testing
+- **Real-time database inspection** and manipulation
+- **Advanced analytics** and data exploration
+- **System monitoring** and performance analysis
+
+### Available MongoDB Operations
+```javascript
+// Database exploration
+mcp__mongodb-falcon__list-databases()
+mcp__mongodb-falcon__list-collections(database)
+mcp__mongodb-falcon__collection-schema(database, collection)
+
+// Data access and querying
+mcp__mongodb-falcon__find(database, collection, filter, projection, sort, limit)
+mcp__mongodb-falcon__aggregate(database, collection, pipeline)
+mcp__mongodb-falcon__count(database, collection, query)
+
+// Data manipulation
+mcp__mongodb-falcon__insert-many(database, collection, documents)
+mcp__mongodb-falcon__update-many(database, collection, filter, update)
+mcp__mongodb-falcon__delete-many(database, collection, filter)
+
+// Performance and monitoring
+mcp__mongodb-falcon__explain(database, collection, method)
+mcp__mongodb-falcon__db-stats(database)
+mcp__mongodb-falcon__collection-storage-size(database, collection)
+mcp__mongodb-falcon__mongodb-logs(limit, type)
+
+// Index management
+mcp__mongodb-falcon__collection-indexes(database, collection)
+mcp__mongodb-falcon__create-index(database, collection, keys, name)
+```
+
+### Key Use Cases
+
+#### 1. Authentication Testing
+```javascript
+// Access user tokens directly for testing
+mcp__mongodb-falcon__find('falcon', 'users', 
+  { character_name: 'YourTestCharacter' }, 
+  { access_token: 1, refresh_token: 1 }
+)
+```
+
+#### 2. Data Verification
+```javascript
+// Verify API responses match database state
+mcp__mongodb-falcon__find('falcon', 'corporations', 
+  { corporation_id: 123456 }
+)
+```
+
+#### 3. System Monitoring
+```javascript
+// Check system performance
+mcp__mongodb-falcon__db-stats('falcon')
+mcp__mongodb-falcon__mongodb-logs(50, 'global')
+```
+
+### Security & Usage Guidelines
+- **Development only** - Never use in production code
+- **Authentication bypass** - Direct access bypasses all API authentication
+- **Data integrity** - Be cautious with write operations
+- **Token access** - User access tokens are available for integration testing
+- **Audit trail** - All operations are logged for debugging
+
+### Integration with Frontend Development
+This MCP server complements the TanStack Query hooks by providing:
+- **Backend data verification** for frontend state
+- **Authentication token inspection** for debugging auth issues
+- **Performance analysis** of database queries triggered by frontend actions
+- **Test data setup** and teardown for development scenarios
+
 ## State Management
 
 ### Guidelines
