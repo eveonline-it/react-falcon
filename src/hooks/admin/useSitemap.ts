@@ -12,6 +12,7 @@ export interface SitemapRoute {
   icon: string | null;
   type: string;
   parent_id: string | null;
+  is_folder: boolean;
   nav_position: string;
   nav_order: number;
   show_in_nav: boolean;
@@ -30,6 +31,15 @@ export interface SitemapRoute {
   badge_text?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ParentOption {
+  id: string;
+  name: string;
+  path?: string;
+  is_folder: boolean;
+  parent_id: string | null;
+  depth: number;
 }
 
 export interface SitemapResponse {
@@ -61,6 +71,8 @@ export const useSitemapRoutes = (filters?: {
   search?: string;
   page?: number;
   limit?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
 }) => {
   const queryParams = new URLSearchParams();
   if (filters?.group) queryParams.append('group', filters.group);
@@ -68,6 +80,9 @@ export const useSitemapRoutes = (filters?: {
   if (filters?.search) queryParams.append('search', filters.search);
   if (filters?.page) queryParams.append('page', String(filters.page));
   if (filters?.limit) queryParams.append('limit', String(filters.limit));
+  // Default to sorting by nav_order in ascending order
+  queryParams.append('sort', filters?.sort || 'nav_order');
+  queryParams.append('order', filters?.order || 'asc');
 
   return useQuery({
     queryKey: ['admin', 'sitemap', filters],
@@ -228,5 +243,118 @@ export const useSitemapStats = () => {
     },
     retry: false,
     staleTime: 30000
+  });
+};
+
+// Get available parent options for route/folder selection
+export const useParentOptions = () => {
+  return useQuery<ParentOption[]>({
+    queryKey: ['admin', 'sitemap', 'parent-options'],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE_URL}/admin/sitemap?type=parent-options&sort=nav_order&order=asc`, {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch parent options');
+      
+      const data = await response.json();
+      
+      // Build hierarchical parent options with depth indicators
+      const buildParentTree = (routes: SitemapRoute[], parentId: string | null = null, depth = 0): ParentOption[] => {
+        return routes
+          .filter(route => route.parent_id === parentId)
+          .sort((a, b) => a.nav_order - b.nav_order)
+          .flatMap(route => {
+            const option: ParentOption = {
+              id: route.id,
+              name: route.name,
+              path: route.path,
+              is_folder: route.is_folder,
+              parent_id: route.parent_id,
+              depth
+            };
+            
+            return [
+              option,
+              ...buildParentTree(routes, route.id, depth + 1)
+            ];
+          });
+      };
+      
+      return buildParentTree(data.routes);
+    },
+    staleTime: 5 * 60 * 1000 // 5 minutes
+  });
+};
+
+// Create a new folder
+export const useCreateFolder = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (folderData: { name: string; parent_id?: string | null; icon?: string }) => {
+      const response = await fetch(`${API_BASE_URL}/admin/sitemap/folders`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(folderData)
+      });
+      
+      if (!response.ok) throw new Error('Failed to create folder');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'sitemap'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'sitemap', 'parent-options'] });
+    }
+  });
+};
+
+// Move an item to a new parent
+export const useMoveItem = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ itemId, newParentId }: { itemId: string; newParentId: string | null }) => {
+      const response = await fetch(`${API_BASE_URL}/admin/sitemap/move/${itemId}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_parent_id: newParentId })
+      });
+      
+      if (!response.ok) throw new Error('Failed to move item');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'sitemap'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'sitemap', 'parent-options'] });
+    }
+  });
+};
+
+// Get folder children
+export const useFolderChildren = (folderId: string | null, depth?: number) => {
+  return useQuery({
+    queryKey: ['admin', 'sitemap', 'folder-children', folderId, depth],
+    queryFn: async () => {
+      if (!folderId) return { children: [], total_count: 0, depth: 0 };
+      
+      const url = new URL(`${API_BASE_URL}/admin/sitemap/folders/${folderId}/children`);
+      if (depth !== undefined) {
+        url.searchParams.set('depth', depth.toString());
+      }
+      
+      const response = await fetch(url.toString(), {
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch folder children');
+      return response.json();
+    },
+    enabled: !!folderId,
+    staleTime: 2 * 60 * 1000 // 2 minutes
   });
 };

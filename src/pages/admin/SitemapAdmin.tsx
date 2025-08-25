@@ -24,8 +24,10 @@ import {
   useDeleteRoute,
   useReorderRoutes,
   useSitemapStats,
+  useCreateFolder,
   SitemapRoute
 } from '../../hooks/admin/useSitemap';
+import { FolderCreateModal, FolderFormData } from '../../components/admin';
 import { sitemapService } from '../../services/sitemapService';
 import Flex from 'components/common/Flex';
 import '../../assets/css/sitemap-admin.css';
@@ -317,6 +319,7 @@ const SitemapAdmin: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showFolderModal, setShowFolderModal] = useState(false);
   const [editingRoute, setEditingRoute] = useState<SitemapRoute | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Administration', 'Personal']));
   const [currentPage, setCurrentPage] = useState(1);
@@ -325,7 +328,9 @@ const SitemapAdmin: React.FC = () => {
     group: selectedGroup || undefined,
     search: searchTerm || undefined,
     page: currentPage,
-    limit: 50 // Show 50 routes per page
+    limit: 50, // Show 50 routes per page
+    sort: 'nav_order',
+    order: 'asc'
   });
   
   const routes = sitemapResponse?.routes || [];
@@ -336,19 +341,29 @@ const SitemapAdmin: React.FC = () => {
   const updateRouteFields = useUpdateRouteFields();
   const deleteRoute = useDeleteRoute();
   const reorderRoutes = useReorderRoutes();
+  const createFolder = useCreateFolder();
 
   // Reset page when filters change
   React.useEffect(() => {
     setCurrentPage(1);
   }, [selectedGroup, searchTerm]);
 
-  // Group routes by their group
+  // Group routes by their group and sort by nav_order
   const groupedRoutes = routes.reduce((acc, route) => {
     const group = route.group || 'Utilities';
     if (!acc[group]) acc[group] = [];
     acc[group].push(route);
     return acc;
   }, {} as Record<string, SitemapRoute[]>);
+
+  // Sort each group by nav_order in ascending order
+  Object.keys(groupedRoutes).forEach(group => {
+    groupedRoutes[group].sort((a, b) => {
+      const orderA = a.nav_order || 0;
+      const orderB = b.nav_order || 0;
+      return orderA - orderB;
+    });
+  });
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
@@ -366,10 +381,10 @@ const SitemapAdmin: React.FC = () => {
     if (sourceGroup === destGroup) {
       sourceRoutes.splice(destIndex, 0, movedRoute);
       
-      // Update order for all affected routes
+      // Update order for all affected routes using increments of 10
       const reorderData = sourceRoutes.map((route, index) => ({
         id: route.id,
-        order: index
+        order: (index + 1) * 10  // Use increments of 10: 10, 20, 30, etc.
       }));
 
       reorderRoutes.mutate({ routes: reorderData }, {
@@ -479,6 +494,21 @@ const SitemapAdmin: React.FC = () => {
     setExpandedGroups(newExpanded);
   };
 
+  const handleSaveFolder = async (folderData: FolderFormData) => {
+    try {
+      await createFolder.mutateAsync({
+        name: folderData.name,
+        parent_id: folderData.parent_id,
+        icon: folderData.icon
+      });
+      toast.success('Folder created successfully');
+      setShowFolderModal(false);
+      sitemapService.clearCache();
+    } catch (error) {
+      toast.error('Failed to create folder');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="text-center py-5">
@@ -526,17 +556,25 @@ const SitemapAdmin: React.FC = () => {
               )}
             </Col>
             <Col xs="auto">
-              <Button
-                variant="falcon-primary"
-                size="sm"
-                onClick={() => {
-                  setEditingRoute(null);
-                  setShowModal(true);
-                }}
-              >
-                <FontAwesomeIcon icon="plus" className="me-1" />
-                Add Route
-              </Button>
+              <ButtonGroup size="sm">
+                <Button
+                  variant="success"
+                  onClick={() => setShowFolderModal(true)}
+                >
+                  <FontAwesomeIcon icon="folder-plus" className="me-1" />
+                  New Folder
+                </Button>
+                <Button
+                  variant="falcon-primary"
+                  onClick={() => {
+                    setEditingRoute(null);
+                    setShowModal(true);
+                  }}
+                >
+                  <FontAwesomeIcon icon="plus" className="me-1" />
+                  Add Route
+                </Button>
+              </ButtonGroup>
             </Col>
           </Row>
         </Card.Header>
@@ -767,6 +805,13 @@ const SitemapAdmin: React.FC = () => {
         }}
         route={editingRoute}
         onSave={handleSaveRoute}
+      />
+
+      <FolderCreateModal
+        show={showFolderModal}
+        onHide={() => setShowFolderModal(false)}
+        onSave={handleSaveFolder}
+        isLoading={createFolder.isPending}
       />
     </>
   );

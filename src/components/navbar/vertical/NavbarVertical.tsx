@@ -13,6 +13,7 @@ import NavbarTopDropDownMenus from 'components/navbar/top/NavbarTopDropDownMenus
 import PurchaseCard from './PurchaseCard';
 import bgNavbar from 'assets/img/generic/bg-navbar.png';
 import { useAppContext } from 'providers/AppProvider';
+import '../../../assets/css/hierarchical-navigation.css';
 
 const NavbarVertical = () => {
   const [routes, setRoutes] = useState<RouteGroup[]>(staticRoutes);

@@ -1,0 +1,248 @@
+/* Sitemap Tree View Styles */
+
+.sitemap-tree-view {
+  position: relative;
+}
+
+.tree-container {
+  position: relative;
+  min-height: 200px;
+}
+
+.tree-container.drag-over {
+  background-color: rgba(13, 110, 253, 0.1);
+  border: 2px dashed rgba(13, 110, 253, 0.3);
+  border-radius: 6px;
+}
+
+.sitemap-tree-item {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.sitemap-tree-item.dragging {
+  opacity: 0.8;
+  transform: rotate(5deg);
+  z-index: 1000;
+}
+
+.sitemap-tree-item .card {
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.sitemap-tree-item:hover .card {
+  border-color: #007bff;
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.1);
+}
+
+.sitemap-tree-item .card-body {
+  padding: 0.75rem 1rem;
+  background: linear-gradient(90deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.drag-handle {
+  cursor: grab;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.drag-handle:hover {
+  background-color: rgba(108, 117, 125, 0.1);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Folder styling */
+.sitemap-tree-item.folder .card-body {
+  background: linear-gradient(90deg, #e3f2fd 0%, #f8f9fa 100%);
+  border-left: 4px solid #2196f3;
+}
+
+.sitemap-tree-item.folder .card {
+  border-color: #bbdefb;
+}
+
+/* Route styling */
+.sitemap-tree-item.route .card-body {
+  background: linear-gradient(90deg, #f3e5f5 0%, #f8f9fa 100%);
+  border-left: 4px solid #9c27b0;
+}
+
+.sitemap-tree-item.route .card {
+  border-color: #ce93d8;
+}
+
+/* Disabled route styling */
+.sitemap-tree-item.disabled .card-body {
+  background: linear-gradient(90deg, #f5f5f5 0%, #fafafa 100%);
+  border-left: 4px solid #9e9e9e;
+  opacity: 0.7;
+}
+
+.sitemap-tree-item.disabled .card {
+  border-color: #e0e0e0;
+}
+
+/* Depth indicators */
+.sitemap-tree-item[data-depth="0"] {
+  margin-left: 0;
+}
+
+.sitemap-tree-item[data-depth="1"] {
+  margin-left: 24px;
+}
+
+.sitemap-tree-item[data-depth="2"] {
+  margin-left: 48px;
+}
+
+.sitemap-tree-item[data-depth="3"] {
+  margin-left: 72px;
+}
+
+.sitemap-tree-item[data-depth="4"] {
+  margin-left: 96px;
+}
+
+/* Connecting lines */
+.sitemap-tree-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -12px;
+  width: 12px;
+  height: 50%;
+  border-left: 1px solid #dee2e6;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.sitemap-tree-item:last-child::before {
+  height: 20px;
+}
+
+.sitemap-tree-item[data-depth="0"]::before {
+  display: none;
+}
+
+/* Expand/collapse button */
+.expand-button {
+  background: none;
+  border: none;
+  color: #6c757d;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
+}
+
+.expand-button:hover {
+  background-color: rgba(108, 117, 125, 0.1);
+  color: #495057;
+}
+
+/* Badge styling */
+.badge.folder-badge {
+  background-color: #e3f2fd !important;
+  color: #1976d2 !important;
+  border: 1px solid #bbdefb;
+}
+
+.badge.route-badge {
+  background-color: #f3e5f5 !important;
+  color: #7b1fa2 !important;
+  border: 1px solid #ce93d8;
+}
+
+/* Action buttons */
+.action-buttons .btn {
+  border-radius: 4px;
+  margin-left: 2px;
+  transition: all 0.2s ease;
+}
+
+.action-buttons .btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6c757d;
+}
+
+.empty-state .empty-icon {
+  color: #dee2e6;
+  margin-bottom: 1rem;
+}
+
+/* Search and filter bar */
+.sitemap-controls {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid #e9ecef;
+}
+
+.sitemap-controls .form-control {
+  border-radius: 6px;
+}
+
+.sitemap-controls .btn {
+  border-radius: 6px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .sitemap-tree-item {
+    margin-left: 0 !important;
+  }
+  
+  .sitemap-tree-item::before {
+    display: none;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .card-body {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] .sitemap-tree-item .card {
+  background-color: #2d3748;
+  border-color: #4a5568;
+}
+
+[data-bs-theme="dark"] .sitemap-tree-item .card-body {
+  background: linear-gradient(90deg, #2d3748 0%, #1a202c 100%);
+}
+
+[data-bs-theme="dark"] .sitemap-tree-item.folder .card-body {
+  background: linear-gradient(90deg, #2c5aa0 0%, #2d3748 100%);
+  border-left-color: #3182ce;
+}
+
+[data-bs-theme="dark"] .sitemap-tree-item.route .card-body {
+  background: linear-gradient(90deg, #6b46c1 0%, #2d3748 100%);
+  border-left-color: #8b5cf6;
+}
+
+[data-bs-theme="dark"] .drag-handle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .sitemap-controls {
+  background-color: #2d3748;
+  border-color: #4a5568;
+}

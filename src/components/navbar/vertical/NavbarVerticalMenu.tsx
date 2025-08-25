@@ -7,10 +7,12 @@ import { useAppContext } from 'providers/AppProvider';
 
 const CollapseItems = ({ route }) => {
   const { pathname } = useLocation();
+  const isFolder = route.is_folder || (!route.to && route.children && route.children.length > 0);
 
   const openCollapse = childrens => {
     const checkLink = children => {
-      if (children.to === pathname) {
+      // Folders don't have direct paths, so check children
+      if (!isFolder && children.to === pathname) {
         return true;
       }
       return (
@@ -30,10 +32,12 @@ const CollapseItems = ({ route }) => {
           setOpen(!open);
         }}
         className={classNames('dropdown-indicator cursor-pointer', {
-          'text-500': !route.active
+          'text-500': !route.active,
+          'nav-folder-header': isFolder,
+          'nav-parent-item': !isFolder
         })}
         aria-expanded={open}
-        // {...route}
+        title={isFolder ? `Folder: ${route.name}` : `Section: ${route.name}`}
       >
         <NavbarVerticalMenuItem route={route} />
       </Nav.Link>
@@ -58,7 +62,40 @@ const NavbarVerticalMenu = ({ routes }) => {
     }
   };
   return routes.map(route => {
+    const isFolder = route.is_folder || (!route.to && route.children && route.children.length > 0);
+    const isEmptyFolder = isFolder && (!route.children || route.children.length === 0);
+    
+    // Handle folders without children (empty folders)
+    if (isEmptyFolder) {
+      return (
+        <Nav.Item as="li" key={route.name}>
+          <Nav.Link
+            className="nav-folder-item cursor-default"
+            title={`Empty folder: ${route.name}`}
+          >
+            <NavbarVerticalMenuItem route={route} />
+          </Nav.Link>
+        </Nav.Item>
+      );
+    }
+
+    // Handle routes without children (leaf nodes)
     if (!route.children) {
+      // Don't render folder items without children as navigable links
+      if (isFolder) {
+        return (
+          <Nav.Item as="li" key={route.name}>
+            <Nav.Link
+              className="nav-folder-item cursor-default"
+              title={`Folder: ${route.name}`}
+            >
+              <NavbarVerticalMenuItem route={route} />
+            </Nav.Link>
+          </Nav.Item>
+        );
+      }
+
+      // Regular navigable route
       return (
         <Nav.Item as="li" key={route.name} onClick={handleNavItemClick}>
           <NavLink
@@ -79,6 +116,8 @@ const NavbarVerticalMenu = ({ routes }) => {
         </Nav.Item>
       );
     }
+    
+    // Handle items with children (collapsible items)
     return <CollapseItems route={route} key={route.name} />;
   });
 };

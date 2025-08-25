@@ -1,0 +1,240 @@
+/* Hierarchical Navigation Styles */
+
+/* Folder-specific styling in navigation */
+.nav-folder-item .nav-link-text {
+  font-weight: 600;
+  color: var(--falcon-primary) !important;
+}
+
+.nav-folder-item .nav-link-icon {
+  color: var(--falcon-primary) !important;
+  opacity: 0.8;
+}
+
+.nav-folder-header {
+  background-color: rgba(var(--falcon-primary-rgb), 0.05);
+  border-left: 3px solid var(--falcon-primary);
+  margin: 2px 0;
+  border-radius: 0 6px 6px 0;
+}
+
+.nav-folder-header:hover {
+  background-color: rgba(var(--falcon-primary-rgb), 0.1);
+}
+
+/* Non-clickable folder styling */
+.nav-folder-item.cursor-default {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.nav-folder-item.cursor-default:hover {
+  background-color: rgba(var(--falcon-primary-rgb), 0.05);
+  transform: none;
+}
+
+/* Route-specific styling */
+.nav-route-item .nav-link-text {
+  color: var(--falcon-600);
+}
+
+.nav-route-item .nav-link-icon {
+  color: var(--falcon-500);
+}
+
+/* Parent item with children (sections) */
+.nav-parent-item {
+  background-color: rgba(var(--falcon-600-rgb), 0.03);
+  border-left: 2px solid var(--falcon-300);
+  margin: 1px 0;
+  border-radius: 0 4px 4px 0;
+}
+
+.nav-parent-item:hover {
+  background-color: rgba(var(--falcon-600-rgb), 0.08);
+  border-left-color: var(--falcon-400);
+}
+
+/* Hierarchy depth indicators */
+.navbar-vertical .nav .nav {
+  border-left: 1px solid var(--falcon-200);
+  margin-left: 1rem;
+  padding-left: 0.5rem;
+}
+
+.navbar-vertical .nav .nav .nav {
+  border-left: 1px solid var(--falcon-300);
+  margin-left: 0.75rem;
+}
+
+.navbar-vertical .nav .nav .nav .nav {
+  border-left: 1px solid var(--falcon-400);
+  margin-left: 0.5rem;
+}
+
+/* Folder badge (child count) styling */
+.nav-folder-item .badge {
+  background-color: var(--falcon-primary) !important;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 500;
+  min-width: 18px;
+  height: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Enhanced dropdown indicators */
+.dropdown-indicator::before {
+  font-family: 'Font Awesome 5 Free';
+  font-weight: 900;
+  content: '\f078'; /* fa-chevron-down */
+  transition: transform 0.15s ease;
+  font-size: 0.75rem;
+  margin-right: 0.5rem;
+  opacity: 0.7;
+}
+
+.dropdown-indicator[aria-expanded='true']::before {
+  transform: rotate(-180deg);
+}
+
+.nav-folder-header.dropdown-indicator::before {
+  color: var(--falcon-primary);
+  opacity: 1;
+}
+
+/* Active state for nested items */
+.navbar-vertical .nav .nav .nav-link.active {
+  background-color: rgba(var(--falcon-primary-rgb), 0.1);
+  color: var(--falcon-primary);
+  border-radius: 6px;
+  font-weight: 500;
+  transform: translateX(4px);
+  box-shadow: inset 3px 0 0 var(--falcon-primary);
+}
+
+.navbar-vertical .nav .nav .nav .nav-link.active {
+  transform: translateX(2px);
+  box-shadow: inset 2px 0 0 var(--falcon-primary);
+}
+
+/* Hover effects for better UX */
+.navbar-vertical .nav-link:hover {
+  transition: all 0.15s ease;
+}
+
+.nav-folder-item:hover .nav-link-icon {
+  transform: scale(1.1);
+  transition: transform 0.15s ease;
+}
+
+.nav-route-item:hover .nav-link-icon {
+  color: var(--falcon-primary) !important;
+  transition: color 0.15s ease;
+}
+
+/* Empty folder styling */
+.nav-folder-item[title*="Empty folder"] {
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.nav-folder-item[title*="Empty folder"] .nav-link-text::after {
+  content: ' (empty)';
+  font-size: 0.7rem;
+  opacity: 0.7;
+  margin-left: 0.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 575.98px) {
+  .navbar-vertical .nav .nav {
+    margin-left: 0.5rem;
+    padding-left: 0.25rem;
+  }
+  
+  .navbar-vertical .nav .nav .nav {
+    margin-left: 0.25rem;
+  }
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] .nav-folder-header {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-left-color: var(--falcon-primary);
+}
+
+[data-bs-theme="dark"] .nav-parent-item {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-left-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-bs-theme="dark"] .navbar-vertical .nav .nav {
+  border-left-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-bs-theme="dark"] .nav-folder-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .nav-parent-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-left-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Animation for expand/collapse */
+.collapsing {
+  transition: height 0.25s ease;
+}
+
+/* Better visual hierarchy */
+.navbar-vertical-label-wrapper {
+  position: relative;
+}
+
+.navbar-vertical-label-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--falcon-300), transparent);
+}
+
+/* Folder vs Route visual distinction */
+.nav-folder-item .nav-link-icon::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: linear-gradient(135deg, rgba(var(--falcon-primary-rgb), 0.1), transparent);
+  z-index: -1;
+}
+
+.nav-route-item .nav-link-icon {
+  position: relative;
+}
+
+.nav-route-item .nav-link-icon::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background-color: var(--falcon-primary);
+  transition: all 0.2s ease;
+  transform: translateX(-50%);
+}
+
+.nav-route-item:hover .nav-link-icon::after {
+  width: 100%;
+}

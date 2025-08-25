@@ -176,6 +176,7 @@ const GroupsAdmin = lazy(() => import('pages/admin/GroupsAdmin'));
 const UsersAdmin = lazy(() => import('pages/admin/UsersAdmin'));
 const PermissionsAdmin = lazy(() => import('pages/admin/PermissionsAdmin'));
 const SitemapAdmin = lazy(() => import('pages/admin/SitemapAdmin'));
+const HierarchicalSitemapAdmin = lazy(() => import('pages/admin/HierarchicalSitemapAdmin'));
 const Characters = lazy(() => import('pages/user/Characters'));
 
 const routes: RouteObject[] = [
@@ -1110,6 +1111,14 @@ const routes: RouteObject[] = [
                 element: (
                   <Suspense key="sitemap-admin" fallback={<FalconLoader />}>
                     <SitemapAdmin />
+                  </Suspense>
+                )
+              },
+              {
+                path: paths.hierarchicalSitemapAdmin,
+                element: (
+                  <Suspense key="hierarchical-sitemap-admin" fallback={<FalconLoader />}>
+                    <HierarchicalSitemapAdmin />
                   </Suspense>
                 )
               }

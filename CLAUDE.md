@@ -56,47 +56,7 @@ This React frontend works in conjunction with a Go backend API server. The backe
 
 ## Architecture
 
-### Project Structure (Key Directories)
-```
-src/
-├── components/           # 🎯 Reusable UI Components ONLY
-│   ├── common/          # Core UI library (Avatar, Button, Card, etc.)
-│   ├── authentication/ # Auth components & layouts
-│   ├── dashboards/      # Dashboard widget components
-│   └── [others...]      # Navigation, wizard, errors, notification
-├── features/            # 🚀 Complete Application Modules
-│   ├── chat/           # Full chat application
-│   ├── email/          # Complete email client
-│   ├── kanban/         # Kanban board system
-│   └── [others...]     # events, social, support-desk, calendar
-├── demos/dashboards/    # 🚀 Complete Dashboard Demos
-├── pages/              # 📄 Page-Level Components
-│   ├── admin/          # Admin interfaces (8 complete admin pages)
-│   └── [others...]     # faq, pricing, user, landing, misc
-├── docs/               # 📚 Documentation & Examples
-├── hooks/              # Custom React hooks (TanStack Query hooks)
-├── providers/          # Context providers
-└── [others...]         # layouts, routes, data, helpers, assets
-```
-
-### Component Organization Principles
-
-1. **Perfect Separation of Concerns**: Clear boundaries between reusable components, complete applications, page components, and documentation
-2. **Barrel Exports**: Clean imports with `index.ts` files for component libraries
-3. **Feature Boundaries**: Each major feature has isolated state management
-4. **Focused Responsibility**: Each directory serves a single, well-defined purpose
-
-### Import Patterns
-```jsx
-// Reusable components
-import { Avatar, Button, Card } from 'components/common';
-import { WeeklySales, TotalOrder } from 'components/dashboards'; 
-import { EveOnlineLoginForm } from 'components/authentication';
-
-// Complete features
-import Chat from 'features/chat/Chat';
-import Inbox from 'features/email/inbox/Inbox';
-```
+React Falcon follows a **Perfect Separation of Concerns** architecture with clear boundaries between reusable components, complete applications, page components, and documentation. See `CLAUDE-patterns.md` for comprehensive architectural details, component organization, and import patterns.
 
 ## Data Fetching & Authentication
 
@@ -114,16 +74,7 @@ import Inbox from 'features/email/inbox/Inbox';
 - **Data Patterns**: `useInfiniteData` for pagination
 
 ### Authentication Pattern (CRITICAL)
-```javascript
-// ✅ CORRECT - Cookie-based authentication
-const response = await fetch(url, {
-  method: 'GET',
-  credentials: 'include',  // Always include cookies
-  headers: { 'Content-Type': 'application/json' }
-});
-
-// ❌ NEVER use Bearer tokens in this project
-```
+**Cookie-based authentication ONLY** - Always use `credentials: 'include'`. Never use Bearer tokens. See `CLAUDE-patterns.md` for complete authentication patterns and examples.
 
 ## MongoDB Direct Access (MCP Server)
 
@@ -255,44 +206,11 @@ npm run preview      # Preview production build
 
 ## Key Configuration
 
-### Environment Variables
-```env
-VITE_EVE_BACKEND_URL=https://your-backend-domain.com
-VITE_REACT_APP_TINYMCE_APIKEY=your_tinymce_api_key
-VITE_REACT_APP_GOOGLE_API_KEY=your_google_api_key
-```
-
-### Theme Configuration (src/config.ts)
-```typescript
-export const settings = {
-  isFluid: false,
-  isRTL: false,
-  isDark: false,
-  theme: 'light',
-  navbarPosition: 'vertical',
-  navbarStyle: 'transparent'
-};
-```
+See `CLAUDE-config-variables.md` for comprehensive configuration details including environment variables, application settings, theme configuration, and build optimization.
 
 ## Development Guidelines
 
-### Component Development
-1. Use functional components with hooks
-2. Follow existing naming conventions and TypeScript patterns
-3. Use React Bootstrap components when possible
-4. Support both light/dark themes and RTL/LTR layouts
-
-### File Organization
-1. **Determine correct location** based on component type (reusable vs feature vs page vs docs)
-2. **Add barrel exports** for reusable components
-3. **Follow existing patterns** in similar components
-4. **Update providers** if component needs state management
-
-### Performance
-- Use React.memo for expensive components
-- Implement proper dependency arrays in hooks
-- Lazy load routes and heavy components
-- TanStack Query handles caching and optimization
+Follow established patterns for component development, file organization, naming conventions, and performance optimization. See `CLAUDE-patterns.md` for comprehensive development guidelines and code examples.
 
 ## Available Features
 

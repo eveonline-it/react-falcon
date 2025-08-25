@@ -2,11 +2,14 @@ import { NavItem, RouteGroup } from '../routes/siteMaps';
 
 export interface BackendRoute {
   id: string;
+  parent_id: string | null;
   path: string;
   component: string;
   name: string;
   title: string;
   icon?: string;
+  is_folder: boolean;
+  nav_order: number;
   meta: {
     title: string;
     group: string;
@@ -23,6 +26,31 @@ export interface BackendRoute {
   };
 }
 
+export interface FolderItem {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  is_folder: boolean;
+  icon?: string;
+  children: (FolderItem | BackendRoute)[];
+  depth: number;
+  nav_order: number;
+}
+
+export interface FolderChildrenResponse {
+  children: (FolderItem | BackendRoute)[];
+  total_count: number;
+  depth: number;
+}
+
+export interface HierarchicalNavItem extends NavItem {
+  id: string;
+  is_folder?: boolean;
+  parent_id?: string | null;
+  depth?: number;
+  nav_order?: number;
+}
+
 export interface BackendSitemap {
   routes: BackendRoute[];
   navigation?: any[];
@@ -32,6 +60,7 @@ export interface BackendSitemap {
 }
 
 const SITEMAP_URL = 'https://go.eveonline.it/sitemap';
+const SITEMAP_ADMIN_URL = 'https://go.eveonline.it/admin/sitemap';
 
 class SitemapService {
   private cache: BackendSitemap | null = null;
@@ -251,6 +280,13 @@ class SitemapService {
   async generateRouteGroups(): Promise<RouteGroup[]> {
     try {
       const sitemap = await this.fetchSitemap();
+      
+      // Try to use hierarchical structure first, fallback to legacy grouping
+      if (sitemap.routes.some(route => route.parent_id !== undefined || route.is_folder !== undefined)) {
+        return await this.generateHierarchicalRouteGroups(sitemap.routes);
+      }
+      
+      // Legacy path-based grouping for backward compatibility
       const groupedRoutes = this.groupRoutesByCategory(sitemap.routes);
       
       const routeGroups: RouteGroup[] = [];
@@ -279,12 +315,311 @@ class SitemapService {
     }
   }
 
+  // Generate hierarchical route groups using parent-child relationships
+  async generateHierarchicalRouteGroups(routes: BackendRoute[]): Promise<RouteGroup[]> {
+    try {
+      // Build hierarchical tree from parent-child relationships
+      const hierarchicalTree = this.buildHierarchicalTree(routes);
+      
+      // Group tree items by category/group
+      const groupedTree = new Map<string, FolderItem[]>();
+      
+      hierarchicalTree.forEach(item => {
+        // Determine group from first non-folder child or use 'Utilities' as default
+        const group = this.getItemGroup(item, routes) || 'Utilities';
+        
+        if (!groupedTree.has(group)) {
+          groupedTree.set(group, []);
+        }
+        groupedTree.get(group)!.push(item);
+      });
+      
+      const routeGroups: RouteGroup[] = [];
+      
+      // Define the order of groups
+      const groupOrder = ['Administration', 'Alliance', 'Corporation', 'Documentation', 'Economy', 'Personal', 'Utilities'];
+      
+      groupOrder.forEach(groupName => {
+        if (groupedTree.has(groupName)) {
+          const treeItems = groupedTree.get(groupName)!;
+          const navItems = this.convertTreeToNavItems(treeItems);
+          
+          routeGroups.push({
+            label: this.formatGroupLabel(groupName),
+            children: navItems
+          });
+        }
+      });
+
+      // Add any remaining groups not in the predefined order
+      groupedTree.forEach((treeItems, groupName) => {
+        if (!groupOrder.includes(groupName)) {
+          const navItems = this.convertTreeToNavItems(treeItems);
+          
+          routeGroups.push({
+            label: this.formatGroupLabel(groupName),
+            children: navItems
+          });
+        }
+      });
+
+      return routeGroups;
+    } catch (error) {
+      console.error('Failed to generate hierarchical route groups:', error);
+      throw error;
+    }
+  }
+
+  // Get group for a tree item (folder or route)
+  private getItemGroup(item: FolderItem, allRoutes: BackendRoute[]): string | null {
+    // If this item corresponds to a route, use its group
+    const route = allRoutes.find(r => r.id === item.id);
+    if (route && route.meta?.group) {
+      return route.meta.group;
+    }
+    
+    // If it's a folder, try to get group from first child route
+    if (item.is_folder && item.children.length > 0) {
+      for (const child of item.children) {
+        const childRoute = allRoutes.find(r => r.id === child.id);
+        if (childRoute && childRoute.meta?.group) {
+          return childRoute.meta.group;
+        }
+        
+        // Recursively check children
+        if ('children' in child && child.children.length > 0) {
+          const childGroup = this.getItemGroup(child as FolderItem, allRoutes);
+          if (childGroup) return childGroup;
+        }
+      }
+    }
+    
+    return null;
+  }
+
   // Clear cache manually if needed
   clearCache(): void {
     this.cache = null;
     this.cacheTimestamp = 0;
     // Notify all listeners that the sitemap has been updated
     this.notifyListeners();
+  }
+
+  // Create a new folder
+  async createFolder(name: string, parentId?: string): Promise<FolderItem> {
+    try {
+      const response = await fetch(`${SITEMAP_ADMIN_URL}/folders`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name,
+          parent_id: parentId || null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create folder: ${response.status}`);
+      }
+
+      const folder = await response.json() as FolderItem;
+      
+      // Clear cache and notify listeners
+      this.clearCache();
+      
+      return folder;
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      throw error;
+    }
+  }
+
+  // Get children of a specific folder
+  async getFolderChildren(folderId: string, depth?: number): Promise<FolderChildrenResponse> {
+    try {
+      const url = new URL(`${SITEMAP_ADMIN_URL}/folders/${folderId}/children`);
+      if (depth !== undefined) {
+        url.searchParams.set('depth', depth.toString());
+      }
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch folder children: ${response.status}`);
+      }
+
+      return await response.json() as FolderChildrenResponse;
+    } catch (error) {
+      console.error('Error fetching folder children:', error);
+      throw error;
+    }
+  }
+
+  // Move an item to a new parent
+  async moveItem(itemId: string, newParentId: string | null): Promise<void> {
+    try {
+      const response = await fetch(`${SITEMAP_ADMIN_URL}/move/${itemId}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          new_parent_id: newParentId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to move item: ${response.status}`);
+      }
+
+      // Clear cache and notify listeners
+      this.clearCache();
+    } catch (error) {
+      console.error('Error moving item:', error);
+      throw error;
+    }
+  }
+
+  // Build hierarchical tree from flat array of routes
+  private buildHierarchicalTree(routes: BackendRoute[]): FolderItem[] {
+    const itemMap = new Map<string, FolderItem | BackendRoute>();
+    const rootItems: FolderItem[] = [];
+
+    // First pass: Create map of all items
+    routes.forEach(route => {
+      if (route.is_folder) {
+        const folderItem: FolderItem = {
+          id: route.id,
+          name: route.name,
+          parent_id: route.parent_id,
+          is_folder: true,
+          icon: route.icon || route.meta?.icon,
+          children: [],
+          depth: 0,
+          nav_order: route.nav_order
+        };
+        itemMap.set(route.id, folderItem);
+      } else {
+        itemMap.set(route.id, route);
+      }
+    });
+
+    // Second pass: Build tree structure
+    routes.forEach(route => {
+      const item = itemMap.get(route.id)!;
+      
+      if (route.parent_id) {
+        const parent = itemMap.get(route.parent_id);
+        if (parent && 'children' in parent) {
+          parent.children.push(item);
+        }
+      } else {
+        // Root level item
+        if (route.is_folder) {
+          rootItems.push(item as FolderItem);
+        } else {
+          // Convert route to folder-like structure for consistency
+          const routeFolder: FolderItem = {
+            id: route.id,
+            name: route.name,
+            parent_id: null,
+            is_folder: false,
+            icon: route.icon || route.meta?.icon,
+            children: [],
+            depth: 0,
+            nav_order: route.nav_order
+          };
+          rootItems.push(routeFolder);
+        }
+      }
+    });
+
+    // Sort by nav_order
+    const sortByOrder = (items: (FolderItem | BackendRoute)[]) => {
+      items.sort((a, b) => {
+        const orderA = 'nav_order' in a ? a.nav_order : 0;
+        const orderB = 'nav_order' in b ? b.nav_order : 0;
+        return orderA - orderB;
+      });
+      
+      // Recursively sort children
+      items.forEach(item => {
+        if ('children' in item && item.children.length > 0) {
+          sortByOrder(item.children);
+        }
+      });
+    };
+
+    sortByOrder(rootItems);
+    
+    // Set depth for all items
+    const setDepth = (items: FolderItem[], depth: number) => {
+      items.forEach(item => {
+        item.depth = depth;
+        if (item.children.length > 0) {
+          setDepth(item.children.filter(child => 'children' in child) as FolderItem[], depth + 1);
+        }
+      });
+    };
+
+    setDepth(rootItems, 0);
+
+    return rootItems;
+  }
+
+  // Convert hierarchical tree to navigation items
+  private convertTreeToNavItems(treeItems: FolderItem[]): HierarchicalNavItem[] {
+    const convertItem = (item: FolderItem | BackendRoute): HierarchicalNavItem => {
+      const navItem: HierarchicalNavItem = {
+        id: item.id,
+        name: item.name || 'Unnamed',
+        active: 'accessible' in item ? item.accessible !== false : true,
+        is_folder: 'is_folder' in item ? item.is_folder : false,
+        parent_id: item.parent_id,
+        nav_order: 'nav_order' in item ? item.nav_order : 0
+      };
+
+      // Add icon if available
+      if (item.icon || ('meta' in item && item.meta?.icon)) {
+        navItem.icon = item.icon || ('meta' in item ? item.meta.icon : undefined);
+      }
+
+      // Add path for non-folder items
+      if (!navItem.is_folder && 'path' in item && item.path) {
+        navItem.to = item.path;
+      }
+
+      // Add optional properties for routes
+      if ('optional' in item && item.optional) {
+        if (item.optional.newtab) {
+          navItem.newtab = item.optional.newtab;
+        }
+        if (item.optional.badge) {
+          navItem.badge = {
+            type: item.optional.badge.type || 'info',
+            text: item.optional.badge.text || ''
+          };
+        }
+      }
+
+      // Add children if present
+      if ('children' in item && item.children.length > 0) {
+        navItem.children = item.children.map(convertItem);
+      }
+
+      return navItem;
+    };
+
+    return treeItems.map(convertItem);
   }
 
   // Subscribe to sitemap changes

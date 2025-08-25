@@ -230,6 +230,7 @@ export interface AppPaths {
   usersAdmin: string;
   permissionsAdmin: string;
   sitemapAdmin: string;
+  hierarchicalSitemapAdmin: string;
 }
 
 const paths: AppPaths = {
@@ -393,7 +394,8 @@ const paths: AppPaths = {
   groupsAdmin: `/${rootPaths.adminRoot}/groups`,
   usersAdmin: `/${rootPaths.adminRoot}/users`,
   permissionsAdmin: `/${rootPaths.adminRoot}/permissions`,
-  sitemapAdmin: `/${rootPaths.adminRoot}/sitemap`
+  sitemapAdmin: `/${rootPaths.adminRoot}/sitemap`,
+  hierarchicalSitemapAdmin: `/${rootPaths.adminRoot}/sitemap/hierarchical`
 };
 
 export default paths;
