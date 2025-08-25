@@ -232,7 +232,20 @@ import {
   faCameraRetro,
   faUtensils,
   faAdjust,
-  faColumns
+  faColumns,
+  faBars,
+  faVial,
+  faUsersCog,
+  faDatabase,
+  faServer,
+  faChartBar,
+  faBuilding,
+  faCogs,
+  faIdCard,
+  faTachometerAlt,
+  faClipboardList,
+  faHandshake,
+  faCoins
 } from '@fortawesome/free-solid-svg-icons';
 
 library.add(
@@ -471,5 +484,18 @@ library.add(
   faCameraRetro,
   faUtensils,
   faAdjust,
-  faColumns
+  faColumns,
+  faBars,
+  faVial,
+  faUsersCog,
+  faDatabase,
+  faServer,
+  faChartBar,
+  faBuilding,
+  faCogs,
+  faIdCard,
+  faTachometerAlt,
+  faClipboardList,
+  faHandshake,
+  faCoins
 );

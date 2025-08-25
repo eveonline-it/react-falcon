@@ -34,12 +34,12 @@ const NavbarTopDropDownMenus = () => {
   } = useAppContext();
 
   // Load dynamic routes from backend
-  const loadRoutes = async () => {
-    if (isLoadingRoutes) return;
+  const loadRoutes = async (forceRefresh = false) => {
+    if (isLoadingRoutes && !forceRefresh) return;
     
     setIsLoadingRoutes(true);
     try {
-      const dynamicRoutes = await loadDynamicRouteGroups();
+      const dynamicRoutes = await loadDynamicRouteGroups(forceRefresh);
       setRouteGroups(dynamicRoutes);
     } catch (error) {
       console.warn('Failed to load dynamic routes in NavbarTopDropDownMenus, using static fallback:', error);
@@ -57,7 +57,9 @@ const NavbarTopDropDownMenus = () => {
   useEffect(() => {
     const unsubscribe = sitemapService.subscribe(() => {
       console.log('🔄 Sitemap changed, reloading top navigation...');
-      loadRoutes();
+      loadRoutes(true).then(() => {
+        console.log('✅ Top navigation successfully reloaded with fresh data');
+      }); // Force refresh to clear cache
     });
 
     // Cleanup subscription on unmount

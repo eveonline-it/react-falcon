@@ -1191,8 +1191,8 @@ const staticRouteGroups: RouteGroup[] = [
 let dynamicRouteGroups: RouteGroup[] | null = null;
 let isLoadingDynamicRoutes = false;
 
-export async function loadDynamicRouteGroups(): Promise<RouteGroup[]> {
-  if (dynamicRouteGroups) {
+export async function loadDynamicRouteGroups(forceRefresh = false): Promise<RouteGroup[]> {
+  if (dynamicRouteGroups && !forceRefresh) {
     return dynamicRouteGroups;
   }
 
@@ -1207,6 +1207,12 @@ export async function loadDynamicRouteGroups(): Promise<RouteGroup[]> {
   isLoadingDynamicRoutes = true;
 
   try {
+    // Clear the cache before fetching fresh data
+    if (forceRefresh) {
+      dynamicRouteGroups = null;
+      sitemapService.clearCache();
+    }
+    
     dynamicRouteGroups = await sitemapService.generateRouteGroups();
     console.info('Successfully loaded dynamic route groups from backend');
     return dynamicRouteGroups;
