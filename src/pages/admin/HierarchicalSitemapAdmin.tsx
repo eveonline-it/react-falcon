@@ -90,7 +90,16 @@ const HierarchicalSitemapAdmin: React.FC = () => {
         toast.success('Item moved successfully');
       },
       onReorder: async (items) => {
-        await reorderRoutes.mutateAsync({ routes: items });
+        // Transform items to match API format
+        const updates = items.map(item => {
+          // Find the corresponding route to get route_id
+          const route = routes.routes.find(r => r.id === item.id);
+          return {
+            route_id: route?.route_id || item.id, // fallback to id if route_id not found
+            nav_order: item.nav_order
+          };
+        });
+        await reorderRoutes.mutateAsync({ updates });
         toast.success('Items reordered successfully');
       }
     };

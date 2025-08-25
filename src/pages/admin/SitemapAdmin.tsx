@@ -383,11 +383,11 @@ const SitemapAdmin: React.FC = () => {
       
       // Update order for all affected routes using increments of 10
       const reorderData = sourceRoutes.map((route, index) => ({
-        id: route.id,
-        order: (index + 1) * 10  // Use increments of 10: 10, 20, 30, etc.
+        route_id: route.route_id,
+        nav_order: (index + 1) * 10  // Use increments of 10: 10, 20, 30, etc.
       }));
 
-      reorderRoutes.mutate({ routes: reorderData }, {
+      reorderRoutes.mutate({ updates: reorderData }, {
         onSuccess: () => {
           toast.success('Routes reordered successfully');
           // Clear sitemap cache to refresh navigation

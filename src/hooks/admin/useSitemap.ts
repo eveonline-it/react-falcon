@@ -57,10 +57,9 @@ export interface SitemapStats {
 }
 
 export interface ReorderRequest {
-  routes: Array<{
-    id: string;
-    order: number;
-    parentId?: string;
+  updates: Array<{
+    route_id: string;
+    nav_order: number;
   }>;
 }
 
