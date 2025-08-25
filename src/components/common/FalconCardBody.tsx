@@ -31,9 +31,8 @@ const FalconCardBody: React.FC<FalconCardBodyProps> = ({
 }) => {
   return (
     <ReactBootstrap.Card.Body
-      className={classNames({
-        'bg-body-tertiary': !noLight,
-        [className]: className
+      className={classNames(className, {
+        'bg-body-tertiary': !noLight
       })}
     >
       <LiveProvider
@@ -56,7 +55,7 @@ const FalconCardBody: React.FC<FalconCardBodyProps> = ({
             className="overflow-auto scrollbar"
           >
             <div style={{ maxHeight: '25rem' }}>
-              <LiveEditor dir="ltr" className="rounded" />
+              <LiveEditor className="rounded" />
               {!hidePreview && <LiveError />}
             </div>
           </ReactBootstrap.Tab.Pane>

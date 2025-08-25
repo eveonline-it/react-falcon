@@ -1,9 +1,20 @@
+import React from 'react';
 import { Dropdown } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import Flex from './Flex';
 import classNames from 'classnames';
 
-const DropdownItemFilter = ({
+interface DropdownItemFilterProps {
+  filter: string;
+  currentFilter: string;
+  className?: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+  [key: string]: any;
+}
+
+const DropdownItemFilter: React.FC<DropdownItemFilterProps> = ({
   filter,
   currentFilter,
   className,
@@ -27,11 +38,18 @@ const DropdownItemFilter = ({
   );
 };
 
-const DropdownFilter = ({ filters, handleFilter, currentFilter, icon }) => {
+interface DropdownFilterProps {
+  filters: string[];
+  handleFilter: (filter: string) => void;
+  currentFilter: string;
+  icon: IconProp;
+}
+
+const DropdownFilter: React.FC<DropdownFilterProps> = ({ filters, handleFilter, currentFilter, icon }) => {
   return (
     <Dropdown
       className="font-sans-serif me-2"
-      style={{ '--falcon-dropdown-content': 'none' }}
+      style={{ '--falcon-dropdown-content': 'none' } as React.CSSProperties}
     >
       <Dropdown.Toggle
         variant="falcon-default"
@@ -43,7 +61,7 @@ const DropdownFilter = ({ filters, handleFilter, currentFilter, icon }) => {
       </Dropdown.Toggle>
 
       <Dropdown.Menu className="border py-2">
-        {filters.map((filter, index) => (
+        {filters.map((filter: string, index: number) => (
           <DropdownItemFilter
             currentFilter={currentFilter}
             onClick={() => {

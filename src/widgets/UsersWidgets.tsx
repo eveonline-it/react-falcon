@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, Col, Row } from 'react-bootstrap';
 import { notifications } from 'data/notification/notification';
 import associations from 'data/associations';

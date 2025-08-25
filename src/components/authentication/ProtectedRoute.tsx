@@ -51,7 +51,11 @@ const ProtectedRoute = ({
     if (requiredPermissions.length > 0) {
       const hasRequiredPermission = Array.isArray(requiredPermissions[0])
         ? hasAnyPermission(requiredPermissions.flat()) // If nested array, flatten and check any
-        : requiredPermissions.every(permission => hasPermission(permission)); // All permissions required
+        : requiredPermissions.every(permission => 
+            typeof permission === 'string' 
+              ? hasPermission(permission)
+              : hasAnyPermission(permission)
+          ); // Handle both string and string[] types
 
       if (!hasRequiredPermission) {
         // Redirect to 404 page (since no 403 page exists) or dashboard

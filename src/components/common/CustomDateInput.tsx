@@ -1,8 +1,25 @@
+import React from 'react';
 import { Form } from 'react-bootstrap';
 
-const CustomDateInput = (
-  { value, onClick, isInvalid, isValid, formControlProps, errorMessage, ref }
-) => {
+interface CustomDateInputProps {
+  value: string;
+  onClick: () => void;
+  isInvalid?: boolean;
+  isValid?: boolean;
+  formControlProps?: any;
+  errorMessage?: string;
+  ref?: React.Ref<HTMLInputElement>;
+}
+
+const CustomDateInput: React.FC<CustomDateInputProps> = ({
+  value,
+  onClick,
+  isInvalid,
+  isValid,
+  formControlProps,
+  errorMessage,
+  ref
+}) => {
   return (
     <>
       <Form.Control

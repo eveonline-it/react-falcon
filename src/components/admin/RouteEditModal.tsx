@@ -11,7 +11,7 @@ import {
   Spinner
 } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { SitemapRoute, useParentOptions, ParentOption } from '../../hooks/admin/useSitemap';
+import { SitemapRoute, useParentOptions } from '../../hooks/admin/useSitemap';
 
 const ROUTE_GROUPS = [
   'Administration',

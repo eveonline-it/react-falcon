@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, Badge, Button, ButtonGroup, Dropdown } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { FolderItem, HierarchicalNavItem } from '../../services/sitemapService';
-import { SitemapRoute } from '../../hooks/admin/useSitemap';
+import { HierarchicalNavItem } from '../../services/sitemapService';
 
 interface SitemapTreeViewProps {
   treeData: HierarchicalNavItem[];
@@ -43,11 +42,16 @@ const TreeItem: React.FC<TreeItemProps> = ({
   const hasChildren = item.children && item.children.length > 0;
   const isFolder = item.is_folder;
 
-  const getItemIcon = () => {
+  const getItemIcon = (): string => {
     if (isFolder) {
       return hasChildren && isExpanded ? 'folder-open' : 'folder';
     }
-    return item.icon || 'file-alt';
+    // Ensure we return a string, not string[]
+    const icon = item.icon;
+    if (Array.isArray(icon)) {
+      return icon[0] || 'file-alt';
+    }
+    return icon || 'file-alt';
   };
 
   const getStatusBadge = () => {
@@ -119,7 +123,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
 
                     {/* Item icon */}
                     <FontAwesomeIcon 
-                      icon={getItemIcon()} 
+                      icon={getItemIcon() as any} 
                       className={`me-2 ${isFolder ? 'text-primary' : 'text-info'}`}
                     />
 
@@ -226,7 +230,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
         <Droppable droppableId={`children-${item.id}`} type="TREE_ITEM">
           {(provided) => (
             <div {...provided.droppableProps} ref={provided.innerRef}>
-              {item.children!.map((child, childIndex) => (
+              {(item.children as HierarchicalNavItem[])!.map((child, childIndex) => (
                 <TreeItem
                   key={child.id}
                   item={child}
@@ -259,15 +263,8 @@ const SitemapTreeView: React.FC<SitemapTreeViewProps> = ({
   expandedItems,
   onToggleExpand
 }) => {
-  const [draggedOverId, setDraggedOverId] = useState<string | null>(null);
-
   const handleDragEnd = (result: DropResult) => {
-    setDraggedOverId(null);
     onDragEnd(result);
-  };
-
-  const handleDragOver = (draggedOverId: string | null) => {
-    setDraggedOverId(draggedOverId);
   };
 
   if (!treeData || treeData.length === 0) {

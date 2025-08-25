@@ -1,4 +1,3 @@
-import React from 'react';
 import ECommerceWidgets from './ECommerceWidgets';
 import ErrorsWidgets from './Errors';
 import Forms from './Forms';

@@ -1,4 +1,3 @@
-import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Flex from 'components/common/Flex';
 import { Col } from 'react-bootstrap';

@@ -53,7 +53,6 @@ const FalconEditor = ({
     >
       {!hidePreview && <LivePreview className="mb-3" />}
       <LiveEditor
-        dir="ltr"
         className={classNames('rounded border-top border-bottom', {
           [className]: !!className
         })}

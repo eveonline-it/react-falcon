@@ -68,7 +68,17 @@ const EveAuthCallback = () => {
       console.log('🔐 Processing EVE authentication data:', authData);
       setAuthData(authData);
       
-      const success = await processEveAuthResponse(authData);
+      // Convert EveAuthData to AuthResponse format expected by processEveAuthResponse
+      const authResponse = {
+        authenticated: authData.authenticated,
+        character_id: authData.character_id,
+        character_name: authData.character_name,
+        characters: [], // Will be populated by the auth response from server
+        permissions: [], // Will be populated by the auth response from server  
+        user_id: 0 // Will be populated by the auth response from server
+      };
+      
+      const success = await processEveAuthResponse(authResponse);
       
       if (success) {
         console.log('✅ Authentication successful, redirecting...');

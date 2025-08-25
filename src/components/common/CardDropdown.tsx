@@ -33,10 +33,9 @@ const CardDropdown: React.FC<CardDropdownProps> = ({
         variant="reveal"
         size="sm"
         data-boundary="viewport"
-        className={classNames('text-600', {
-          [btnRevealClass]: btnRevealClass,
-          'btn-reveal': !btnRevealClass
-        })}
+        className={classNames('text-600', 
+          btnRevealClass || 'btn-reveal'
+        )}
       >
         <FontAwesomeIcon icon={icon} className="fs-11" />
       </Dropdown.Toggle>
