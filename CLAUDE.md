@@ -36,6 +36,14 @@ This project uses a structured memory bank system with specialized context files
 
 React Falcon is a comprehensive admin dashboard template built with React 19, featuring multiple specialized dashboards for various business applications including analytics, CRM, e-commerce, project management, SaaS, and support desk systems.
 
+## Full-Stack Development
+
+This React frontend works in conjunction with a Go backend API server. The backend code is available at `~/go-falcon` for complete full-stack development and analysis.
+
+- **Frontend**: React Falcon dashboard (current repository)
+- **Backend**: Go Falcon API server (available at `~/go-falcon`)
+- **Integration**: Cookie-based authentication and OpenAPI-compliant endpoints
+
 ## Core Technologies
 
 - **React 19.1.0** - Latest React with functional components and hooks
