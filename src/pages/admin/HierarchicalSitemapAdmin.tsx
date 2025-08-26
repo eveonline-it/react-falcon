@@ -64,10 +64,10 @@ const HierarchicalSitemapAdmin: React.FC = () => {
   const [preselectedParentId, setPreselectedParentId] = useState<string | null>(null);
   const [parentForFolder, setParentForFolder] = useState<string | null>(null);
 
-  // API hooks - use user sitemap hook to get navigation structure
-  const { data: sitemap, isLoading, error, refetch } = useSitemap();
-  // Also get admin routes for CRUD operations
-  const { data: adminRoutes } = useSitemapRoutes({ sort: 'nav_order', order: 'asc' });
+  // API hooks - use user sitemap hook to get navigation structure (for reference)
+  const { data: sitemap, refetch } = useSitemap();
+  // Get admin routes for CRUD operations and tree structure
+  const { data: adminRoutes, isLoading, error } = useSitemapRoutes({ sort: 'nav_order', order: 'asc' });
   const createRoute = useCreateRoute();
   const updateRoute = useUpdateRoute();
   const deleteRoute = useDeleteRoute();
@@ -98,45 +98,69 @@ const HierarchicalSitemapAdmin: React.FC = () => {
   // Drag drop handler
   const [dragDropHandler, setDragDropHandler] = useState<HierarchicalDragDropHandler | null>(null);
 
-  // Convert navigation structure to tree data using useMemo for stability
+  // Convert admin routes to tree data using useMemo for stability
   const treeData = useMemo(() => {
-    if (!sitemap?.navigation) return [];
+    if (!adminRoutes?.routes) return [];
 
-    const hierarchicalItems: HierarchicalNavItem[] = [];
-    
-    // Process each navigation group
-    sitemap.navigation.forEach((navGroup, groupIndex) => {
-      // Process each navigation item in the group
-      const processNavItem = (item: any, depth: number = 0, parentIndex: string = ''): HierarchicalNavItem => {
-        const itemIndex = `${groupIndex}-${parentIndex}-${item.routeId || item.name}`;
-        const children = item.children ? 
-          item.children.map((child: any, childIndex: number) => 
-            processNavItem(child, depth + 1, `${itemIndex}-${childIndex}`)
-          ) : undefined;
-        
-        const navItem: HierarchicalNavItem = {
-          id: item.routeId || `navitem-${itemIndex}`, // Use stable ID based on position
-          name: item.name || '',
-          to: item.to || undefined,
-          icon: item.icon || undefined,
-          active: item.active !== false,
-          is_folder: item.isFolder || false,
-          parent_id: null, // Will be set if needed
-          nav_order: depth,
-          children: children as any // Type override since HierarchicalNavItem extends NavItem but we need different children type
-        };
-        
-        return navItem;
+    // Build hierarchical structure from flat admin routes
+    const itemMap = new Map<string, HierarchicalNavItem>();
+    const rootItems: HierarchicalNavItem[] = [];
+
+    // First pass: Create all items
+    adminRoutes.routes.forEach((route) => {
+      const hierarchicalItem: HierarchicalNavItem = {
+        id: route.id,
+        name: route.name || 'Unnamed',
+        to: route.is_folder ? undefined : route.path,
+        icon: route.icon || undefined,
+        active: route.is_enabled !== false && route.show_in_nav !== false,
+        is_folder: route.is_folder || false,
+        parent_id: route.parent_id,
+        nav_order: route.nav_order || 0,
+        children: []
       };
       
-      // Add all items from this navigation group
-      navGroup.children.forEach((item: any, itemIndex: number) => {
-        hierarchicalItems.push(processNavItem(item, 0, String(itemIndex)));
-      });
+      itemMap.set(route.id, hierarchicalItem);
+      // Also map by route_id for parent lookups
+      if (route.route_id) {
+        itemMap.set(route.route_id, hierarchicalItem);
+      }
     });
+
+    // Second pass: Build tree structure
+    adminRoutes.routes.forEach((route) => {
+      const item = itemMap.get(route.id)!;
+      
+      if (route.parent_id) {
+        // Find parent (parent_id could be either MongoDB ID or route_id)
+        const parent = itemMap.get(route.parent_id);
+        if (parent) {
+          parent.children = parent.children || [];
+          parent.children.push(item);
+        } else {
+          // Parent not found, treat as root item
+          rootItems.push(item);
+        }
+      } else {
+        // Root level item
+        rootItems.push(item);
+      }
+    });
+
+    // Sort by nav_order
+    const sortItems = (items: HierarchicalNavItem[]) => {
+      items.sort((a, b) => (a.nav_order || 0) - (b.nav_order || 0));
+      items.forEach(item => {
+        if (item.children && item.children.length > 0) {
+          sortItems(item.children);
+        }
+      });
+    };
+
+    sortItems(rootItems);
     
-    return hierarchicalItems;
-  }, [JSON.stringify(sitemap?.navigation)]);
+    return rootItems;
+  }, [adminRoutes?.routes]);
 
   // Initialize drag drop handler - temporarily disabled to prevent infinite loops
   // TODO: Re-enable drag drop functionality after fixing memoization issues
@@ -175,7 +199,7 @@ const HierarchicalSitemapAdmin: React.FC = () => {
     });
   }, []);
 
-  const handleDragEnd = useCallback(async (result: DropResult) => {
+  const handleDragEnd = useCallback(async (_result: DropResult) => {
     // Drag drop temporarily disabled to prevent infinite re-renders
     console.log('Drag drop temporarily disabled');
     return;
@@ -183,7 +207,7 @@ const HierarchicalSitemapAdmin: React.FC = () => {
     // TODO: Re-enable when memoization is fixed
     // if (!dragDropHandler) return;
     // try {
-    //   const reorderResult = await dragDropHandler.handleDragEnd(result);
+    //   const reorderResult = await dragDropHandler.handleDragEnd(_result);
     //   if (reorderResult) {
     //     refetch();
     //     sitemapService.clearCache();
@@ -211,7 +235,7 @@ const HierarchicalSitemapAdmin: React.FC = () => {
     }
   }, [deleteRoute]);
 
-  const handleToggleEnabled = useCallback(async (item: HierarchicalNavItem) => {
+  const handleToggleEnabled = useCallback(async (_item: HierarchicalNavItem) => {
     // This would need to be implemented with a toggle endpoint
     toast.info('Toggle functionality needs backend implementation');
   }, []);
@@ -271,7 +295,7 @@ const HierarchicalSitemapAdmin: React.FC = () => {
       items.forEach(item => {
         if (item.children && item.children.length > 0) {
           allIds.add(item.id);
-          collectIds(item.children);
+          collectIds(item.children as HierarchicalNavItem[]);
         }
       });
     };
@@ -284,62 +308,34 @@ const HierarchicalSitemapAdmin: React.FC = () => {
   }, []);
 
   const getParentName = useCallback((parentId: string | null): string => {
-    if (!parentId) return '';
-    // Find parent in navigation structure
-    const findParentInNavigation = (items: any[], id: string): string => {
-      for (const group of items) {
-        for (const item of group.children || []) {
-          if (item.routeId === id) return item.name;
-          if (item.children) {
-            const found = findParentInNavigation([{ children: item.children }], id);
-            if (found) return found;
-          }
-        }
-      }
-      return '';
-    };
-    return sitemap?.navigation ? findParentInNavigation(sitemap.navigation, parentId) : '';
-  }, [sitemap?.navigation]);
+    if (!parentId || !adminRoutes?.routes) return '';
+    // Find parent in admin routes
+    const parent = adminRoutes.routes.find(route => 
+      route.id === parentId || route.route_id === parentId
+    );
+    return parent?.name || '';
+  }, [adminRoutes?.routes]);
 
-  // Generate parent options from navigation structure
+  // Generate parent options from admin routes
   const parentOptions = useMemo(() => {
-    if (!sitemap?.navigation) return [];
+    if (!adminRoutes?.routes) return [];
 
-    const options: Array<{
-      id: string;
-      name: string;
-      path?: string;
-      is_folder: boolean;
-      parent_id: string | null;
-      depth: number;
-    }> = [];
+    // Only include folders and root routes as potential parents
+    const potentialParents = adminRoutes.routes.filter(route => 
+      route.is_folder || route.parent_id === null
+    );
 
-    const processNavItem = (item: any, depth: number = 0, parentId: string | null = null) => {
-      if (item.routeId) {
-        options.push({
-          id: item.routeId,
-          name: item.name,
-          path: item.to,
-          is_folder: item.isFolder || false,
-          parent_id: parentId,
-          depth
-        });
-
-        // Process children
-        if (item.children) {
-          item.children.forEach((child: any) => 
-            processNavItem(child, depth + 1, item.routeId)
-          );
-        }
-      }
-    };
-
-    sitemap.navigation.forEach(navGroup => {
-      navGroup.children.forEach((item: any) => processNavItem(item));
-    });
+    const options = potentialParents.map(route => ({
+      id: route.id,
+      name: route.name || 'Unnamed',
+      path: route.path,
+      is_folder: route.is_folder || false,
+      parent_id: route.parent_id,
+      depth: 0 // Calculate depth if needed, or use 0 as default
+    }));
 
     return options.sort((a, b) => a.name.localeCompare(b.name));
-  }, [sitemap?.navigation]);
+  }, [adminRoutes?.routes]);
 
   if (isLoading) {
     return (
@@ -359,7 +355,7 @@ const HierarchicalSitemapAdmin: React.FC = () => {
         <p className="mb-0">
           {error instanceof Error ? error.message : 'Please try again later.'}
         </p>
-        <Button variant="outline-danger" onClick={() => refetch()} className="mt-2">
+        <Button variant="outline-danger" onClick={() => window.location.reload()} className="mt-2">
           <FontAwesomeIcon icon="refresh" className="me-2" />
           Retry
         </Button>

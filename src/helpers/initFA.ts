@@ -267,7 +267,8 @@ import {
   faGripVertical,
   faExpandArrowsAlt,
   faCompressArrowsAlt,
-  faEllipsisV
+  faEllipsisV,
+  faSave
 } from '@fortawesome/free-solid-svg-icons';
 
 library.add(
@@ -541,5 +542,6 @@ library.add(
   faGripVertical,
   faExpandArrowsAlt,
   faCompressArrowsAlt,
-  faEllipsisV
+  faEllipsisV,
+  faSave
 );

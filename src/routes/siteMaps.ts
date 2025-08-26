@@ -1305,6 +1305,13 @@ loadDynamicRouteGroups().catch(error => {
   console.warn('Initial dynamic route loading failed:', error);
 });
 
+// Force refresh navigation to use hierarchical structure  
+export async function forceRefreshNavigation(): Promise<void> {
+  console.log('🔄 Forcing navigation refresh to use hierarchical structure...');
+  sitemapService.clearCache();
+  await loadDynamicRouteGroups(true);
+}
+
 // For backward compatibility, export static routes by default
 const routeGroups: RouteGroup[] = staticRouteGroups;
 
