@@ -151,10 +151,53 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
       }
     }
     
-    onSave({
-      ...formData,
-      is_folder: itemType === 'folder'
-    });
+    // Build payload based on item type and operation
+    const commonFields = {
+      name: formData.name,
+      icon: formData.icon,
+      type: formData.type,
+      parent_id: formData.parent_id,
+      nav_order: formData.nav_order,
+      show_in_nav: formData.show_in_nav,
+      required_permissions: formData.required_permissions,
+      required_groups: formData.required_groups,
+      description: formData.description,
+      keywords: formData.keywords,
+      group: formData.group,
+      feature_flags: formData.feature_flags,
+      is_enabled: formData.is_enabled,
+      props: formData.props
+    };
+
+    const routeSpecificFields = {
+      title: formData.title,
+      path: formData.path,
+      component: formData.component,
+      nav_position: formData.nav_position,
+      lazy_load: formData.lazy_load,
+      exact: formData.exact,
+      newtab: formData.newtab
+    };
+
+    let payload: any;
+    if (route) {
+      // Updating existing item - only include relevant fields
+      payload = itemType === 'folder' ? commonFields : { ...commonFields, ...routeSpecificFields };
+    } else {
+      // Creating new item - include route_id and is_folder
+      payload = {
+        ...commonFields,
+        route_id: formData.route_id,
+        is_folder: itemType === 'folder'
+      };
+      
+      // Only include route-specific fields for routes
+      if (itemType === 'route') {
+        Object.assign(payload, routeSpecificFields);
+      }
+    }
+    
+    onSave(payload);
   };
 
   const getParentBreadcrumb = (parentId: string | null): string => {
@@ -283,6 +326,7 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
                   value={formData.route_id}
                   onChange={e => setFormData({ ...formData, route_id: e.target.value })}
                   required
+                  disabled={!!route}
                   placeholder={itemType === 'folder' ? 'user-management' : 'dashboard-main'}
                 />
                 <Form.Text className="text-muted">

@@ -367,10 +367,30 @@ const HierarchicalSitemapAdmin: React.FC = () => {
     }
   }, [deleteRoute]);
 
-  const handleToggleEnabled = useCallback(async (_item: HierarchicalNavItem) => {
-    // This would need to be implemented with a toggle endpoint
-    toast.info('Toggle functionality needs backend implementation');
-  }, []);
+  const handleToggleEnabled = useCallback(async (item: HierarchicalNavItem) => {
+    try {
+      const originalRoute = adminRoutes?.routes?.find(r => r.id === item.id);
+      if (originalRoute) {
+        // Filter out computed/read-only fields for updates
+        const { 
+          route_id, 
+          is_folder, 
+          ...editableFields 
+        } = originalRoute;
+        
+        await updateRoute.mutateAsync({
+          ...editableFields,
+          id: originalRoute.id,
+          route_id: originalRoute.route_id,
+          is_folder: originalRoute.is_folder,
+          is_enabled: !originalRoute.is_enabled
+        });
+        toast.success(`${originalRoute.is_folder ? 'Folder' : 'Route'} ${originalRoute.is_enabled ? 'disabled' : 'enabled'} successfully`);
+      }
+    } catch (error) {
+      toast.error('Failed to toggle item status');
+    }
+  }, [adminRoutes, updateRoute]);
 
   const handleCreateFolder = useCallback((parentId?: string) => {
     setParentForFolder(parentId || null);
@@ -379,19 +399,44 @@ const HierarchicalSitemapAdmin: React.FC = () => {
 
   const handleSaveFolder = useCallback(async (folderData: FolderFormData) => {
     try {
-      await createFolder.mutateAsync({
-        name: folderData.name,
-        parent_id: folderData.parent_id,
-        icon: folderData.icon
-      });
-      toast.success('Folder created successfully');
+      if (editingItem) {
+        // Update existing folder using the same endpoint as routes
+        const originalRoute = adminRoutes?.routes?.find(r => r.id === editingItem.id);
+        if (originalRoute) {
+          // Filter out computed/read-only fields
+          const { 
+            route_id, 
+            is_folder, 
+            ...editableFields 
+          } = originalRoute;
+          
+          await updateRoute.mutateAsync({
+            ...editableFields,
+            ...folderData,
+            id: originalRoute.id,
+            route_id: originalRoute.route_id,
+            is_folder: originalRoute.is_folder
+          });
+          toast.success('Folder updated successfully');
+        }
+      } else {
+        // Create new folder
+        await createFolder.mutateAsync({
+          name: folderData.name,
+          parent_id: folderData.parent_id,
+          icon: folderData.icon
+        });
+        toast.success('Folder created successfully');
+      }
+      
       setShowFolderModal(false);
       setParentForFolder(null);
+      setEditingItem(null);
       sitemapService.clearCache();
     } catch (error) {
-      toast.error('Failed to create folder');
+      toast.error(editingItem ? 'Failed to update folder' : 'Failed to create folder');
     }
-  }, [createFolder]);
+  }, [editingItem, adminRoutes, createFolder, updateRoute]);
 
   const handleSaveRoute = useCallback(async (routeData: RouteFormData) => {
     try {
@@ -399,11 +444,19 @@ const HierarchicalSitemapAdmin: React.FC = () => {
         // Find the original route data for update
         const originalRoute = adminRoutes?.routes?.find(r => r.id === editingItem.id);
         if (originalRoute) {
+          // Filter out computed/read-only fields
+          const { 
+            route_id, 
+            is_folder, 
+            ...editableFields 
+          } = originalRoute;
+          
           await updateRoute.mutateAsync({
+            ...editableFields,
             ...routeData,
             id: originalRoute.id,
-            created_at: originalRoute.created_at,
-            updated_at: originalRoute.updated_at
+            route_id: originalRoute.route_id,
+            is_folder: originalRoute.is_folder
           });
           toast.success('Route updated successfully');
         }
