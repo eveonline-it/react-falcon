@@ -3,7 +3,7 @@ import { Button, Card, Col, Row } from 'react-bootstrap';
 import { Link } from 'react-router';
 import editing from 'assets/img/icons/spot-illustrations/21.png';
 import paths from 'routes/paths';
-import SitemapDebug from 'components/debug/SitemapDebug';
+import SitemapDiagnostic from 'components/debug/SitemapDiagnostic';
 
 const Starter: React.FC = () => {
   const [showDebug, setShowDebug] = useState(false);
@@ -41,7 +41,7 @@ const Starter: React.FC = () => {
 
       {showDebug && (
         <div className="mt-4">
-          <SitemapDebug />
+          <SitemapDiagnostic />
         </div>
       )}
     </>

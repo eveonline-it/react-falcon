@@ -249,7 +249,6 @@ const CorporationsAdmin = () => {
   const { data: corporationsData, isLoading, error, refetch } = useManagedCorporations();
   const { data: searchResults, isLoading: searchLoading } = useSearchCorporations(searchQuery);
   const { data: healthData, isLoading: healthLoading } = useCorporationHealth();
-  console.log("healthData: ", healthData)
   
   const addCorporationMutation = useAddManagedCorporation();
   const updateStatusMutation = useUpdateCorporationStatus();
@@ -279,7 +278,6 @@ const CorporationsAdmin = () => {
       const newIndex = currentCorps.findIndex(corp => corp.corporation_id === over.id);
       
       if (oldIndex === -1 || newIndex === -1) {
-        console.error('Could not find corporation indices for drag operation');
         return;
       }
       

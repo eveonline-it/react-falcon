@@ -307,7 +307,6 @@ const TaskHistoryModal = ({
                               variant="outline-info"
                               onClick={() => {
                                 // Show execution details in a modal or expand row
-                                console.log('View execution details:', execution);
                               }}
                             >
                               <FontAwesomeIcon icon={faEye} />

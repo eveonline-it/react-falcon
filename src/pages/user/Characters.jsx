@@ -239,7 +239,6 @@ const Characters = () => {
       toast.success('Character positions updated successfully!');
       refetch();
     } catch (error) {
-      console.error('Failed to update positions:', error);
       toast.error('Failed to update character positions');
     }
   };

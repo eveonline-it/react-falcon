@@ -42,17 +42,6 @@ const GroupPermissions = ({ group, onClose }) => {
   const permissions = groupPermissions?.permissions || [];
   const availablePerms = availablePermissions?.permissions || [];
 
-  // Debug logging to help identify data structure issues
-  React.useEffect(() => {
-    if (groupPermissions && availablePermissions) {
-      console.log('Group permissions data:', {
-        groupPermissions,
-        firstPermission: permissions[0],
-        availablePermissions,
-        firstAvailable: availablePerms[0]
-      });
-    }
-  }, [groupPermissions, availablePermissions]);
 
   // Get permissions not already granted to this group
   const unassignedPermissions = availablePerms.filter(
@@ -101,7 +90,7 @@ const GroupPermissions = ({ group, onClose }) => {
       setSearchTerm('');
       setServiceFilter('');
     } catch (err) {
-      console.error('Failed to grant permission:', err);
+      // Failed to grant permission
     }
   };
 
@@ -116,7 +105,7 @@ const GroupPermissions = ({ group, onClose }) => {
       setShowRevokeConfirm(false);
       setPermissionToRevoke(null);
     } catch (err) {
-      console.error('Failed to revoke permission:', err);
+      // Failed to revoke permission
     }
   };
 
@@ -130,7 +119,7 @@ const GroupPermissions = ({ group, onClose }) => {
         isActive: newStatus
       });
     } catch (err) {
-      console.error('Failed to update permission status:', err);
+      // Failed to update permission status
     }
   };
 

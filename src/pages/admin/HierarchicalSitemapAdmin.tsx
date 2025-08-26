@@ -139,42 +139,11 @@ const HierarchicalSitemapAdmin: React.FC = () => {
     // Find all folders first
     const folders = adminRoutes.routes.filter(r => r.is_folder || r.type === 'folder');
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔍 API Data Received:', {
-        totalRoutes: adminRoutes.routes.length,
-        apiTotal: adminRoutes.total,
-        apiPage: adminRoutes.page,
-        apiLimit: adminRoutes.limit
-      });
-      
-      console.log('📁 Folders found:', folders.map(f => ({
-        name: f.name,
-        route_id: f.route_id,
-        id: f.id
-      })));
-      
-      // Check specifically for Administration children in raw data
-      const adminChildrenInRawData = adminRoutes.routes.filter(r => r.parent_id === 'folder-administration');
-      console.log('📊 Administration children in raw API data:', {
-        count: adminChildrenInRawData.length,
-        names: adminChildrenInRawData.map(r => r.name)
-      });
-    }
-
     // For each folder, find its children by matching parent_id to folder's route_id
     folders.forEach(folder => {
       const folderItem = itemMap.get(folder.id)!;
       const children = adminRoutes.routes.filter(r => r.parent_id === folder.route_id);
       
-      if (process.env.NODE_ENV === 'development' && folder.route_id === 'folder-administration') {
-        console.log('🏢 Administration folder processing:', {
-          folderName: folder.name,
-          folderRouteId: folder.route_id,
-          foundChildren: children.length,
-          childrenNames: children.map(c => c.name)
-        });
-      }
-
       // Add children to folder
       children.forEach(child => {
         const childItem = itemMap.get(child.id);
@@ -183,13 +152,6 @@ const HierarchicalSitemapAdmin: React.FC = () => {
             folderItem.children = [];
           }
           folderItem.children.push(childItem);
-          
-          if (process.env.NODE_ENV === 'development' && folder.route_id === 'folder-administration') {
-            console.log('✅ Added to Administration:', {
-              childName: child.name,
-              totalChildren: folderItem.children.length
-            });
-          }
         }
       });
 
@@ -233,21 +195,6 @@ const HierarchicalSitemapAdmin: React.FC = () => {
 
     sortItems(rootItems);
 
-    // Debug final result
-    if (process.env.NODE_ENV === 'development') {
-      const adminFolder = rootItems.find(item => item.name === 'Administration' && item.is_folder);
-      if (adminFolder) {
-        console.log('🎯 FINAL Administration folder:', {
-          name: adminFolder.name,
-          childCount: adminFolder.children?.length || 0,
-          children: adminFolder.children?.map(c => ({
-            id: (c as HierarchicalNavItem).id,
-            name: (c as HierarchicalNavItem).name
-          })) || []
-        });
-      }
-    }
-    
     return rootItems;
   }, [adminRoutes?.routes]);
 

@@ -146,7 +146,7 @@ const SettingsAdmin = () => {
       handleCloseModal();
       refetch();
     } catch (err) {
-      console.error('Failed to save setting:', err);
+      // Failed to save setting
     }
   };
 
@@ -159,7 +159,7 @@ const SettingsAdmin = () => {
       setSettingToDelete(null);
       refetch();
     } catch (err) {
-      console.error('Failed to delete setting:', err);
+      // Failed to delete setting
     }
   };
 
@@ -174,7 +174,7 @@ const SettingsAdmin = () => {
       });
       refetch();
     } catch (err) {
-      console.error('Failed to toggle setting:', err);
+      // Failed to toggle setting
     }
   };
 

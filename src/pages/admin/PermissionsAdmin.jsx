@@ -90,7 +90,7 @@ const PermissionsAdmin = () => {
         characterId: checkCharacterId || undefined
       });
     } catch (err) {
-      console.error('Failed to check permission:', err);
+      // Failed to check permission
     }
   };
 

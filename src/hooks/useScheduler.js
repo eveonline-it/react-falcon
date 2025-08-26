@@ -230,13 +230,6 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      console.error('❌ Execute task failed:', {
-        taskId,
-        status: res.status,
-        statusText: res.statusText,
-        errorData,
-        executeParams: executeParams || {}
-      });
       const error = new Error(errorData.detail || errorData.message || `HTTP ${res.status}: ${res.statusText}`);
       error.status = res.status;
       error.data = errorData;

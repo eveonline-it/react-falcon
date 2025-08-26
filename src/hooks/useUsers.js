@@ -6,10 +6,7 @@ const BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.i
 // Character data enrichment helper functions
 
 const enrichUserWithCharacterData = async (user) => {
-  console.log(`enrichUserWithCharacterData called for user:`, user.character_name || user.name, 'character_id:', user.character_id);
-  
   if (!user.character_id) {
-    console.log('No character_id, skipping enrichment');
     return user;
   }
   
@@ -17,7 +14,6 @@ const enrichUserWithCharacterData = async (user) => {
   
   try {
     // Fetch character details from backend
-    console.log(`Making API call to ${BASE_URL}/character/${user.character_id}`);
     const characterResponse = await fetch(`${BASE_URL}/character/${user.character_id}`, {
       method: 'GET',
       credentials: 'include',
@@ -26,15 +22,11 @@ const enrichUserWithCharacterData = async (user) => {
       },
     });
 
-    console.log(`Character API response status: ${characterResponse.status} ${characterResponse.statusText}`);
-    
     if (!characterResponse.ok) {
-      console.warn(`Failed to fetch character data for ${user.character_id}: ${characterResponse.status} ${characterResponse.statusText}`);
       return user;
     }
 
     const characterData = await characterResponse.json();
-    console.log(`Character data for ${user.character_id}:`, characterData);
     
     // Update all character fields from API response
     if (characterData.corporation_id) {
@@ -111,7 +103,6 @@ const enrichUserWithCharacterData = async (user) => {
           const { type, response } = result.value;
           try {
             const data = await response.json();
-            console.log(`${type} data:`, data);
             if (type === 'corporation' && data.name) {
               enrichedUser.corporation_name = data.name;
               if (data.ticker) enrichedUser.corporation_ticker = data.ticker;
@@ -119,7 +110,6 @@ const enrichUserWithCharacterData = async (user) => {
               if (data.member_count) enrichedUser.corporation_member_count = data.member_count;
               if (data.tax_rate !== undefined) enrichedUser.corporation_tax_rate = data.tax_rate;
               if (data.date_founded) enrichedUser.corporation_date_founded = data.date_founded;
-              console.log(`Set corporation_name to: ${data.name}`);
             } else if (type === 'alliance' && data.name) {
               enrichedUser.alliance_name = data.name;
               if (data.ticker) enrichedUser.alliance_ticker = data.ticker;
@@ -127,22 +117,20 @@ const enrichUserWithCharacterData = async (user) => {
               if (data.creator_corporation_id) enrichedUser.alliance_creator_corporation_id = data.creator_corporation_id;
               if (data.date_founded) enrichedUser.alliance_date_founded = data.date_founded;
               if (data.executor_corporation_id) enrichedUser.alliance_executor_corporation_id = data.executor_corporation_id;
-              console.log(`Set alliance_name to: ${data.name}`);
             }
           } catch (jsonError) {
-            console.warn(`Failed to parse ${type} response:`, jsonError);
+            // Failed to parse response
           }
         } else if (result.status === 'fulfilled') {
-          console.warn(`${result.value.type} API call failed:`, result.value.response.status, result.value.response.statusText);
+          // API call failed
         } else {
-          console.warn(`${result.value?.type || 'API'} call rejected:`, result.reason);
+          // API call rejected
         }
       }
     }
     
     return enrichedUser;
   } catch (error) {
-    console.error('Error enriching user data:', error);
     return user; // Return original user data on error
   }
 };
@@ -169,7 +157,6 @@ const fetchUsers = async (filters = {}) => {
   }
 
   const data = await response.json();
-  console.log('Users API response:', data); // Debug log to see what we get
   
   // Handle different response structures
   let usersArray;
@@ -183,23 +170,16 @@ const fetchUsers = async (filters = {}) => {
     usersArray = data.users;
   } else {
     // No users found or unexpected structure
-    console.log('No users found or unexpected response structure');
     return data;
   }
   
   // Check if we have users with character_id for enrichment
   if (usersArray.length > 0) {
-    console.log('Sample user structure:', usersArray[0]);
-    console.log('Users with character_id:', usersArray.filter(u => u.character_id).length, 'out of', usersArray.length);
-    
-    console.log('Enriching', usersArray.length, 'users with character data...');
     const enrichedUsers = await Promise.all(
-      usersArray.map((user, index) => {
-        console.log(`Processing user ${index + 1}/${usersArray.length}: character_id=${user.character_id}, name=${user.character_name}`);
+      usersArray.map((user) => {
         return enrichUserWithCharacterData(user);
       })
     );
-    console.log('Character data enrichment completed');
     
     // Return in the same structure as received
     if (Array.isArray(data)) {
@@ -211,7 +191,6 @@ const fetchUsers = async (filters = {}) => {
       };
     }
   } else {
-    console.log('No users to enrich (empty array)');
     return data;
   }
   
@@ -255,13 +234,11 @@ const fetchUserProfile = async (userId) => {
     // If public profile fails, return null to indicate we should use existing user data
     return null;
   } catch (error) {
-    console.warn('User profile fetch failed, will use existing user data:', error);
     return null;
   }
 };
 
 const updateUser = async ({ userId, data }) => {
-  console.log(`Making PUT request to ${BASE_URL}/users/mgt/${userId} with data:`, data);
   
   const response = await fetch(`${BASE_URL}/users/mgt/${userId}`, {
     method: 'PUT',
@@ -274,12 +251,10 @@ const updateUser = async ({ userId, data }) => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    console.error('Update user failed:', response.status, errorData);
     throw new Error(errorData.error || errorData.message || `Failed to update user: ${response.status}`);
   }
 
   const result = await response.json();
-  console.log('Update user success:', result);
   return result;
 };
 
@@ -322,7 +297,6 @@ const bulkUpdateUsers = async ({ userIds, data }) => {
 };
 
 const deleteUser = async (characterId) => {
-  console.log(`Making DELETE request to ${BASE_URL}/users/mgt/${characterId}`);
   
   const response = await fetch(`${BASE_URL}/users/mgt/${characterId}`, {
     method: 'DELETE',
@@ -334,12 +308,10 @@ const deleteUser = async (characterId) => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    console.error('Delete user failed:', response.status, errorData);
     throw new Error(errorData.error || errorData.message || `Failed to delete user: ${response.status}`);
   }
 
   const result = await response.json();
-  console.log('Delete user success:', result);
   return result;
 };
 

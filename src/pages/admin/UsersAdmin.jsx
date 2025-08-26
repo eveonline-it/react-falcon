@@ -117,7 +117,6 @@ const UsersAdmin = () => {
   }, [debouncedSearch]);
 
   const handleOpenUserModal = (user) => {
-    console.log('Selected user data:', user); // Debug log to see available fields
     setSelectedUser(user);
     setShowUserModal(true);
   };
@@ -144,7 +143,7 @@ const UsersAdmin = () => {
       setStatusUpdate({ user: null, status: '' });
       refetch();
     } catch (err) {
-      console.error('Failed to update user status:', err);
+      // Failed to update user status
     }
   };
 
@@ -152,7 +151,7 @@ const UsersAdmin = () => {
     try {
       await refreshDataMutation.mutateAsync(userId);
     } catch (err) {
-      console.error('Failed to refresh user data:', err);
+      // Failed to refresh user data
     }
   };
   
@@ -199,7 +198,6 @@ const UsersAdmin = () => {
         throw new Error('Character ID is required for user updates');
       }
       
-      console.log('Updating user by character_id:', characterId, 'with data:', updateData);
       
       await updateUserMutation.mutateAsync({
         userId: characterId, // API expects character_id, but we call it userId in the hook
@@ -212,7 +210,6 @@ const UsersAdmin = () => {
       setUserPosition('');
       refetch();
     } catch (err) {
-      console.error('Failed to update user:', err);
       toast.error(`Failed to update user: ${err.message}`);
     }
   };
@@ -247,7 +244,7 @@ const UsersAdmin = () => {
       setBulkAction('');
       refetch();
     } catch (err) {
-      console.error('Failed to perform bulk action:', err);
+      // Failed to perform bulk action
     }
   };
 
@@ -265,7 +262,7 @@ const UsersAdmin = () => {
       setUserToDelete(null);
       refetch();
     } catch (err) {
-      console.error('Failed to delete user:', err);
+      // Failed to delete user
     }
   };
 

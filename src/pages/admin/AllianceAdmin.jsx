@@ -276,7 +276,6 @@ const AllianceAdmin = () => {
       const newIndex = currentAlliances.findIndex(alliance => alliance.alliance_id === over.id);
       
       if (oldIndex === -1 || newIndex === -1) {
-        console.error('Could not find alliance indices for drag operation');
         return;
       }
       

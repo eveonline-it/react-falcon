@@ -23,7 +23,6 @@ const fetchUserCharacters = async (userId) => {
   }
 
   const data = await response.json();
-  console.log('User characters API response:', data);
   
   // Handle different response structures
   if (Array.isArray(data)) {
@@ -35,7 +34,6 @@ const fetchUserCharacters = async (userId) => {
   }
   
   // If no array found, return empty array
-  console.log('No characters found or unexpected response structure');
   return [];
 };
 
@@ -45,7 +43,6 @@ const updateCharacterPositions = async ({ userId, updates }) => {
     throw new Error('User ID and updates array are required');
   }
   
-  console.log(`Making PUT request to ${BASE_URL}/users/${userId}/characters/positions with updates:`, updates);
   
   const response = await fetch(`${BASE_URL}/users/${userId}/characters/positions`, {
     method: 'PUT',
@@ -58,12 +55,10 @@ const updateCharacterPositions = async ({ userId, updates }) => {
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    console.error('Update character positions failed:', response.status, errorData);
     throw new Error(errorData.error || errorData.message || `Failed to update character positions: ${response.status}`);
   }
 
   const result = await response.json();
-  console.log('Update character positions success:', result);
   return result;
 };
 
@@ -92,10 +87,8 @@ export const useUpdateCharacterPositions = (options = {}) => {
         refetchType: 'active',
       });
       
-      console.log('Character positions updated successfully');
     },
     onError: (error) => {
-      console.error('Failed to update character positions:', error);
       toast.error(`Failed to update character positions: ${error.message}`);
     },
     ...options,

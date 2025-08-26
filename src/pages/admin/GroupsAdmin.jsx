@@ -157,7 +157,7 @@ const GroupsAdmin = () => {
       handleCloseModal();
       refetch();
     } catch (err) {
-      console.error('Failed to save group:', err);
+      // Failed to save group
     }
   };
 
@@ -165,41 +165,11 @@ const GroupsAdmin = () => {
     if (!groupToDelete) return;
     
     try {
-      console.log('Attempting to delete group:', {
-        id: groupToDelete.id,
-        idType: typeof groupToDelete.id,
-        fullGroup: groupToDelete
-      });
-
-      // First, let's try to fetch the group to make sure it exists
-      console.log('Verifying group exists before deletion...');
-      const verifyResponse = await fetch(`${import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.it'}/groups/${groupToDelete.id}`, {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      console.log('Verification response status:', verifyResponse.status);
-      
-      if (!verifyResponse.ok) {
-        console.log('Group verification failed, group may not exist');
-        const errorData = await verifyResponse.json().catch(() => ({}));
-        console.log('Verification error:', errorData);
-      } else {
-        console.log('Group exists, proceeding with deletion');
-      }
-
       await deleteMutation.mutateAsync(groupToDelete.id);
       setShowDeleteConfirm(false);
       setGroupToDelete(null);
       refetch();
     } catch (err) {
-      console.error('Failed to delete group:', err);
-      console.error('Error details:', {
-        status: err.status,
-        response: err.response,
-        message: err.message
-      });
       toast.error(`Delete failed: ${err.response?.error || err.message || 'Unknown error'}`);
     }
   };
@@ -235,7 +205,6 @@ const GroupsAdmin = () => {
       setCharacterSearchTerm('');
       toast.success(`${characterToAdd.name} added to group successfully!`);
     } catch (err) {
-      console.error('Failed to add member:', err);
       setShowAddMemberConfirm(false);
       setCharacterToAdd(null);
     }
@@ -253,7 +222,6 @@ const GroupsAdmin = () => {
       setMemberToRemove(null);
       toast.success(`${memberToRemove.character_name || memberToRemove.name} removed from group successfully!`);
     } catch (err) {
-      console.error('Failed to remove member:', err);
       setShowRemoveMemberConfirm(false);
       setMemberToRemove(null);
     }

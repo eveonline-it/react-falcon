@@ -24,7 +24,6 @@ const fetcher = async (url, options = {}) => {
       const errorText = error.response?.errors?.[0]?.message || '';
       if (errorText.includes('not found') && errorText.includes('group')) {
         // This might be a successful deletion that the backend reports as an error
-        console.warn('Backend returned 500 for DELETE, but this might be successful');
       }
     }
     
@@ -138,8 +137,6 @@ export const useDeleteGroup = () => {
   return useMutation({
     mutationFn: async (id) => {
       const url = `/groups/${id}`;
-      console.log('DELETE request URL:', url);
-      console.log('DELETE request ID:', id);
       
       try {
         return await fetcher(url, {
@@ -151,7 +148,6 @@ export const useDeleteGroup = () => {
           const errorMessage = error.response?.errors?.[0]?.message || '';
           if (errorMessage.includes('group not found')) {
             // The group might have been successfully deleted but backend reports it as not found
-            console.warn('Backend returned "group not found" error, but deletion might have succeeded');
             
             // Let's verify by trying to fetch the group
             try {
@@ -162,11 +158,9 @@ export const useDeleteGroup = () => {
               
               if (verifyResponse.status === 404) {
                 // Group is indeed gone, so deletion was successful
-                console.log('Verification confirms group was deleted successfully');
                 return {}; // Return success
               }
             } catch (verifyError) {
-              console.log('Verification failed, but assuming deletion succeeded');
               return {}; // Assume success
             }
           }
@@ -324,7 +318,6 @@ export const useDeletePermissionFromGroup = () => {
           const errorMessage = error.response?.errors?.[0]?.message || '';
           if (errorMessage.includes('permission not found') || errorMessage.includes('not found')) {
             // The permission might have been successfully revoked but backend reports it as not found
-            console.warn('Backend returned "permission not found" error, but revocation might have succeeded');
             return {}; // Return success
           }
         }
@@ -386,7 +379,6 @@ export const useGroupMemberCounts = (groupIds) => {
           memberCounts[groupId] = response.members?.length || 0;
         } catch (error) {
           // If there's an error getting members for a specific group, set count to 0
-          console.warn(`Failed to get member count for group ${groupId}:`, error);
           memberCounts[groupId] = 0;
         }
       });
