@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   Card,
   Button,
@@ -24,6 +24,7 @@ import {
 } from '../../components/admin';
 
 // Hooks
+import { useSitemap } from '../../hooks/useSitemap';
 import {
   useSitemapRoutes,
   useCreateRoute,
@@ -32,7 +33,6 @@ import {
   useCreateFolder,
   useMoveItem,
   useReorderRoutes,
-  useParentOptions,
   SitemapRoute
 } from '../../hooks/admin/useSitemap';
 
@@ -52,7 +52,6 @@ interface RouteFormData extends Omit<SitemapRoute, 'id' | 'created_at' | 'update
 
 const HierarchicalSitemapAdmin: React.FC = () => {
   // State management
-  const [treeData, setTreeData] = useState<HierarchicalNavItem[]>([]);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,12 +64,10 @@ const HierarchicalSitemapAdmin: React.FC = () => {
   const [preselectedParentId, setPreselectedParentId] = useState<string | null>(null);
   const [parentForFolder, setParentForFolder] = useState<string | null>(null);
 
-  // API hooks
-  const { data: routes, isLoading, error, refetch } = useSitemapRoutes({
-    sort: 'nav_order',
-    order: 'asc'
-  });
-  const { data: parentOptions } = useParentOptions();
+  // API hooks - use user sitemap hook to get navigation structure
+  const { data: sitemap, isLoading, error, refetch } = useSitemap();
+  // Also get admin routes for CRUD operations
+  const { data: adminRoutes } = useSitemapRoutes({ sort: 'nav_order', order: 'asc' });
   const createRoute = useCreateRoute();
   const updateRoute = useUpdateRoute();
   const deleteRoute = useDeleteRoute();
@@ -78,117 +75,80 @@ const HierarchicalSitemapAdmin: React.FC = () => {
   const moveItem = useMoveItem();
   const reorderRoutes = useReorderRoutes();
 
+  // Memoized drag drop callbacks
+  const handleItemMove = useCallback(async (itemId: string, newParentId: string | null, newOrder: number) => {
+    await moveItem.mutateAsync({ itemId, newParentId });
+    toast.success('Item moved successfully');
+  }, [moveItem]);
+
+  const handleReorder = useCallback(async (items) => {
+    // Transform items to match API format
+    const updates = items.map(item => {
+      // Find the corresponding route to get route_id
+      const route = adminRoutes?.routes?.find(r => r.id === item.id);
+      return {
+        route_id: route?.route_id || item.id, // fallback to id if route_id not found
+        nav_order: item.nav_order
+      };
+    });
+    await reorderRoutes.mutateAsync({ updates });
+    toast.success('Items reordered successfully');
+  }, [adminRoutes, reorderRoutes]);
+
   // Drag drop handler
   const [dragDropHandler, setDragDropHandler] = useState<HierarchicalDragDropHandler | null>(null);
 
-  // Initialize drag drop handler
-  useEffect(() => {
-    const context: HierarchicalDragDropContext = {
-      treeData,
-      onItemMove: async (itemId: string, newParentId: string | null, newOrder: number) => {
-        await moveItem.mutateAsync({ itemId, newParentId });
-        toast.success('Item moved successfully');
-      },
-      onReorder: async (items) => {
-        // Transform items to match API format
-        const updates = items.map(item => {
-          // Find the corresponding route to get route_id
-          const route = routes.routes.find(r => r.id === item.id);
-          return {
-            route_id: route?.route_id || item.id, // fallback to id if route_id not found
-            nav_order: item.nav_order
-          };
-        });
-        await reorderRoutes.mutateAsync({ updates });
-        toast.success('Items reordered successfully');
-      }
-    };
+  // Convert navigation structure to tree data using useMemo for stability
+  const treeData = useMemo(() => {
+    if (!sitemap?.navigation) return [];
 
-    setDragDropHandler(createHierarchicalDragDropHandler(context));
-  }, [treeData, moveItem, reorderRoutes]);
+    const hierarchicalItems: HierarchicalNavItem[] = [];
+    
+    // Process each navigation group
+    sitemap.navigation.forEach((navGroup, groupIndex) => {
+      // Process each navigation item in the group
+      const processNavItem = (item: any, depth: number = 0, parentIndex: string = ''): HierarchicalNavItem => {
+        const itemIndex = `${groupIndex}-${parentIndex}-${item.routeId || item.name}`;
+        const children = item.children ? 
+          item.children.map((child: any, childIndex: number) => 
+            processNavItem(child, depth + 1, `${itemIndex}-${childIndex}`)
+          ) : undefined;
+        
+        const navItem: HierarchicalNavItem = {
+          id: item.routeId || `navitem-${itemIndex}`, // Use stable ID based on position
+          name: item.name || '',
+          to: item.to || undefined,
+          icon: item.icon || undefined,
+          active: item.active !== false,
+          is_folder: item.isFolder || false,
+          parent_id: null, // Will be set if needed
+          nav_order: depth,
+          children: children as any // Type override since HierarchicalNavItem extends NavItem but we need different children type
+        };
+        
+        return navItem;
+      };
+      
+      // Add all items from this navigation group
+      navGroup.children.forEach((item: any, itemIndex: number) => {
+        hierarchicalItems.push(processNavItem(item, 0, String(itemIndex)));
+      });
+    });
+    
+    return hierarchicalItems;
+  }, [JSON.stringify(sitemap?.navigation)]);
 
-  // Convert routes to hierarchical structure
-  useEffect(() => {
-    const convertToHierarchical = async () => {
-      if (!routes?.routes) return;
+  // Initialize drag drop handler - temporarily disabled to prevent infinite loops
+  // TODO: Re-enable drag drop functionality after fixing memoization issues
+  // useEffect(() => {
+  //   const context: HierarchicalDragDropContext = {
+  //     treeData,
+  //     onItemMove: handleItemMove,
+  //     onReorder: handleReorder
+  //   };
 
-      try {
-        // Check if routes have hierarchical data
-        const hasHierarchy = routes.routes.some(route => 
-          route.parent_id !== undefined || route.is_folder !== undefined
-        );
-
-        if (hasHierarchy) {
-          // Use the service to generate hierarchical route groups
-          const routeGroups = await sitemapService.generateHierarchicalRouteGroups(routes.routes);
-          
-          // Convert to flat array of hierarchical nav items with proper sorting
-          const hierarchicalItems: HierarchicalNavItem[] = [];
-          
-          // Process each group and maintain hierarchical order
-          routeGroups.forEach(group => {
-            group.children.forEach(child => {
-              hierarchicalItems.push(child as HierarchicalNavItem);
-            });
-          });
-          
-          // Sort the items by nav_order to ensure proper ordering
-          hierarchicalItems.sort((a, b) => {
-            const orderA = a.nav_order || 0;
-            const orderB = b.nav_order || 0;
-            return orderA - orderB;
-          });
-          
-          setTreeData(hierarchicalItems);
-        } else {
-          // Fallback to flat structure
-          const flatItems: HierarchicalNavItem[] = routes.routes
-            .map(route => ({
-              id: route.id,
-              name: route.name,
-              to: route.path,
-              icon: route.icon || undefined,
-              active: route.is_enabled,
-              is_folder: route.is_folder || false,
-              parent_id: route.parent_id,
-              nav_order: route.nav_order
-            }))
-            .sort((a, b) => {
-              const orderA = a.nav_order || 0;
-              const orderB = b.nav_order || 0;
-              return orderA - orderB;
-            });
-          
-          setTreeData(flatItems);
-        }
-      } catch (error) {
-        console.error('Error converting routes to hierarchical:', error);
-        // Fallback to flat structure on error
-        if (routes?.routes) {
-          const flatItems: HierarchicalNavItem[] = routes.routes
-            .map(route => ({
-              id: route.id,
-              name: route.name,
-              to: route.path,
-              icon: route.icon || undefined,
-              active: route.is_enabled,
-              is_folder: route.is_folder || false,
-              parent_id: route.parent_id,
-              nav_order: route.nav_order
-            }))
-            .sort((a, b) => {
-              const orderA = a.nav_order || 0;
-              const orderB = b.nav_order || 0;
-              return orderA - orderB;
-            });
-          
-          setTreeData(flatItems);
-        }
-      }
-    };
-
-    convertToHierarchical();
-  }, [routes]);
+  //   setDragDropHandler(createHierarchicalDragDropHandler(context));
+  // }, [treeData, handleItemMove, handleReorder]);
 
   // Filter tree data based on search and group
   const filteredTreeData = treeData.filter(item => {
@@ -197,7 +157,7 @@ const HierarchicalSitemapAdmin: React.FC = () => {
       (item.to && item.to.toLowerCase().includes(searchTerm.toLowerCase()));
     
     // Group filtering would need to be implemented based on route data
-    const matchesGroup = selectedGroup === '' || true; // TODO: Implement group filtering
+    const matchesGroup = selectedGroup === ''; // TODO: Implement group filtering
     
     return matchesSearch && matchesGroup;
   });
@@ -216,21 +176,23 @@ const HierarchicalSitemapAdmin: React.FC = () => {
   }, []);
 
   const handleDragEnd = useCallback(async (result: DropResult) => {
-    if (!dragDropHandler) return;
-
-    try {
-      const reorderResult = await dragDropHandler.handleDragEnd(result);
-      if (reorderResult) {
-        setTreeData(reorderResult.updatedTree);
-        // Refresh data from server
-        refetch();
-        sitemapService.clearCache();
-      }
-    } catch (error) {
-      console.error('Drag drop error:', error);
-      toast.error('Failed to reorder items');
-    }
-  }, [dragDropHandler, refetch]);
+    // Drag drop temporarily disabled to prevent infinite re-renders
+    console.log('Drag drop temporarily disabled');
+    return;
+    
+    // TODO: Re-enable when memoization is fixed
+    // if (!dragDropHandler) return;
+    // try {
+    //   const reorderResult = await dragDropHandler.handleDragEnd(result);
+    //   if (reorderResult) {
+    //     refetch();
+    //     sitemapService.clearCache();
+    //   }
+    // } catch (error) {
+    //   console.error('Drag drop error:', error);
+    //   toast.error('Failed to reorder items');
+    // }
+  }, []);
 
   const handleEditItem = useCallback((item: HierarchicalNavItem) => {
     setEditingItem(item);
@@ -279,7 +241,7 @@ const HierarchicalSitemapAdmin: React.FC = () => {
     try {
       if (editingItem) {
         // Find the original route data for update
-        const originalRoute = routes?.routes.find(r => r.id === editingItem.id);
+        const originalRoute = adminRoutes?.routes?.find(r => r.id === editingItem.id);
         if (originalRoute) {
           await updateRoute.mutateAsync({
             ...routeData,
@@ -301,7 +263,7 @@ const HierarchicalSitemapAdmin: React.FC = () => {
     } catch (error) {
       toast.error(editingItem ? 'Failed to update route' : 'Failed to create route');
     }
-  }, [editingItem, routes, updateRoute, createRoute]);
+  }, [editingItem, adminRoutes, updateRoute, createRoute]);
 
   const handleExpandAll = useCallback(() => {
     const allIds = new Set<string>();
@@ -321,11 +283,63 @@ const HierarchicalSitemapAdmin: React.FC = () => {
     setExpandedItems(new Set());
   }, []);
 
-  const getParentName = (parentId: string | null): string => {
-    if (!parentId || !parentOptions) return '';
-    const parent = parentOptions.find(p => p.id === parentId);
-    return parent?.name || '';
-  };
+  const getParentName = useCallback((parentId: string | null): string => {
+    if (!parentId) return '';
+    // Find parent in navigation structure
+    const findParentInNavigation = (items: any[], id: string): string => {
+      for (const group of items) {
+        for (const item of group.children || []) {
+          if (item.routeId === id) return item.name;
+          if (item.children) {
+            const found = findParentInNavigation([{ children: item.children }], id);
+            if (found) return found;
+          }
+        }
+      }
+      return '';
+    };
+    return sitemap?.navigation ? findParentInNavigation(sitemap.navigation, parentId) : '';
+  }, [sitemap?.navigation]);
+
+  // Generate parent options from navigation structure
+  const parentOptions = useMemo(() => {
+    if (!sitemap?.navigation) return [];
+
+    const options: Array<{
+      id: string;
+      name: string;
+      path?: string;
+      is_folder: boolean;
+      parent_id: string | null;
+      depth: number;
+    }> = [];
+
+    const processNavItem = (item: any, depth: number = 0, parentId: string | null = null) => {
+      if (item.routeId) {
+        options.push({
+          id: item.routeId,
+          name: item.name,
+          path: item.to,
+          is_folder: item.isFolder || false,
+          parent_id: parentId,
+          depth
+        });
+
+        // Process children
+        if (item.children) {
+          item.children.forEach((child: any) => 
+            processNavItem(child, depth + 1, item.routeId)
+          );
+        }
+      }
+    };
+
+    sitemap.navigation.forEach(navGroup => {
+      navGroup.children.forEach((item: any) => processNavItem(item));
+    });
+
+    return options.sort((a, b) => a.name.localeCompare(b.name));
+  }, [sitemap?.navigation]);
 
   if (isLoading) {
     return (
@@ -545,9 +559,11 @@ const HierarchicalSitemapAdmin: React.FC = () => {
           setEditingItem(null);
           setPreselectedParentId(null);
         }}
-        route={editingItem ? routes?.routes.find(r => r.id === editingItem.id) || null : null}
+        route={editingItem ? adminRoutes?.routes?.find(r => r.id === editingItem.id) || null : null}
         onSave={handleSaveRoute}
         preselectedParentId={preselectedParentId}
+        parentOptions={parentOptions}
+        parentOptionsLoading={isLoading}
       />
     </div>
   );

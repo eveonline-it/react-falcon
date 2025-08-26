@@ -1,7 +1,8 @@
 import React, { Suspense, lazy } from 'react';
 import App from 'App';
 import paths, { rootPaths } from './paths';
-import { Navigate, createBrowserRouter, RouteObject } from 'react-router';
+import { Navigate, createBrowserRouter, RouteObject, useLocation } from 'react-router';
+import { getDynamicRoutes, routeComponents } from './siteMaps';
 
 import MainLayout from '../layouts/MainLayout';
 import ErrorLayout from '../layouts/ErrorLayout';
@@ -175,9 +176,72 @@ const AllianceAdmin = lazy(() => import('pages/admin/AllianceAdmin'));
 const GroupsAdmin = lazy(() => import('pages/admin/GroupsAdmin'));
 const UsersAdmin = lazy(() => import('pages/admin/UsersAdmin'));
 const PermissionsAdmin = lazy(() => import('pages/admin/PermissionsAdmin'));
-const SitemapAdmin = lazy(() => import('pages/admin/SitemapAdmin'));
 const HierarchicalSitemapAdmin = lazy(() => import('pages/admin/HierarchicalSitemapAdmin'));
 const Characters = lazy(() => import('pages/user/Characters'));
+
+// Dynamic Route Component - must be defined before routes array
+const DynamicRoute: React.FC = () => {
+  const location = useLocation();
+  const [routeComponent, setRouteComponent] = React.useState<React.ComponentType | null>(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  
+  React.useEffect(() => {
+    const loadDynamicRoute = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const currentPath = location.pathname;
+        const dynamicRoutes = await getDynamicRoutes();
+        
+        // Find matching route
+        const matchingRoute = dynamicRoutes.find(route => 
+          route.path === currentPath || 
+          (route.path !== '/' && currentPath.startsWith(route.path))
+        );
+        
+        if (matchingRoute) {
+          const ComponentLoader = routeComponents[matchingRoute.component];
+          if (ComponentLoader) {
+            const Component = React.lazy(ComponentLoader);
+            setRouteComponent(() => Component);
+          } else {
+            setError(`Component ${matchingRoute.component} not found`);
+          }
+        } else {
+          setError('Route not found');
+        }
+      } catch (err) {
+        setError('Failed to load dynamic route');
+        console.error('Dynamic route loading error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadDynamicRoute();
+  }, [location.pathname]);
+  
+  if (loading) {
+    return <div className="text-center p-4">Loading...</div>;
+  }
+  
+  if (error) {
+    return <div className="text-center p-4 text-danger">Error: {error}</div>;
+  }
+  
+  if (!routeComponent) {
+    return <Navigate to={paths.error404} replace />;
+  }
+  
+  const Component = routeComponent;
+  return (
+    <Suspense fallback={<div className="text-center p-4">Loading component...</div>}>
+      <Component />
+    </Suspense>
+  );
+};
 
 const routes: RouteObject[] = [
   {
@@ -1109,20 +1173,16 @@ const routes: RouteObject[] = [
               {
                 path: paths.sitemapAdmin,
                 element: (
-                  <Suspense key="sitemap-admin" fallback={<FalconLoader />}>
-                    <SitemapAdmin />
-                  </Suspense>
-                )
-              },
-              {
-                path: paths.hierarchicalSitemapAdmin,
-                element: (
                   <Suspense key="hierarchical-sitemap-admin" fallback={<FalconLoader />}>
                     <HierarchicalSitemapAdmin />
                   </Suspense>
                 )
               }
             ]
+          },
+          {
+            path: '*',
+            element: <DynamicRoute />
           }
         ]
       },

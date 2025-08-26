@@ -11,7 +11,16 @@ import {
   Spinner
 } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { SitemapRoute, useParentOptions } from '../../hooks/admin/useSitemap';
+import { SitemapRoute } from '../../hooks/admin/useSitemap';
+
+interface ParentOption {
+  id: string;
+  name: string;
+  path?: string;
+  is_folder: boolean;
+  parent_id: string | null;
+  depth: number;
+}
 
 const ROUTE_GROUPS = [
   'Administration',
@@ -40,6 +49,8 @@ interface RouteEditModalProps {
   route?: SitemapRoute | null;
   onSave: (data: RouteFormData) => void;
   preselectedParentId?: string | null;
+  parentOptions?: ParentOption[];
+  parentOptionsLoading?: boolean;
 }
 
 const RouteEditModal: React.FC<RouteEditModalProps> = ({ 
@@ -47,7 +58,9 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
   onHide, 
   route, 
   onSave,
-  preselectedParentId = null 
+  preselectedParentId = null,
+  parentOptions = [],
+  parentOptionsLoading = false
 }) => {
   const [formData, setFormData] = useState<RouteFormData>({
     route_id: '',
@@ -76,7 +89,6 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
   });
 
   const [itemType, setItemType] = useState<'route' | 'folder'>('route');
-  const { data: parentOptions, isLoading: parentOptionsLoading } = useParentOptions();
 
   useEffect(() => {
     if (route) {

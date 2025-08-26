@@ -1,3 +1,4 @@
+import React from 'react';
 import paths, { rootPaths } from './paths';
 import { sitemapService } from '../services/sitemapService';
 
@@ -1228,6 +1229,75 @@ export async function loadDynamicRouteGroups(forceRefresh = false): Promise<Rout
 // Get route groups (sync function that returns static routes if dynamic not loaded)
 export function getRouteGroups(): RouteGroup[] {
   return dynamicRouteGroups || staticRouteGroups;
+}
+
+// Component registry for dynamic route loading
+export const routeComponents = {
+  // Dashboard components (in demos folder)
+  'DefaultDashboard': () => import('../demos/dashboards/DefaultDashboard'),
+  'AnalyticsDashboard': () => import('../demos/dashboards/AnalyticsDashboard'),
+  'CrmDashboard': () => import('../demos/dashboards/CrmDashboard'),
+  'ProjectManagement': () => import('../demos/dashboards/ProjectManagementDashboard'),
+  'SaasDashboard': () => import('../demos/dashboards/SaasDashboard'),
+  'SupportDesk': () => import('../demos/dashboards/SupportDeskDashboard'),
+  
+  // App components (in features folder)
+  'Calendar': () => import('../features/calendar/Calendar'),
+  'Chat': () => import('../features/chat/Chat'),
+  'EmailInbox': () => import('../features/email/inbox/Inbox'),
+  'EmailDetail': () => import('../features/email/email-detail/EmailDetail'),
+  'EmailCompose': () => import('../features/email/compose/Compose'),
+  'Kanban': () => import('../features/kanban/Kanban'),
+  'SocialProfile': () => import('../pages/user/profile/Profile'),
+  'SocialFeed': () => import('../features/social/feed/Feed'),
+  
+  // User components
+  'UserProfile': () => import('../pages/user/profile/Profile'),
+  'UserSettings': () => import('../pages/user/settings/Settings'),
+  'Characters': () => import('../pages/user/Characters'),
+  
+  // Admin components
+  'UsersAdmin': () => import('../pages/admin/UsersAdmin'),
+  'GroupsAdmin': () => import('../pages/admin/GroupsAdmin'),
+  'PermissionsAdmin': () => import('../pages/admin/PermissionsAdmin'),
+  'CorporationsAdmin': () => import('../pages/admin/CorporationsAdmin'),
+  'AllianceAdmin': () => import('../pages/admin/AllianceAdmin'),
+  'SchedulerAdmin': () => import('../pages/admin/SchedulerAdmin'),
+  'TaskAnalyticsAdmin': () => import('../pages/admin/TaskAnalyticsAdmin'),
+  'SettingsAdmin': () => import('../pages/admin/SettingsAdmin'),
+  'HierarchicalSitemapAdmin': () => import('../pages/admin/HierarchicalSitemapAdmin'),
+  
+  // Public pages  
+  'Landing': () => import('../pages/landing/Landing')
+};
+
+// Get dynamic routes for React Router configuration
+export async function getDynamicRoutes() {
+  try {
+    const backendRoutes = await sitemapService.getDynamicRoutes();
+    return backendRoutes.map(route => {
+      // Get component loader from registry
+      const ComponentLoader = routeComponents[route.component];
+      if (!ComponentLoader) {
+        console.warn(`Component ${route.component} not found in registry for route ${route.path}`);
+        return null;
+      }
+      
+      return {
+        path: route.path,
+        component: route.component, // Store component name for lazy loading
+        loader: ComponentLoader,    // Store the loader function
+        // Add additional route properties if needed
+        id: route.id,
+        title: route.title,
+        permissions: route.permissions,
+        accessible: route.accessible
+      };
+    }).filter(Boolean); // Remove null entries
+  } catch (error) {
+    console.error('Failed to get dynamic routes:', error);
+    return [];
+  }
 }
 
 // Initialize dynamic routes on module load (non-blocking)

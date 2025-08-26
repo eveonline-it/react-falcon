@@ -1,31 +1,54 @@
 import { NavItem, RouteGroup } from '../routes/siteMaps';
 
+// Updated interfaces to match new backend response
 export interface BackendRoute {
   id: string;
-  parent_id: string | null;
   path: string;
   component: string;
   name: string;
   title: string;
-  icon?: string;
-  is_folder: boolean;
-  nav_order: number;
-  meta: {
-    title: string;
-    group: string;
-    icon?: string;
-  };
+  permissions: string[];
   lazyLoad: boolean;
   accessible: boolean;
-  optional?: {
-    newtab?: boolean;
-    badge?: {
-      type: string;
-      text: string;
-    };
+  meta: {
+    title: string;
+    icon?: string;
+    group: string;
   };
+  // Legacy fields for backward compatibility
+  icon?: string;
+  parent_id?: string | null;
+  is_folder?: boolean;
+  nav_order?: number;
 }
 
+export interface NavigationItem {
+  routeId?: string;
+  name: string;
+  to?: string;
+  icon?: string;
+  isFolder?: boolean;
+  hasChildren?: boolean;
+  active?: boolean;
+  children?: NavigationItem[];
+}
+
+export interface NavigationGroup {
+  label: string;
+  labelDisable?: boolean;
+  children: NavigationItem[];
+}
+
+// New backend sitemap response structure
+export interface BackendSitemap {
+  routes: BackendRoute[];
+  navigation: NavigationGroup[];
+  userPermissions: string[];
+  userGroups: string[];
+  features: Record<string, boolean>;
+}
+
+// Legacy interfaces for backwards compatibility
 export interface FolderItem {
   id: string;
   name: string;
@@ -49,14 +72,6 @@ export interface HierarchicalNavItem extends NavItem {
   parent_id?: string | null;
   depth?: number;
   nav_order?: number;
-}
-
-export interface BackendSitemap {
-  routes: BackendRoute[];
-  navigation?: any[];
-  userPermissions?: any;
-  userGroups?: any[];
-  features?: Record<string, boolean>;
 }
 
 const SITEMAP_URL = 'https://go.eveonline.it/sitemap';
@@ -89,7 +104,10 @@ class SitemapService {
         throw new Error(`Failed to fetch sitemap: ${response.status}`);
       }
 
-      const sitemap: BackendSitemap = await response.json();
+      const responseData = await response.json();
+      
+      // Handle both wrapped and unwrapped responses
+      const sitemap: BackendSitemap = responseData.body || responseData;
       
       // Update cache
       this.cache = sitemap;
@@ -115,21 +133,8 @@ class SitemapService {
     };
 
     // Add icon if available
-    if (route.icon || route.meta?.icon) {
-      navItem.icon = route.icon || route.meta.icon;
-    }
-
-    // Add optional properties
-    if (route.optional) {
-      if (route.optional.newtab) {
-        navItem.newtab = route.optional.newtab;
-      }
-      if (route.optional.badge) {
-        navItem.badge = {
-          type: route.optional.badge.type || 'info',
-          text: route.optional.badge.text || ''
-        };
-      }
+    if (route.meta?.icon) {
+      navItem.icon = route.meta.icon;
     }
 
     return navItem;
@@ -150,7 +155,43 @@ class SitemapService {
     return groupedRoutes;
   }
 
-  private createRouteGroup(groupName: string, routes: BackendRoute[]): RouteGroup {
+  // Convert backend navigation structure to route groups
+  private convertBackendNavigationToRouteGroups(navigation: NavigationGroup[]): RouteGroup[] {
+    return navigation.map(navGroup => ({
+      label: navGroup.label,
+      labelDisable: navGroup.labelDisable,
+      children: this.convertNavigationItems(navGroup.children)
+    }));
+  }
+
+  // Convert backend navigation items to nav items
+  private convertNavigationItems(items: NavigationItem[]): NavItem[] {
+    return items.map(item => {
+      const navItem: NavItem = {
+        name: item.name,
+        active: item.active !== false
+      };
+
+      // Add path if not a folder
+      if (item.to && !item.isFolder) {
+        navItem.to = item.to;
+      }
+
+      // Add icon if available
+      if (item.icon) {
+        navItem.icon = item.icon;
+      }
+
+      // Add children if present
+      if (item.children && item.children.length > 0) {
+        navItem.children = this.convertNavigationItems(item.children);
+      }
+
+      return navItem;
+    });
+  }
+
+  private createLegacyRouteGroup(groupName: string, routes: BackendRoute[]): RouteGroup {
     // Handle nested structure for certain groups
     const nestedGroups = this.createNestedStructure(routes);
     
@@ -281,12 +322,12 @@ class SitemapService {
     try {
       const sitemap = await this.fetchSitemap();
       
-      // Try to use hierarchical structure first, fallback to legacy grouping
-      if (sitemap.routes.some(route => route.parent_id !== undefined || route.is_folder !== undefined)) {
-        return await this.generateHierarchicalRouteGroups(sitemap.routes);
+      // Use the navigation structure directly from the backend
+      if (sitemap.navigation && sitemap.navigation.length > 0) {
+        return this.convertBackendNavigationToRouteGroups(sitemap.navigation);
       }
       
-      // Legacy path-based grouping for backward compatibility
+      // Fallback to legacy grouping for backward compatibility
       const groupedRoutes = this.groupRoutesByCategory(sitemap.routes);
       
       const routeGroups: RouteGroup[] = [];
@@ -297,14 +338,14 @@ class SitemapService {
       groupOrder.forEach(groupName => {
         if (groupedRoutes.has(groupName)) {
           const routes = groupedRoutes.get(groupName)!;
-          routeGroups.push(this.createRouteGroup(groupName, routes));
+          routeGroups.push(this.createLegacyRouteGroup(groupName, routes));
         }
       });
 
       // Add any remaining groups not in the predefined order
       groupedRoutes.forEach((routes, groupName) => {
         if (!groupOrder.includes(groupName)) {
-          routeGroups.push(this.createRouteGroup(groupName, routes));
+          routeGroups.push(this.createLegacyRouteGroup(groupName, routes));
         }
       });
 
@@ -321,7 +362,70 @@ class SitemapService {
       // Build hierarchical tree from parent-child relationships
       const hierarchicalTree = this.buildHierarchicalTree(routes);
       
-      // Group tree items by category/group
+      // For the new folder-based backend structure, use folders as primary groups
+      // Check if we have folder containers at root level
+      const rootFolders = hierarchicalTree.filter(item => item.is_folder && item.parent_id === null);
+      
+      if (rootFolders.length > 0) {
+        // New folder-based structure: each root folder becomes a group
+        const routeGroups: RouteGroup[] = [];
+        
+        // Map folder names to display labels
+        const folderLabelMap: Record<string, string> = {
+          'folder-administration': 'Administration',
+          'folder-personal': 'Personal',
+          'folder-economy': 'Economy',
+          'folder-utilities': 'Utilities',
+          'folder-alliance': 'Alliance',
+          'folder-corporation': 'Corporation',
+          'folder-documentation': 'Documentation'
+        };
+        
+        // Define the order of groups to match expected layout
+        const groupOrder = ['Administration', 'Personal', 'Economy', 'Utilities', 'Alliance', 'Corporation', 'Documentation'];
+        
+        // Process folders in order
+        groupOrder.forEach(groupName => {
+          const folderName = Object.keys(folderLabelMap).find(key => folderLabelMap[key] === groupName);
+          const folder = rootFolders.find(f => f.name === folderName);
+          
+          if (folder) {
+            const navItems = this.convertTreeToNavItems([folder]);
+            routeGroups.push({
+              label: groupName,
+              children: navItems
+            });
+          }
+        });
+        
+        // Add any remaining folders not in the predefined order
+        rootFolders.forEach(folder => {
+          const groupName = folderLabelMap[folder.name] || this.formatName(folder.name);
+          const alreadyAdded = routeGroups.some(group => group.label === groupName);
+          
+          if (!alreadyAdded) {
+            const navItems = this.convertTreeToNavItems([folder]);
+            routeGroups.push({
+              label: groupName,
+              children: navItems
+            });
+          }
+        });
+        
+        // Add any root-level routes (not in folders) to a default group
+        const rootRoutes = hierarchicalTree.filter(item => !item.is_folder && item.parent_id === null);
+        if (rootRoutes.length > 0) {
+          const navItems = this.convertTreeToNavItems(rootRoutes);
+          routeGroups.push({
+            label: 'Other',
+            children: navItems
+          });
+        }
+        
+        return routeGroups;
+      }
+      
+      // Fallback to legacy group-based structure for backward compatibility
       const groupedTree = new Map<string, FolderItem[]>();
       
       hierarchicalTree.forEach(item => {
@@ -598,15 +702,16 @@ class SitemapService {
         navItem.to = item.path;
       }
 
-      // Add optional properties for routes
+      // Add optional properties for routes (if they exist)
       if ('optional' in item && item.optional) {
-        if (item.optional.newtab) {
-          navItem.newtab = item.optional.newtab;
+        const optional = item.optional as any;
+        if (optional.newtab) {
+          navItem.newtab = optional.newtab;
         }
-        if (item.optional.badge) {
+        if (optional.badge) {
           navItem.badge = {
-            type: item.optional.badge.type || 'info',
-            text: item.optional.badge.text || ''
+            type: optional.badge.type || 'info',
+            text: optional.badge.text || ''
           };
         }
       }
@@ -620,6 +725,28 @@ class SitemapService {
     };
 
     return treeItems.map(convertItem);
+  }
+
+  // Get flat routes array for React Router configuration
+  async getDynamicRoutes(): Promise<BackendRoute[]> {
+    try {
+      const sitemap = await this.fetchSitemap();
+      return sitemap.routes || [];
+    } catch (error) {
+      console.error('Failed to get dynamic routes:', error);
+      return [];
+    }
+  }
+
+  // Get navigation structure for menu rendering
+  async getNavigationStructure(): Promise<NavigationGroup[]> {
+    try {
+      const sitemap = await this.fetchSitemap();
+      return sitemap.navigation || [];
+    } catch (error) {
+      console.error('Failed to get navigation structure:', error);
+      return [];
+    }
   }
 
   // Subscribe to sitemap changes
