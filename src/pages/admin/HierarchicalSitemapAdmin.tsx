@@ -29,6 +29,7 @@ import {
   useSitemapRoutes,
   useCreateRoute,
   useUpdateRoute,
+  useUpdateRouteFields,
   useDeleteRoute,
   useCreateFolder,
   useMoveItem,
@@ -70,6 +71,7 @@ const HierarchicalSitemapAdmin: React.FC = () => {
   const { data: adminRoutes, isLoading, error } = useSitemapRoutes();
   const createRoute = useCreateRoute();
   const updateRoute = useUpdateRoute();
+  const updateRouteFields = useUpdateRouteFields();
   const deleteRoute = useDeleteRoute();
   const createFolder = useCreateFolder();
   const moveItem = useMoveItem();
@@ -318,26 +320,21 @@ const HierarchicalSitemapAdmin: React.FC = () => {
     try {
       const originalRoute = adminRoutes?.routes?.find(r => r.id === item.id);
       if (originalRoute) {
-        // Filter out computed/read-only fields for updates
-        const { 
-          route_id, 
-          is_folder, 
-          ...editableFields 
-        } = originalRoute;
-        
-        await updateRoute.mutateAsync({
-          ...editableFields,
+        await updateRouteFields.mutateAsync({
           id: originalRoute.id,
-          route_id: originalRoute.route_id,
-          is_folder: originalRoute.is_folder,
-          is_enabled: !originalRoute.is_enabled
+          fields: {
+            is_enabled: !originalRoute.is_enabled
+          }
         });
         toast.success(`${originalRoute.is_folder ? 'Folder' : 'Route'} ${originalRoute.is_enabled ? 'disabled' : 'enabled'} successfully`);
+        // Clear cache and refresh navigation
+        sitemapService.clearCache();
+        refetch();
       }
     } catch (error) {
       toast.error('Failed to toggle item status');
     }
-  }, [adminRoutes, updateRoute]);
+  }, [adminRoutes, updateRouteFields, refetch]);
 
   const handleCreateFolder = useCallback((parentId?: string) => {
     setParentForFolder(parentId || null);
