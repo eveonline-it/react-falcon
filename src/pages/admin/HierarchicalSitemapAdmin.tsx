@@ -347,19 +347,10 @@ const HierarchicalSitemapAdmin: React.FC = () => {
         // Update existing folder using the same endpoint as routes
         const originalRoute = adminRoutes?.routes?.find(r => r.id === editingItem.id);
         if (originalRoute) {
-          // Filter out computed/read-only fields
-          const { 
-            route_id, 
-            is_folder, 
-            ...editableFields 
-          } = originalRoute;
-          
+          // Create updated route object - the hook will filter out read-only fields
           await updateRoute.mutateAsync({
-            ...editableFields,
-            ...folderData,
-            id: originalRoute.id,
-            route_id: originalRoute.route_id,
-            is_folder: originalRoute.is_folder
+            ...originalRoute,
+            ...folderData
           });
           toast.success('Folder updated successfully');
         }
@@ -388,19 +379,10 @@ const HierarchicalSitemapAdmin: React.FC = () => {
         // Find the original route data for update
         const originalRoute = adminRoutes?.routes?.find(r => r.id === editingItem.id);
         if (originalRoute) {
-          // Filter out computed/read-only fields
-          const { 
-            route_id, 
-            is_folder, 
-            ...editableFields 
-          } = originalRoute;
-          
+          // Create updated route object - the hook will filter out read-only fields
           await updateRoute.mutateAsync({
-            ...editableFields,
-            ...routeData,
-            id: originalRoute.id,
-            route_id: originalRoute.route_id,
-            is_folder: originalRoute.is_folder
+            ...originalRoute,
+            ...routeData
           });
           toast.success('Route updated successfully');
         }

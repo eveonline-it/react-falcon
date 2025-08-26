@@ -144,7 +144,17 @@ export const useUpdateRoute = () => {
   
   return useMutation({
     mutationFn: async (route: SitemapRoute) => {
-      const { id, created_at, updated_at, ...updateData } = route;
+      const { 
+        id, 
+        created_at, 
+        updated_at, 
+        depth,
+        folder_path,
+        children_count,
+        route_id,
+        is_folder,
+        ...updateData 
+      } = route;
       const response = await fetch(`${API_BASE_URL}/admin/sitemap/${id}`, {
         method: 'PUT',
         credentials: 'include',
@@ -167,7 +177,7 @@ export const useUpdateRouteFields = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, fields }: { id: string; fields: Partial<Omit<SitemapRoute, 'id' | 'created_at' | 'updated_at'>> }) => {
+    mutationFn: async ({ id, fields }: { id: string; fields: Partial<Omit<SitemapRoute, 'id' | 'created_at' | 'updated_at' | 'depth' | 'folder_path' | 'children_count' | 'route_id' | 'is_folder'>> }) => {
       const response = await fetch(`${API_BASE_URL}/admin/sitemap/${id}`, {
         method: 'PUT',
         credentials: 'include',
