@@ -1188,47 +1188,47 @@ const staticRouteGroups: RouteGroup[] = [
   documentationRoutes
 ];
 
-// Dynamic route groups from backend
-let dynamicRouteGroups: RouteGroup[] | null = null;
-let isLoadingDynamicRoutes = false;
+// Backend route groups
+let backendRouteGroups: RouteGroup[] | null = null;
+let isLoadingBackendRoutes = false;
 
 export async function loadDynamicRouteGroups(forceRefresh = false): Promise<RouteGroup[]> {
-  if (dynamicRouteGroups && !forceRefresh) {
-    return dynamicRouteGroups;
+  if (backendRouteGroups && !forceRefresh) {
+    return backendRouteGroups;
   }
 
-  if (isLoadingDynamicRoutes) {
+  if (isLoadingBackendRoutes) {
     // Wait for ongoing load to complete
-    while (isLoadingDynamicRoutes) {
+    while (isLoadingBackendRoutes) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    return dynamicRouteGroups || staticRouteGroups;
+    return backendRouteGroups || [];
   }
 
-  isLoadingDynamicRoutes = true;
+  isLoadingBackendRoutes = true;
 
   try {
     // Clear the cache before fetching fresh data
     if (forceRefresh) {
-      dynamicRouteGroups = null;
+      backendRouteGroups = null;
       sitemapService.clearCache();
     }
     
-    dynamicRouteGroups = await sitemapService.generateRouteGroups();
-    console.info('Successfully loaded dynamic route groups from backend');
-    return dynamicRouteGroups;
+    backendRouteGroups = await sitemapService.generateRouteGroups();
+    console.info('Successfully loaded backend route groups');
+    return backendRouteGroups;
   } catch (error) {
-    console.warn('Failed to load dynamic routes, falling back to static routes:', error);
-    dynamicRouteGroups = staticRouteGroups;
-    return staticRouteGroups;
+    console.warn('Failed to load backend routes:', error);
+    backendRouteGroups = [];
+    return [];
   } finally {
-    isLoadingDynamicRoutes = false;
+    isLoadingBackendRoutes = false;
   }
 }
 
-// Get route groups (sync function that returns static routes if dynamic not loaded)
+// Get route groups (sync function that returns backend routes or empty if not loaded)
 export function getRouteGroups(): RouteGroup[] {
-  return dynamicRouteGroups || staticRouteGroups;
+  return backendRouteGroups || [];
 }
 
 // Component registry for dynamic route loading
@@ -1305,14 +1305,14 @@ loadDynamicRouteGroups().catch(error => {
   console.warn('Initial dynamic route loading failed:', error);
 });
 
-// Force refresh navigation to use hierarchical structure  
+// Force refresh navigation from backend  
 export async function forceRefreshNavigation(): Promise<void> {
-  console.log('🔄 Forcing navigation refresh to use hierarchical structure...');
+  console.log('🔄 Forcing navigation refresh from backend...');
   sitemapService.clearCache();
   await loadDynamicRouteGroups(true);
 }
 
-// For backward compatibility, export static routes by default
+// Static routes are kept for reference but not used in navigation
 const routeGroups: RouteGroup[] = staticRouteGroups;
 
 export default routeGroups;

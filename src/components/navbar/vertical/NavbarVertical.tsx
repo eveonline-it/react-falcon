@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Fragment } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import classNames from 'classnames';
 import { Nav, Navbar, Row, Col } from 'react-bootstrap';
 import { navbarBreakPoint, topNavbarBreakpoint } from 'config';
@@ -16,7 +16,7 @@ import { useAppContext } from 'providers/AppProvider';
 import '../../../assets/css/hierarchical-navigation.css';
 
 const NavbarVertical = () => {
-  const [routes, setRoutes] = useState<RouteGroup[]>(staticRoutes);
+  const [routes, setRoutes] = useState<RouteGroup[]>([]);
   const [isLoadingRoutes, setIsLoadingRoutes] = useState(false);
 
   const {
@@ -47,11 +47,19 @@ const NavbarVertical = () => {
     
     setIsLoadingRoutes(true);
     try {
+      console.log('🔄 Loading navigation routes...', { forceRefresh });
       const dynamicRoutes = await loadDynamicRouteGroups(forceRefresh);
-      setRoutes(dynamicRoutes);
+      console.log('✅ Navigation routes loaded:', dynamicRoutes.length, 'groups');
+      
+      if (dynamicRoutes.length > 0) {
+        setRoutes(dynamicRoutes);
+      } else {
+        console.warn('⚠️ No navigation routes returned, using static fallback');
+        setRoutes(staticRoutes);
+      }
     } catch (error) {
-      console.warn('Failed to load dynamic routes in NavbarVertical, using static fallback:', error);
-      // Keep static routes as fallback
+      console.warn('❌ Failed to load dynamic routes in NavbarVertical, using static fallback:', error);
+      setRoutes(staticRoutes);
     } finally {
       setIsLoadingRoutes(false);
     }
@@ -75,7 +83,7 @@ const NavbarVertical = () => {
   }, []);
 
   //Control mouseEnter event
-  let time = null;
+  let time: NodeJS.Timeout | null = null;
   const handleMouseEnter = () => {
     if (isNavbarVerticalCollapsed) {
       time = setTimeout(() => {
@@ -84,11 +92,13 @@ const NavbarVertical = () => {
     }
   };
   const handleMouseLeave = () => {
-    clearTimeout(time);
+    if (time) {
+      clearTimeout(time);
+    }
     HTMLClassList.remove('navbar-vertical-collapsed-hover');
   };
 
-  const NavbarLabel = ({ label }) => (
+  const NavbarLabel = ({ label }: { label: string }) => (
     <Nav.Item as="li">
       <Row className="mt-3 mb-2 navbar-vertical-label-wrapper">
         <Col xs="auto" className="navbar-vertical-label navbar-vertical-label">
@@ -126,14 +136,27 @@ const NavbarVertical = () => {
       >
         <div className="navbar-vertical-content scrollbar">
           <Nav className="flex-column" as="ul">
-            {routes.map(route => (
-              <Fragment key={route.label}>
-                {!route.labelDisable && (
-                  <NavbarLabel label={capitalize(route.label)} />
-                )}
-                <NavbarVerticalMenu routes={route.children} />
-              </Fragment>
-            ))}
+            {isLoadingRoutes ? (
+              <Nav.Item as="li" className="text-center p-3">
+                <div className="spinner-border spinner-border-sm me-2" role="status">
+                  <span className="visually-hidden">Loading...</span>
+                </div>
+                Loading navigation...
+              </Nav.Item>
+            ) : routes.length > 0 ? (
+              routes.map(route => (
+                <Fragment key={route.label}>
+                  {!route.labelDisable && (
+                    <NavbarLabel label={capitalize(route.label)} />
+                  )}
+                  <NavbarVerticalMenu routes={route.children} />
+                </Fragment>
+              ))
+            ) : (
+              <Nav.Item as="li" className="text-center p-3 text-muted">
+                <small>No navigation available</small>
+              </Nav.Item>
+            )}
           </Nav>
 
           <>
