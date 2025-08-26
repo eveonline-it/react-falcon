@@ -246,10 +246,7 @@ class SitemapService {
       
       // Always prefer the navigation structure from the backend if available
       if (sitemap.navigation && sitemap.navigation.length > 0) {
-        console.log('🎯 Using backend navigation structure with', sitemap.navigation.length, 'groups');
-        const routeGroups = this.convertBackendNavigationToRouteGroups(sitemap.navigation);
-        console.log('✅ Converted to', routeGroups.length, 'route groups');
-        return routeGroups;
+        return this.convertBackendNavigationToRouteGroups(sitemap.navigation);
       }
       
       // If no navigation structure, check if we have hierarchical routes
@@ -258,12 +255,10 @@ class SitemapService {
       );
       
       if (hasHierarchicalStructure) {
-        console.log('✅ Using hierarchical structure from routes');
         return await this.generateHierarchicalRouteGroups(sitemap.routes);
       }
       
       // Simple fallback - group routes by category
-      console.log('📋 Using simple route grouping');
       const groupedRoutes = this.groupRoutesByCategory(sitemap.routes);
       const routeGroups: RouteGroup[] = [];
       

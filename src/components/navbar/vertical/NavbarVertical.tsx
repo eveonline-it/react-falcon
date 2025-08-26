@@ -47,18 +47,15 @@ const NavbarVertical = () => {
     
     setIsLoadingRoutes(true);
     try {
-      console.log('🔄 Loading navigation routes...', { forceRefresh });
       const dynamicRoutes = await loadDynamicRouteGroups(forceRefresh);
-      console.log('✅ Navigation routes loaded:', dynamicRoutes.length, 'groups');
       
       if (dynamicRoutes.length > 0) {
         setRoutes(dynamicRoutes);
       } else {
-        console.warn('⚠️ No navigation routes returned, using static fallback');
         setRoutes(staticRoutes);
       }
     } catch (error) {
-      console.warn('❌ Failed to load dynamic routes in NavbarVertical, using static fallback:', error);
+      console.warn('Failed to load dynamic routes in NavbarVertical, using static fallback:', error);
       setRoutes(staticRoutes);
     } finally {
       setIsLoadingRoutes(false);
@@ -72,10 +69,7 @@ const NavbarVertical = () => {
   // Subscribe to sitemap changes to reload navigation
   useEffect(() => {
     const unsubscribe = sitemapService.subscribe(() => {
-      console.log('🔄 Sitemap changed, reloading navigation...');
-      loadRoutes(true).then(() => {
-        console.log('✅ Navigation successfully reloaded with fresh data');
-      }); // Force refresh to clear cache
+      loadRoutes(true); // Force refresh to clear cache
     });
 
     // Cleanup subscription on unmount
