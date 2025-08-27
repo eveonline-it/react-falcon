@@ -225,25 +225,38 @@ const TreeItem: React.FC<TreeItemProps> = ({
         )}
       </Draggable>
 
-      {/* Render children if expanded */}
-      {hasChildren && isExpanded && (
+      {/* Render droppable area for folders (always) and children if expanded */}
+      {isFolder && (
         <Droppable droppableId={`children-${item.id}`} type="TREE_ITEM">
-          {(provided) => (
-            <div {...provided.droppableProps} ref={provided.innerRef}>
-              {(item.children as HierarchicalNavItem[])!.map((child, childIndex) => (
-                <TreeItem
-                  key={child.id}
-                  item={child}
-                  index={childIndex}
-                  depth={depth + 1}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onToggleEnabled={onToggleEnabled}
-                  onCreateFolder={onCreateFolder}
-                  expandedItems={expandedItems}
-                  onToggleExpand={onToggleExpand}
-                />
-              ))}
+          {(provided, snapshot) => (
+            <div 
+              {...provided.droppableProps} 
+              ref={provided.innerRef}
+              className={`folder-drop-zone ${snapshot.isDraggingOver ? 'drag-over' : ''}`}
+              style={{ 
+                minHeight: hasChildren && isExpanded ? 'auto' : '8px',
+                marginLeft: hasChildren && isExpanded ? '0' : '24px',
+                borderLeft: snapshot.isDraggingOver ? '2px solid #007bff' : 'none',
+                backgroundColor: snapshot.isDraggingOver ? 'rgba(0, 123, 255, 0.1)' : 'transparent'
+              }}
+            >
+              {/* Render children if expanded */}
+              {hasChildren && isExpanded && (
+                (item.children as HierarchicalNavItem[])!.map((child, childIndex) => (
+                  <TreeItem
+                    key={child.id}
+                    item={child}
+                    index={childIndex}
+                    depth={depth + 1}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    onToggleEnabled={onToggleEnabled}
+                    onCreateFolder={onCreateFolder}
+                    expandedItems={expandedItems}
+                    onToggleExpand={onToggleExpand}
+                  />
+                ))
+              )}
               {provided.placeholder}
             </div>
           )}

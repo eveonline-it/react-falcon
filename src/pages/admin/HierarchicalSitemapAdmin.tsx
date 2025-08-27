@@ -78,14 +78,26 @@ const HierarchicalSitemapAdmin: React.FC = () => {
   const reorderRoutes = useReorderRoutes();
 
   // Memoized drag drop callbacks with stable dependencies
-  const handleItemMove = useCallback(async (itemId: string, newParentId: string | null) => {
+  const handleItemMove = useCallback(async (itemId: string, newParentId: string | null, newOrder: number) => {
     try {
-      // Find the route to get the correct route_id (backend expects route_id, not MongoDB _id)
+      // Convert itemId from MongoDB _id to route_id (backend expects route_id for item)
       const route = adminRoutes?.routes?.find(r => r.id === itemId);
       if (!route) {
         throw new Error('Route not found');
       }
-      await moveItem.mutateAsync({ itemId: route.route_id, newParentId });
+      
+      // Convert newParentId from MongoDB _id to route_id (backend expects route_id for parent)
+      let parentRouteId: string | null = null;
+      if (newParentId) {
+        const parentRoute = adminRoutes?.routes?.find(r => r.id === newParentId);
+        if (!parentRoute) {
+          throw new Error('Parent route not found');
+        }
+        parentRouteId = parentRoute.route_id;
+      }
+      
+      // Use route_id for both itemId and newParentId
+      await moveItem.mutateAsync({ itemId: route.route_id, newParentId: parentRouteId });
       toast.success('Item moved successfully');
     } catch (error) {
       console.error('Error moving item:', error);

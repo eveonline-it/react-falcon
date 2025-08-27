@@ -84,6 +84,11 @@ export class HierarchicalDragDropHandler {
     const newParentId = this.getParentIdFromDroppableId(destination!.droppableId);
     const sourceParentId = this.getParentIdFromDroppableId(source.droppableId);
 
+    // Validate the move before proceeding
+    if (!this.isValidMove(treeData, draggableId, newParentId)) {
+      throw new Error(`Invalid move: cannot move item ${draggableId} to parent ${newParentId}`);
+    }
+
     // Create updated tree
     const updatedTree = this.moveItemInTree(
       treeData,
