@@ -126,7 +126,8 @@ export const useCreateRoute = () => {
   
   return useMutation({
     mutationFn: async (route: Omit<SitemapRoute, 'id' | 'created_at' | 'updated_at' | 'depth' | 'children_count' | 'folder_path' | 'is_expanded'>) => {
-      const { route_id, is_folder, ...createData } = route;
+      // Only exclude read-only fields that are managed by the backend
+      const { id, created_at, updated_at, depth, children_count, folder_path, is_expanded, ...createData } = route;
       const response = await fetch(`${API_BASE_URL}/admin/sitemap`, {
         method: 'POST',
         credentials: 'include',
