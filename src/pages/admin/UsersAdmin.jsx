@@ -435,10 +435,10 @@ const UsersAdmin = () => {
             <Card>
               <Card.Body>
                 <div className="d-flex align-items-center">
-                  <FontAwesomeIcon icon={faUserCheck} size="2x" className="text-success me-3" />
+                  <FontAwesomeIcon icon={faCheckCircle} size="2x" className="text-success me-3" />
                   <div>
-                    <h6 className="mb-0">Enabled</h6>
-                    <h4 className="mb-0">{statsData.enabled_users || 0}</h4>
+                    <h6 className="mb-0">Valid</h6>
+                    <h4 className="mb-0">{statsData.valid_users || 0}</h4>
                   </div>
                 </div>
               </Card.Body>
@@ -448,10 +448,10 @@ const UsersAdmin = () => {
             <Card>
               <Card.Body>
                 <div className="d-flex align-items-center">
-                  <FontAwesomeIcon icon={faUserTimes} size="2x" className="text-secondary me-3" />
+                  <FontAwesomeIcon icon={faExclamationTriangle} size="2x" className="text-warning me-3" />
                   <div>
-                    <h6 className="mb-0">Disabled</h6>
-                    <h4 className="mb-0">{statsData.disabled_users || 0}</h4>
+                    <h6 className="mb-0">Invalid</h6>
+                    <h4 className="mb-0">{statsData.invalid_users || 0}</h4>
                   </div>
                 </div>
               </Card.Body>
