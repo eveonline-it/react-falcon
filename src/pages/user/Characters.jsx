@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUsers, faGripVertical, faEye, faSync, faExclamationTriangle,
   faUser, faBuilding, faGlobe, faInfoCircle, faSave,
-  faCheckCircle, faTimesCircle
+  faCheckCircle, faTimesCircle, faBan
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { CharacterPortrait, CorporationLogo, AllianceLogo } from 'components/common';
@@ -79,6 +79,17 @@ const DraggableRow = ({ character, index, onDragStart, onDragEnd, onDragOver, on
           </div>
         </div>
       </td>
+      <td className="py-2 align-middle">
+        {(() => {
+          const statusInfo = getCharacterStatus(character);
+          return (
+            <Badge bg={statusInfo.color} className="small">
+              <FontAwesomeIcon icon={statusInfo.icon} className="me-1" size="xs" />
+              {statusInfo.label}
+            </Badge>
+          );
+        })()}
+      </td>
       <td className="py-2 align-middle d-none d-md-table-cell">
         <div className="d-flex align-items-center">
           {(character.corporation_id || character.corporation?.corporation_id) && (
@@ -129,6 +140,14 @@ const DraggableRow = ({ character, index, onDragStart, onDragEnd, onDragOver, on
       </td>
     </tr>
   );
+};
+
+const getCharacterStatus = (character) => {
+  if (character.banned === true) return { value: 'banned', label: 'Banned', color: 'danger', icon: faBan };
+  // Only mark as invalid if valid is explicitly false
+  if (character.valid === false) return { value: 'invalid', label: 'Invalid', color: 'warning', icon: faExclamationTriangle };
+  // Default to valid (including when valid is true, undefined, or missing)
+  return { value: 'valid', label: 'Valid', color: 'success', icon: faCheckCircle };
 };
 
 const Characters = () => {
@@ -369,6 +388,7 @@ const Characters = () => {
                       <tr>
                         <th style={{ width: '40px' }}></th>
                         <th>Character</th>
+                        <th>Status</th>
                         <th className="d-none d-md-table-cell">Corporation</th>
                         <th className="d-none d-lg-table-cell">Alliance</th>
                         <th style={{ width: '80px' }}>Actions</th>
@@ -508,6 +528,20 @@ const Characters = () => {
                               </span>
                             </div>
                           ) : '-'}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                          {(() => {
+                            const statusInfo = getCharacterStatus(selectedCharacter);
+                            return (
+                              <Badge bg={statusInfo.color}>
+                                <FontAwesomeIcon icon={statusInfo.icon} className="me-1" />
+                                {statusInfo.label}
+                              </Badge>
+                            );
+                          })()}
                         </td>
                       </tr>
                       <tr>

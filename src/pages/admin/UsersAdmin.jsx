@@ -37,7 +37,8 @@ const UsersAdmin = () => {
     limit: 20,
     status: '',
     search: '',
-    banned: ''
+    banned: '',
+    valid: ''
   });
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -404,8 +405,17 @@ const UsersAdmin = () => {
             type="checkbox"
             id="banned-filter"
             label="Banned"
-            checked={filters.banned === 'true'}
-            onChange={(e) => setFilters({...filters, banned: e.target.checked ? 'true' : '', page: 1})}
+            checked={filters.banned === true}
+            onChange={(e) => setFilters({...filters, banned: e.target.checked ? true : '', page: 1})}
+            className="me-3"
+          />
+          <Form.Check
+            inline
+            type="checkbox"
+            id="invalid-filter"
+            label="Invalid"
+            checked={filters.valid === false}
+            onChange={(e) => setFilters({...filters, valid: e.target.checked ? false : '', page: 1})}
             className="me-3"
           />
           <Button variant="outline-primary" size="sm" onClick={refetch} className="ms-2">
