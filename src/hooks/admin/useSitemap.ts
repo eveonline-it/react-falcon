@@ -329,6 +329,35 @@ export const useCreateFolder = () => {
   });
 };
 
+// Update existing folder using the dedicated folder endpoint
+export const useUpdateFolder = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (folderData: { id: string; name: string; parent_id?: string | null; icon?: string | null; nav_order?: number; is_enabled?: boolean; show_in_nav?: boolean; required_groups?: string[] | null | undefined; description?: string | null | undefined }) => {
+      const { id, ...updateData } = folderData;
+      
+      const response = await fetch(`${API_BASE_URL}/admin/sitemap/folders/${id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to update folder: ${response.status} ${errorText}`);
+      }
+      return response.json();
+    },
+    onSuccess: (_data, folderData) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'sitemap'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'sitemap', folderData.id] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'sitemap', 'parent-options'] });
+    }
+  });
+};
+
 // Move an item to a new parent
 export const useMoveItem = () => {
   const queryClient = useQueryClient();

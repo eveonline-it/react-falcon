@@ -132,6 +132,42 @@ const TreeItem: React.FC<TreeItemProps> = ({
                       <div className="d-flex align-items-center">
                         <strong className="me-2">{item.name}</strong>
                         {getStatusBadge()}
+                        
+                        {/* Group restrictions indicator */}
+                        {item.required_groups && item.required_groups.length > 0 && (
+                          <Badge 
+                            bg="warning" 
+                            className="ms-2"
+                            title={`Required Groups: ${item.required_groups.join(', ')}`}
+                          >
+                            <FontAwesomeIcon icon="users" className="me-1" size="xs" />
+                            {item.required_groups.length} Group{item.required_groups.length > 1 ? 's' : ''}
+                          </Badge>
+                        )}
+                        
+                        {/* Permission restrictions indicator */}
+                        {item.required_permissions && item.required_permissions.length > 0 && (
+                          <Badge 
+                            bg="danger" 
+                            className="ms-2"
+                            title={`Required Permissions: ${item.required_permissions.join(', ')}`}
+                          >
+                            <FontAwesomeIcon icon="key" className="me-1" size="xs" />
+                            {item.required_permissions.length} Perm{item.required_permissions.length > 1 ? 's' : ''}
+                          </Badge>
+                        )}
+                        
+                        {/* Route type badge */}
+                        {item.route_type && item.route_type !== 'public' && (
+                          <Badge 
+                            bg={item.route_type === 'admin' ? 'primary' : 'secondary'} 
+                            className="ms-2"
+                            title={`Route Type: ${item.route_type}`}
+                          >
+                            {item.route_type}
+                          </Badge>
+                        )}
+                        
                         {item.badge && (
                           <Badge 
                             bg={item.badge.type === 'success' ? 'success' : 'warning'} 
@@ -143,6 +179,24 @@ const TreeItem: React.FC<TreeItemProps> = ({
                       </div>
                       {!isFolder && item.to && (
                         <small className="text-muted">{item.to}</small>
+                      )}
+                      {/* Access control details */}
+                      {(item.required_groups || item.required_permissions) && (
+                        <div className="mt-1">
+                          {item.required_groups && item.required_groups.length > 0 && (
+                            <small className="text-warning d-block">
+                              <FontAwesomeIcon icon="users" className="me-1" />
+                              Groups: {item.required_groups.join(', ')}
+                            </small>
+                          )}
+                          {item.required_permissions && item.required_permissions.length > 0 && (
+                            <small className="text-danger d-block">
+                              <FontAwesomeIcon icon="key" className="me-1" />
+                              Permissions: {item.required_permissions.slice(0, 2).join(', ')}
+                              {item.required_permissions.length > 2 && ` (+${item.required_permissions.length - 2} more)`}
+                            </small>
+                          )}
+                        </div>
                       )}
                       {hasChildren && (
                         <small className="text-muted">

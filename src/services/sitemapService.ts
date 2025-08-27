@@ -93,6 +93,10 @@ export interface HierarchicalNavItem extends NavItem {
   parent_id?: string | null;
   depth?: number;
   nav_order?: number;
+  // Access control information
+  required_groups?: string[] | null;
+  required_permissions?: string[] | null;
+  route_type?: string;
 }
 
 const SITEMAP_URL = 'https://go.eveonline.it/sitemap';

@@ -12,6 +12,21 @@ import {
 } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { SitemapRoute } from '../../hooks/admin/useSitemap';
+// @ts-ignore - useGroups is a JS file
+import { useGroups } from '../../hooks/useGroups';
+
+// Type definitions for groups data
+interface GroupData {
+  id: string;
+  name: string;
+  type: string;
+  description?: string;
+}
+
+interface GroupsResponse {
+  groups: GroupData[];
+  total_pages?: number;
+}
 
 interface ParentOption {
   id: string;
@@ -87,6 +102,11 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
   parentOptions = [],
   parentOptionsLoading = false
 }) => {
+  // Fetch available groups for group restrictions
+  const { data: groupsData, isLoading: groupsLoading } = useGroups() as {
+    data: GroupsResponse | undefined;
+    isLoading: boolean;
+  };
   const [formData, setFormData] = useState<RouteFormData>({
     route_id: '',
     path: '',
@@ -415,8 +435,8 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
                   <div className="mt-2">
                     <small className="text-muted">
                       {itemType === 'folder' 
-                        ? '📁 Folders organize navigation items and don\'t have their own pages'
-                        : '📄 Routes are navigable pages with their own URLs and components'
+                        ? '📁 Folders organize navigation items and use the /admin/sitemap/folders endpoint'
+                        : '📄 Routes are navigable pages with URLs and components, use the /admin/sitemap endpoint'
                       }
                     </small>
                   </div>
@@ -517,7 +537,10 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Path*</Form.Label>
+                    <Form.Label>
+                      Path* 
+                      <Badge bg="danger" className="ms-2">Required for Routes</Badge>
+                    </Form.Label>
                     <Form.Control
                       type="text"
                       value={formData.path}
@@ -540,7 +563,10 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
                 </Col>
                 <Col md={6}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Component*</Form.Label>
+                    <Form.Label>
+                      Component* 
+                      <Badge bg="danger" className="ms-2">Required for Routes</Badge>
+                    </Form.Label>
                     <Form.Control
                       type="text"
                       value={formData.component}
@@ -771,6 +797,133 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
                 </Form.Control.Feedback>
                 <Form.Text className="text-muted">
                   Lower numbers appear first (0-999)
+                </Form.Text>
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* Access Control Section - Available for both routes and folders */}
+          <Row>
+            <Col md={12}>
+              <h6 className="mb-3 mt-4">
+                <FontAwesomeIcon icon="shield-alt" className="me-2 text-primary" />
+                Access Control
+              </h6>
+              {/* Show warning only for routes that need path/component */}
+              {itemType === 'route' && (!formData.path.trim() || !formData.component.trim()) && (
+                <Alert variant="warning" className="mb-3">
+                  <FontAwesomeIcon icon="exclamation-triangle" className="me-2" />
+                  <strong>Complete Basic Route Information First</strong>
+                  <br />
+                  Path and Component are required by the PUT /admin/sitemap/{'{id}'} endpoint.
+                  Access controls can only be set after these required fields are filled.
+                </Alert>
+              )}
+              {/* Info for folders */}
+              {itemType === 'folder' && (
+                <Alert variant="info" className="mb-3">
+                  <FontAwesomeIcon icon="info-circle" className="me-2" />
+                  <strong>Folder Access Control</strong>
+                  <br />
+                  These restrictions will apply to the folder and may affect which users can see it in navigation.
+                </Alert>
+              )}
+            </Col>
+          </Row>
+
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>
+                  <FontAwesomeIcon icon="users" className="me-2" />
+                  Required Groups (Optional)
+                </Form.Label>
+                {groupsLoading ? (
+                  <div className="d-flex align-items-center">
+                    <Spinner size="sm" className="me-2" />
+                    Loading groups...
+                  </div>
+                ) : (
+                  <>
+                    <Form.Select
+                      multiple
+                      value={formData.required_groups || []}
+                      onChange={e => {
+                        const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+                        setFormData({ ...formData, required_groups: selectedOptions.length > 0 ? selectedOptions : null });
+                      }}
+                      style={{ height: '150px' }}
+                      disabled={itemType === 'route' && (!formData.path.trim() || !formData.component.trim())}
+                    >
+                      {groupsData?.groups?.map((group: GroupData) => (
+                        <option key={group.id} value={group.name}>
+                          {group.name} ({group.type})
+                        </option>
+                      )) || []}
+                    </Form.Select>
+                    <Form.Text className="text-muted">
+                      Users must belong to ANY of these groups to access this {itemType}.
+                      Hold Ctrl/Cmd to select multiple groups. Leave empty for no group restrictions.
+                      {itemType === 'route' && ' (Route must have Path and Component filled first.)'}
+                    </Form.Text>
+                    {formData.required_groups && formData.required_groups.length > 0 && (
+                      <div className="mt-2">
+                        <small className="text-info">
+                          <FontAwesomeIcon icon="info-circle" className="me-1" />
+                          Selected groups: {formData.required_groups.join(', ')}
+                        </small>
+                      </div>
+                    )}
+                  </>
+                )}
+              </Form.Group>
+            </Col>
+                <Col md={6}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>
+                      <FontAwesomeIcon icon="key" className="me-2" />
+                      Required Permissions (Optional)
+                    </Form.Label>
+                    <Form.Control
+                      as="textarea"
+                      rows={6}
+                      value={formData.required_permissions?.join('\n') || ''}
+                      onChange={e => {
+                        const permissions = e.target.value.split('\n').filter(p => p.trim());
+                        setFormData({ 
+                          ...formData, 
+                          required_permissions: permissions.length > 0 ? permissions : null 
+                        });
+                      }}
+                      placeholder="Enter one permission per line...\ne.g.:\nsystem:admin:read\nsystem:admin:write"
+                      disabled={itemType === 'route' && (!formData.path.trim() || !formData.component.trim())}
+                    />
+                    <Form.Text className="text-muted">
+                      Users must have ALL of these permissions to access this {itemType}.
+                      Enter one permission per line.
+                      {itemType === 'route' && ' (Route must have Path and Component filled first.)'}
+                    </Form.Text>
+                  </Form.Group>
+                </Col>
+          </Row>
+
+          {/* Description and Badge */}
+          <Row>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label>
+                  <FontAwesomeIcon icon="comment" className="me-2" />
+                  Description (Optional)
+                </Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  value={formData.description || ''}
+                  onChange={e => setFormData({ ...formData, description: e.target.value || null })}
+                  placeholder="Brief description of this route's purpose..."
+                />
+                <Form.Text className="text-muted">
+                  Internal description for documentation purposes
                 </Form.Text>
               </Form.Group>
             </Col>
