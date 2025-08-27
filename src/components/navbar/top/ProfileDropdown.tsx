@@ -42,7 +42,7 @@ const ProfileDropdown = () => {
             <span>Go Pro</span>
           </Dropdown.Item> */}
           <Dropdown.Divider />
-          <Dropdown.Item href="#!">Characters</Dropdown.Item>
+          <Dropdown.Item as={Link} to={'/user/characters'}>Characters</Dropdown.Item>
           <Dropdown.Item href="/login">Add Character</Dropdown.Item>
           <Dropdown.Item as={Link} to={paths.userProfile}>
             Profile &amp; account

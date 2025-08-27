@@ -37,9 +37,7 @@ const UsersAdmin = () => {
     limit: 20,
     status: '',
     search: '',
-    enabled: '',
-    banned: '',
-    invalid: ''
+    banned: ''
   });
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -87,10 +85,8 @@ const UsersAdmin = () => {
   const selectedCount = selectedUsers.size;
 
   const userStatuses = [
-    { value: 'enabled', label: 'Enabled', color: 'success', icon: faCheckCircle },
-    { value: 'disabled', label: 'Disabled', color: 'secondary', icon: faTimesCircle },
-    { value: 'banned', label: 'Banned', color: 'danger', icon: faBan },
-    { value: 'invalid', label: 'Invalid', color: 'warning', icon: faExclamationTriangle }
+    { value: 'valid', label: 'Valid', color: 'success', icon: faCheckCircle },
+    { value: 'banned', label: 'Banned', color: 'danger', icon: faBan }
   ];
 
   const getStatusInfo = (status) => {
@@ -115,6 +111,15 @@ const UsersAdmin = () => {
     const cleanup = debouncedSearch();
     return cleanup;
   }, [debouncedSearch]);
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const refreshInterval = setInterval(() => {
+      refetch();
+    }, 5 * 60 * 1000); // 5 minutes in milliseconds
+
+    return () => clearInterval(refreshInterval);
+  }, [refetch]);
 
   const handleOpenUserModal = (user) => {
     setSelectedUser(user);
@@ -189,8 +194,7 @@ const UsersAdmin = () => {
         position: userPosition ? parseInt(userPosition, 10) : null,
         // Include current status fields to maintain user's current state
         banned: editingUser.banned || false,
-        enabled: editingUser.enabled !== false, // Default to true if undefined
-        invalid: editingUser.invalid || false
+        valid: editingUser.valid !== false // Default to true if undefined
       };
       
       const characterId = editingUser.character_id;
@@ -222,17 +226,17 @@ const UsersAdmin = () => {
       let updateData = {};
       
       switch (bulkAction) {
-        case 'enable':
-          updateData = { enabled: true, banned: false, invalid: false };
-          break;
-        case 'disable':
-          updateData = { enabled: false, banned: false, invalid: false };
-          break;
         case 'ban':
-          updateData = { enabled: false, banned: true, invalid: false };
+          updateData = { banned: true, valid: false };
           break;
         case 'unban':
-          updateData = { enabled: true, banned: false, invalid: false };
+          updateData = { banned: false, valid: true };
+          break;
+        case 'validate':
+          updateData = { banned: false, valid: true };
+          break;
+        case 'invalidate':
+          updateData = { banned: false, valid: false };
           break;
         default:
           return;
@@ -278,9 +282,8 @@ const UsersAdmin = () => {
   
   const getUserStatus = (user) => {
     if (user.banned) return { value: 'banned', label: 'Banned', color: 'danger', icon: faBan };
-    if (user.invalid) return { value: 'invalid', label: 'Invalid', color: 'warning', icon: faExclamationTriangle };
-    if (!user.enabled) return { value: 'disabled', label: 'Disabled', color: 'secondary', icon: faTimesCircle };
-    return { value: 'enabled', label: 'Enabled', color: 'success', icon: faCheckCircle };
+    if (user.valid === false) return { value: 'invalid', label: 'Invalid', color: 'warning', icon: faExclamationTriangle };
+    return { value: 'valid', label: 'Valid', color: 'success', icon: faCheckCircle };
   };
   
   const exportUsers = () => {
@@ -399,28 +402,10 @@ const UsersAdmin = () => {
           <Form.Check
             inline
             type="checkbox"
-            id="enabled-filter"
-            label="Enabled"
-            checked={filters.enabled === 'true'}
-            onChange={(e) => setFilters({...filters, enabled: e.target.checked ? 'true' : '', page: 1})}
-            className="me-3"
-          />
-          <Form.Check
-            inline
-            type="checkbox"
             id="banned-filter"
             label="Banned"
             checked={filters.banned === 'true'}
             onChange={(e) => setFilters({...filters, banned: e.target.checked ? 'true' : '', page: 1})}
-            className="me-3"
-          />
-          <Form.Check
-            inline
-            type="checkbox"
-            id="invalid-filter"
-            label="Invalid"
-            checked={filters.invalid === 'true'}
-            onChange={(e) => setFilters({...filters, invalid: e.target.checked ? 'true' : '', page: 1})}
             className="me-3"
           />
           <Button variant="outline-primary" size="sm" onClick={refetch} className="ms-2">
@@ -1038,14 +1023,6 @@ const UsersAdmin = () => {
                         </td>
                       </tr>
                       <tr>
-                        <td><strong>Enabled:</strong></td>
-                        <td>
-                          <Badge bg={selectedUser.enabled ? 'success' : 'secondary'}>
-                            {selectedUser.enabled !== undefined ? (selectedUser.enabled ? 'Yes' : 'No') : 'Not available'}
-                          </Badge>
-                        </td>
-                      </tr>
-                      <tr>
                         <td><strong>Banned:</strong></td>
                         <td>
                           <Badge bg={selectedUser.banned ? 'danger' : 'success'}>
@@ -1054,10 +1031,10 @@ const UsersAdmin = () => {
                         </td>
                       </tr>
                       <tr>
-                        <td><strong>Invalid:</strong></td>
+                        <td><strong>Valid Profile:</strong></td>
                         <td>
-                          <Badge bg={selectedUser.invalid ? 'warning' : 'success'}>
-                            {selectedUser.invalid !== undefined ? (selectedUser.invalid ? 'Yes' : 'No') : 'Not available'}
+                          <Badge bg={selectedUser.valid ? 'success' : 'warning'}>
+                            {selectedUser.valid !== undefined ? (selectedUser.valid ? 'Yes' : 'No') : 'Not available'}
                           </Badge>
                         </td>
                       </tr>
@@ -1071,14 +1048,6 @@ const UsersAdmin = () => {
                                 : selectedUser.scopes}
                             </small>
                           ) : 'Not available'}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td><strong>Valid Profile:</strong></td>
-                        <td>
-                          <Badge bg={selectedUser.valid ? 'success' : 'warning'}>
-                            {selectedUser.valid !== undefined ? (selectedUser.valid ? 'Yes' : 'No') : 'Not available'}
-                          </Badge>
                         </td>
                       </tr>
                       <tr>
@@ -1273,8 +1242,8 @@ const UsersAdmin = () => {
             <Form.Label>Select Action</Form.Label>
             <Form.Select value={bulkAction} onChange={(e) => setBulkAction(e.target.value)}>
               <option value="">Choose an action...</option>
-              <option value="enable">Enable Users</option>
-              <option value="disable">Disable Users</option>
+              <option value="validate">Validate Users</option>
+              <option value="invalidate">Invalidate Users</option>
               <option value="ban">Ban Users</option>
               <option value="unban">Unban Users</option>
             </Form.Select>
