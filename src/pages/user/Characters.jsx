@@ -81,49 +81,41 @@ const DraggableRow = ({ character, index, onDragStart, onDragEnd, onDragOver, on
       </td>
       <td className="py-2 align-middle d-none d-md-table-cell">
         <div className="d-flex align-items-center">
-          {character.corporation_id && (
+          {(character.corporation_id || character.corporation?.corporation_id) && (
             <div className="me-2" style={{ width: '24px', height: '24px', flexShrink: 0 }}>
               <CorporationLogo 
-                corporationId={character.corporation_id}
-                corporationName={character.corporation_name}
+                corporationId={character.corporation_id || character.corporation?.corporation_id}
+                corporationName={character.corporation_name || character.corporation?.name}
                 size={24}
               />
             </div>
           )}
           <div className="d-flex flex-column text-truncate" style={{ maxWidth: '130px' }}>
-            <span>{character.corporation_name || '-'}</span>
-            {character.corporation_ticker && (
-              <small className="text-muted">[{character.corporation_ticker}]</small>
+            <span>{character.corporation_name || character.corporation?.name || '-'}</span>
+            {(character.corporation_ticker || character.corporation?.ticker) && (
+              <small className="text-muted">[{character.corporation_ticker || character.corporation?.ticker}]</small>
             )}
           </div>
         </div>
       </td>
       <td className="py-2 align-middle d-none d-lg-table-cell">
         <div className="d-flex align-items-center">
-          {character.alliance_id && (
+          {(character.alliance_id || character.alliance?.alliance_id) && (
             <div className="me-2" style={{ width: '24px', height: '24px', flexShrink: 0 }}>
               <AllianceLogo 
-                allianceId={character.alliance_id}
-                allianceName={character.alliance_name}
+                allianceId={character.alliance_id || character.alliance?.alliance_id}
+                allianceName={character.alliance_name || character.alliance?.name}
                 size={24}
               />
             </div>
           )}
           <div className="d-flex flex-column text-truncate" style={{ maxWidth: '130px' }}>
-            <span>{character.alliance_name || '-'}</span>
-            {character.alliance_ticker && (
-              <small className="text-muted">[{character.alliance_ticker}]</small>
+            <span>{character.alliance_name || character.alliance?.name || '-'}</span>
+            {(character.alliance_ticker || character.alliance?.ticker) && (
+              <small className="text-muted">[{character.alliance_ticker || character.alliance?.ticker}]</small>
             )}
           </div>
         </div>
-      </td>
-      <td className="py-2 align-middle d-none d-lg-table-cell">
-        <Badge bg={character.is_main ? 'success' : 'secondary'}>
-          {character.is_main ? 'Main' : 'Alt'}
-        </Badge>
-      </td>
-      <td className="py-2 align-middle text-center">
-        <span className="fw-bold">{character.position || index + 1}</span>
       </td>
       <td className="py-2 align-middle">
         <Button
@@ -379,8 +371,6 @@ const Characters = () => {
                         <th>Character</th>
                         <th className="d-none d-md-table-cell">Corporation</th>
                         <th className="d-none d-lg-table-cell">Alliance</th>
-                        <th className="d-none d-lg-table-cell">Type</th>
-                        <th className="text-center" style={{ width: '80px' }}>Position</th>
                         <th style={{ width: '80px' }}>Actions</th>
                       </tr>
                     </thead>
@@ -428,28 +418,38 @@ const Characters = () => {
                 </div>
                 <div className="mt-2">
                   <h5 className="mb-1">{selectedCharacter.character_name}</h5>
-                  {selectedCharacter.corporation_name && (
+                  {(selectedCharacter.corporation_name || selectedCharacter.corporation?.name) && (
                     <div className="d-flex align-items-center justify-content-center mb-1">
-                      {selectedCharacter.corporation_id && (
+                      {(selectedCharacter.corporation_id || selectedCharacter.corporation?.corporation_id) && (
                         <CorporationLogo 
-                          corporationId={selectedCharacter.corporation_id}
-                          corporationName={selectedCharacter.corporation_name}
+                          corporationId={selectedCharacter.corporation_id || selectedCharacter.corporation?.corporation_id}
+                          corporationName={selectedCharacter.corporation_name || selectedCharacter.corporation?.name}
                           size={20}
                         />
                       )}
-                      <small className="text-muted ms-2">{selectedCharacter.corporation_name}</small>
+                      <small className="text-muted ms-2">
+                        {selectedCharacter.corporation_name || selectedCharacter.corporation?.name}
+                        {(selectedCharacter.corporation_ticker || selectedCharacter.corporation?.ticker) && (
+                          <span> [{selectedCharacter.corporation_ticker || selectedCharacter.corporation?.ticker}]</span>
+                        )}
+                      </small>
                     </div>
                   )}
-                  {selectedCharacter.alliance_name && (
+                  {(selectedCharacter.alliance_name || selectedCharacter.alliance?.name) && (
                     <div className="d-flex align-items-center justify-content-center">
-                      {selectedCharacter.alliance_id && (
+                      {(selectedCharacter.alliance_id || selectedCharacter.alliance?.alliance_id) && (
                         <AllianceLogo 
-                          allianceId={selectedCharacter.alliance_id}
-                          allianceName={selectedCharacter.alliance_name}
+                          allianceId={selectedCharacter.alliance_id || selectedCharacter.alliance?.alliance_id}
+                          allianceName={selectedCharacter.alliance_name || selectedCharacter.alliance?.name}
                           size={18}
                         />
                       )}
-                      <small className="text-muted ms-2">{selectedCharacter.alliance_name}</small>
+                      <small className="text-muted ms-2">
+                        {selectedCharacter.alliance_name || selectedCharacter.alliance?.name}
+                        {(selectedCharacter.alliance_ticker || selectedCharacter.alliance?.ticker) && (
+                          <span> [{selectedCharacter.alliance_ticker || selectedCharacter.alliance?.ticker}]</span>
+                        )}
+                      </small>
                     </div>
                   )}
                 </div>
@@ -467,17 +467,22 @@ const Characters = () => {
                       <tr>
                         <td><strong>Corporation:</strong></td>
                         <td>
-                          {selectedCharacter.corporation_name ? (
+                          {(selectedCharacter.corporation_name || selectedCharacter.corporation?.name) ? (
                             <div className="d-flex align-items-center">
-                              {selectedCharacter.corporation_id && (
+                              {(selectedCharacter.corporation_id || selectedCharacter.corporation?.corporation_id) && (
                                 <CorporationLogo 
-                                  corporationId={selectedCharacter.corporation_id}
-                                  corporationName={selectedCharacter.corporation_name}
+                                  corporationId={selectedCharacter.corporation_id || selectedCharacter.corporation?.corporation_id}
+                                  corporationName={selectedCharacter.corporation_name || selectedCharacter.corporation?.name}
                                   size={16}
                                   className="me-2"
                                 />
                               )}
-                              <span>{selectedCharacter.corporation_name}</span>
+                              <span>
+                                {selectedCharacter.corporation_name || selectedCharacter.corporation?.name}
+                                {(selectedCharacter.corporation_ticker || selectedCharacter.corporation?.ticker) && (
+                                  <small className="text-muted ms-1">[{selectedCharacter.corporation_ticker || selectedCharacter.corporation?.ticker}]</small>
+                                )}
+                              </span>
                             </div>
                           ) : '-'}
                         </td>
@@ -485,17 +490,22 @@ const Characters = () => {
                       <tr>
                         <td><strong>Alliance:</strong></td>
                         <td>
-                          {selectedCharacter.alliance_name ? (
+                          {(selectedCharacter.alliance_name || selectedCharacter.alliance?.name) ? (
                             <div className="d-flex align-items-center">
-                              {selectedCharacter.alliance_id && (
+                              {(selectedCharacter.alliance_id || selectedCharacter.alliance?.alliance_id) && (
                                 <AllianceLogo 
-                                  allianceId={selectedCharacter.alliance_id}
-                                  allianceName={selectedCharacter.alliance_name}
+                                  allianceId={selectedCharacter.alliance_id || selectedCharacter.alliance?.alliance_id}
+                                  allianceName={selectedCharacter.alliance_name || selectedCharacter.alliance?.name}
                                   size={16}
                                   className="me-2"
                                 />
                               )}
-                              <span>{selectedCharacter.alliance_name}</span>
+                              <span>
+                                {selectedCharacter.alliance_name || selectedCharacter.alliance?.name}
+                                {(selectedCharacter.alliance_ticker || selectedCharacter.alliance?.ticker) && (
+                                  <small className="text-muted ms-1">[{selectedCharacter.alliance_ticker || selectedCharacter.alliance?.ticker}]</small>
+                                )}
+                              </span>
                             </div>
                           ) : '-'}
                         </td>
@@ -503,8 +513,8 @@ const Characters = () => {
                       <tr>
                         <td><strong>Type:</strong></td>
                         <td>
-                          <Badge bg={selectedCharacter.is_main ? 'success' : 'secondary'}>
-                            {selectedCharacter.is_main ? 'Main Character' : 'Alt Character'}
+                          <Badge bg={selectedCharacter.position === 1 ? 'success' : 'secondary'}>
+                            {selectedCharacter.position === 1 ? 'MAIN' : 'ALT'}
                           </Badge>
                         </td>
                       </tr>

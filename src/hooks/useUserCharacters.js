@@ -44,13 +44,13 @@ const updateCharacterPositions = async ({ userId, updates }) => {
   }
   
   
-  const response = await fetch(`${BASE_URL}/users/${userId}/characters/positions`, {
+  const response = await fetch(`${BASE_URL}/users/${userId}/characters/reorder`, {
     method: 'PUT',
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ updates }),
+    body: JSON.stringify({ characters: updates }),
   });
 
   if (!response.ok) {
