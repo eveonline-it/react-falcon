@@ -7,7 +7,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUsers, faSearch, faFilter, faEye, faSync, faUserEdit,
-  faCheck, faTimes, faExclamationTriangle, faUserCheck, faUserTimes,
+  faCheck, faTimes, faExclamationTriangle,
   faCheckCircle, faTimesCircle, faInfoCircle, faUser,
   faUserSlash, faBan, faShieldAlt, faGlobe, faCalendarAlt,
   faEdit, faSave, faPlus, faTrash, faCopy, faFileExport,
