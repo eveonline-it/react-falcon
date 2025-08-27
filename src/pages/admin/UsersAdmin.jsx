@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Container, Row, Col, Card, Button, Badge, Form, 
   Alert, Modal, Table, InputGroup, Spinner, OverlayTrigger, Tooltip,
@@ -18,7 +18,6 @@ import { CharacterPortrait, CorporationLogo, AllianceLogo, GroupsBadges } from '
 
 import {
   useUsers,
-  useUserStats,
   useUserProfile,
   useUpdateUserStatus,
   useUpdateUser,
@@ -57,7 +56,6 @@ const UsersAdmin = () => {
   const [userToDelete, setUserToDelete] = useState(null);
 
   const { data: usersData, isLoading, error, refetch } = useUsers(filters);
-  const { data: statsData, isLoading: statsLoading } = useUserStats();
   const { data: userProfile, isLoading: profileLoading } = useUserProfile(selectedUser?.character_id);
   const { data: enrichedUser, isLoading: enrichedLoading } = useEnrichedUser(selectedUser);
   const { data: usersStatus } = useUsersStatus();
@@ -70,6 +68,39 @@ const UsersAdmin = () => {
   const users = usersData?.users || [];
   const totalPages = usersData?.total_pages || 1;
   const totalUsers = usersData?.total || 0;
+  
+  // Calculate stats from usersData
+  const statsData = useMemo(() => {
+    if (!users.length) {
+      return {
+        total_users: 0,
+        valid_users: 0,
+        invalid_users: 0,
+        banned_users: 0
+      };
+    }
+    
+    let validUsers = 0;
+    let invalidUsers = 0;
+    let bannedUsers = 0;
+    
+    users.forEach(user => {
+      if (user.banned) {
+        bannedUsers++;
+      } else if (user.valid === false) {
+        invalidUsers++;
+      } else {
+        validUsers++;
+      }
+    });
+    
+    return {
+      total_users: users.length,
+      valid_users: validUsers,
+      invalid_users: invalidUsers,
+      banned_users: bannedUsers
+    };
+  }, [users]);
   
   // React 19 compiler will optimize this automatically
   const filteredUsers = users.filter(user => {
@@ -92,10 +123,6 @@ const UsersAdmin = () => {
 
   const getStatusInfo = (status) => {
     return userStatuses.find(s => s.value === status) || userStatuses[0];
-  };
-
-  const handleSearch = () => {
-    setFilters(prev => ({ ...prev, search: searchTerm, page: 1 }));
   };
 
   // Debounced auto-search functionality
