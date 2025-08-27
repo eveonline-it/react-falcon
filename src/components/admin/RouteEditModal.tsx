@@ -32,6 +32,31 @@ const ROUTE_GROUPS = [
   'Utilities'
 ];
 
+const ROUTE_TYPES = [
+  'public',
+  'auth', 
+  'protected',
+  'admin',
+  'folder'
+];
+
+const NAV_POSITIONS = [
+  'main',
+  'user',
+  'admin', 
+  'footer',
+  'hidden'
+];
+
+const BADGE_TYPES = [
+  'success',
+  'warning', 
+  'danger',
+  'info',
+  'primary',
+  'secondary'
+];
+
 const ICON_OPTIONS = [
   'chart-pie', 'user', 'users', 'cog', 'shield-alt', 'clock',
   'chart-line', 'file-alt', 'table', 'globe', 'flag', 'lock',
@@ -41,7 +66,7 @@ const ICON_OPTIONS = [
   'folder', 'folder-open', 'archive', 'layer-group', 'sitemap'
 ];
 
-interface RouteFormData extends Omit<SitemapRoute, 'id' | 'created_at' | 'updated_at'> {}
+interface RouteFormData extends Omit<SitemapRoute, 'id' | 'created_at' | 'updated_at' | 'depth' | 'children_count' | 'folder_path' | 'is_expanded'> {}
 
 interface RouteEditModalProps {
   show: boolean;
@@ -82,18 +107,115 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
     group: 'Utilities',
     feature_flags: null,
     is_enabled: true,
-    props: null,
+    props: {},
     lazy_load: true,
     exact: false,
-    newtab: false
+    newtab: false,
+    badge_text: '',
+    badge_type: null
   });
 
   const [itemType, setItemType] = useState<'route' | 'folder'>('route');
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  // Validation function following OpenAPI schema
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+
+    // Required fields validation
+    if (!formData.route_id.trim()) {
+      errors.route_id = 'Route ID is required';
+    } else if (formData.route_id.length > 100) {
+      errors.route_id = 'Route ID must be 100 characters or less';
+    }
+
+    if (!formData.name.trim()) {
+      errors.name = 'Display name is required';
+    } else if (formData.name.length > 100) {
+      errors.name = 'Display name must be 100 characters or less';
+    }
+
+    // Route-specific validations
+    if (itemType === 'route') {
+      if (!formData.path.trim()) {
+        errors.path = 'Path is required for routes';
+      } else if (formData.path.length > 200) {
+        errors.path = 'Path must be 200 characters or less';
+      }
+
+      if (!formData.component.trim()) {
+        errors.component = 'Component is required for routes';
+      } else if (formData.component.length > 100) {
+        errors.component = 'Component must be 100 characters or less';
+      }
+
+      if (formData.title && formData.title.length > 100) {
+        errors.title = 'Title must be 100 characters or less';
+      }
+    }
+
+    // Type validation
+    if (!ROUTE_TYPES.includes(formData.type)) {
+      errors.type = `Type must be one of: ${ROUTE_TYPES.join(', ')}`;
+    }
+
+    // Nav position validation
+    if (!NAV_POSITIONS.includes(formData.nav_position)) {
+      errors.nav_position = `Navigation position must be one of: ${NAV_POSITIONS.join(', ')}`;
+    }
+
+    // Nav order validation (0-999)
+    if (formData.nav_order < 0 || formData.nav_order > 999) {
+      errors.nav_order = 'Navigation order must be between 0 and 999';
+    }
+
+    // Group validation
+    if (formData.group && !ROUTE_GROUPS.includes(formData.group)) {
+      errors.group = `Group must be one of: ${ROUTE_GROUPS.join(', ')}`;
+    }
+
+    // Badge type validation - only validate if badge_text is provided
+    if (formData.badge_text && formData.badge_type && !BADGE_TYPES.includes(formData.badge_type)) {
+      errors.badge_type = `Badge type must be one of: ${BADGE_TYPES.join(', ')}`;
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Clear specific validation error when field changes
+  const clearValidationError = (fieldName: string) => {
+    if (validationErrors[fieldName]) {
+      setValidationErrors(prev => {
+        const { [fieldName]: removed, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
+
+  // Get form control props with validation
+  const getControlProps = (fieldName: string) => ({
+    isInvalid: !!validationErrors[fieldName]
+  });
 
   useEffect(() => {
     if (route) {
       const { created_at, updated_at, ...editableRoute } = route;
-      setFormData(editableRoute);
+      // Ensure all form fields are properly initialized with correct null values
+      setFormData({
+        ...editableRoute,
+        // Handle optional fields that might be undefined
+        badge_text: editableRoute.badge_text ?? '',
+        badge_type: editableRoute.badge_type ?? null,
+        icon: editableRoute.icon ?? null,
+        required_permissions: editableRoute.required_permissions ?? null,
+        required_groups: editableRoute.required_groups ?? null,
+        description: editableRoute.description ?? null,
+        keywords: editableRoute.keywords ?? null,
+        group: editableRoute.group ?? null,
+        feature_flags: editableRoute.feature_flags ?? null,
+        props: editableRoute.props ?? {}
+      });
       setItemType(route.is_folder ? 'folder' : 'route');
     } else {
       setFormData({
@@ -116,13 +238,17 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
         group: 'Utilities',
         feature_flags: null,
         is_enabled: true,
-        props: null,
+        props: {},
         lazy_load: true,
         exact: false,
-        newtab: false
+        newtab: false,
+        badge_text: '',
+        badge_type: null
       });
       setItemType('route');
     }
+    // Clear validation errors when form resets
+    setValidationErrors({});
   }, [route, show, preselectedParentId]);
 
   // Update is_folder when item type changes
@@ -143,12 +269,9 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate required fields based on item type
-    if (itemType === 'route') {
-      if (!formData.path || !formData.component) {
-        alert('Path and Component are required for routes');
-        return;
-      }
+    // Validate form data against OpenAPI schema
+    if (!validateForm()) {
+      return;
     }
     
     // Build payload based on item type and operation
@@ -166,7 +289,9 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
       group: formData.group,
       feature_flags: formData.feature_flags,
       is_enabled: formData.is_enabled,
-      props: formData.props
+      props: formData.props,
+      badge_text: formData.badge_text,
+      badge_type: formData.badge_type
     };
 
     const routeSpecificFields = {
@@ -181,10 +306,16 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
 
     let payload: any;
     if (route) {
-      // Updating existing item - only include relevant fields
-      payload = itemType === 'folder' ? commonFields : { ...commonFields, ...routeSpecificFields };
+      // Updating existing item - include route_id and is_folder as hooks will filter them
+      const basePayload = {
+        ...commonFields,
+        route_id: formData.route_id,
+        is_folder: formData.is_folder
+      };
+      
+      payload = itemType === 'folder' ? basePayload : { ...basePayload, ...routeSpecificFields };
     } else {
-      // Creating new item - include route_id and is_folder
+      // Creating new item - include route_id and is_folder as hooks will filter them
       payload = {
         ...commonFields,
         route_id: formData.route_id,
@@ -324,13 +455,21 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
                 <Form.Control
                   type="text"
                   value={formData.route_id}
-                  onChange={e => setFormData({ ...formData, route_id: e.target.value })}
+                  onChange={e => {
+                    setFormData({ ...formData, route_id: e.target.value });
+                    clearValidationError('route_id');
+                  }}
                   required
                   disabled={!!route}
                   placeholder={itemType === 'folder' ? 'user-management' : 'dashboard-main'}
+                  maxLength={100}
+                  {...getControlProps('route_id')}
                 />
+                <Form.Control.Feedback type="invalid">
+                  {validationErrors.route_id}
+                </Form.Control.Feedback>
                 <Form.Text className="text-muted">
-                  Unique identifier (e.g., {itemType === 'folder' ? 'user-management' : 'dashboard-main'})
+                  Unique identifier (e.g., {itemType === 'folder' ? 'user-management' : 'dashboard-main'}) - Max 100 characters
                 </Form.Text>
               </Form.Group>
             </Col>
@@ -340,10 +479,21 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
                 <Form.Control
                   type="text"
                   value={formData.name}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  onChange={e => {
+                    setFormData({ ...formData, name: e.target.value });
+                    clearValidationError('name');
+                  }}
                   required
                   placeholder={itemType === 'folder' ? 'User Management' : 'Dashboard'}
+                  maxLength={100}
+                  {...getControlProps('name')}
                 />
+                <Form.Control.Feedback type="invalid">
+                  {validationErrors.name}
+                </Form.Control.Feedback>
+                <Form.Text className="text-muted">
+                  Display name shown in navigation - Max 100 characters
+                </Form.Text>
               </Form.Group>
             </Col>
           </Row>
@@ -371,12 +521,20 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
                     <Form.Control
                       type="text"
                       value={formData.path}
-                      onChange={e => setFormData({ ...formData, path: e.target.value })}
+                      onChange={e => {
+                        setFormData({ ...formData, path: e.target.value });
+                        clearValidationError('path');
+                      }}
                       required
                       placeholder="/dashboard"
+                      maxLength={200}
+                      {...getControlProps('path')}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {validationErrors.path}
+                    </Form.Control.Feedback>
                     <Form.Text className="text-muted">
-                      URL path for this route
+                      URL path for this route - Max 200 characters
                     </Form.Text>
                   </Form.Group>
                 </Col>
@@ -386,12 +544,20 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
                     <Form.Control
                       type="text"
                       value={formData.component}
-                      onChange={e => setFormData({ ...formData, component: e.target.value })}
+                      onChange={e => {
+                        setFormData({ ...formData, component: e.target.value });
+                        clearValidationError('component');
+                      }}
                       required
                       placeholder="Dashboard"
+                      maxLength={100}
+                      {...getControlProps('component')}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {validationErrors.component}
+                    </Form.Control.Feedback>
                     <Form.Text className="text-muted">
-                      React component name
+                      React component name - Max 100 characters
                     </Form.Text>
                   </Form.Group>
                 </Col>
@@ -404,11 +570,19 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
                     <Form.Control
                       type="text"
                       value={formData.title}
-                      onChange={e => setFormData({ ...formData, title: e.target.value })}
+                      onChange={e => {
+                        setFormData({ ...formData, title: e.target.value });
+                        clearValidationError('title');
+                      }}
                       placeholder="Dashboard Page"
+                      maxLength={100}
+                      {...getControlProps('title')}
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {validationErrors.title}
+                    </Form.Control.Feedback>
                     <Form.Text className="text-muted">
-                      HTML title and breadcrumb text
+                      HTML title and breadcrumb text - Max 100 characters
                     </Form.Text>
                   </Form.Group>
                 </Col>
@@ -420,11 +594,41 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
           <Row>
             <Col md={6}>
               <Form.Group className="mb-3">
+                <Form.Label>Type*</Form.Label>
+                <Form.Select
+                  value={formData.type}
+                  onChange={e => {
+                    setFormData({ ...formData, type: e.target.value });
+                    clearValidationError('type');
+                  }}
+                  required
+                  {...getControlProps('type')}
+                >
+                  {ROUTE_TYPES.map(type => (
+                    <option key={type} value={type}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </option>
+                  ))}
+                </Form.Select>
+                <Form.Control.Feedback type="invalid">
+                  {validationErrors.type}
+                </Form.Control.Feedback>
+                <Form.Text className="text-muted">
+                  Access level required for this {itemType}
+                </Form.Text>
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
                 <Form.Label>Group*</Form.Label>
                 <Form.Select
                   value={formData.group || ''}
-                  onChange={e => setFormData({ ...formData, group: e.target.value })}
+                  onChange={e => {
+                    setFormData({ ...formData, group: e.target.value });
+                    clearValidationError('group');
+                  }}
                   required
+                  {...getControlProps('group')}
                 >
                   {ROUTE_GROUPS.map(group => (
                     <option key={group} value={group}>
@@ -432,8 +636,42 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
                     </option>
                   ))}
                 </Form.Select>
+                <Form.Control.Feedback type="invalid">
+                  {validationErrors.group}
+                </Form.Control.Feedback>
               </Form.Group>
             </Col>
+          </Row>
+
+          <Row>
+            {itemType === 'route' && (
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Navigation Position*</Form.Label>
+                  <Form.Select
+                    value={formData.nav_position}
+                    onChange={e => {
+                      setFormData({ ...formData, nav_position: e.target.value });
+                      clearValidationError('nav_position');
+                    }}
+                    required
+                    {...getControlProps('nav_position')}
+                  >
+                    {NAV_POSITIONS.map(position => (
+                      <option key={position} value={position}>
+                        {position.charAt(0).toUpperCase() + position.slice(1)}
+                      </option>
+                    ))}
+                  </Form.Select>
+                  <Form.Control.Feedback type="invalid">
+                    {validationErrors.nav_position}
+                  </Form.Control.Feedback>
+                  <Form.Text className="text-muted">
+                    Where to display this route in navigation
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+            )}
             <Col md={6}>
               <Form.Group className="mb-3">
                 <Form.Label>Icon</Form.Label>
@@ -518,11 +756,21 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
                 <Form.Control
                   type="number"
                   value={formData.nav_order || 0}
-                  onChange={e => setFormData({ ...formData, nav_order: parseInt(e.target.value) || 0 })}
+                  onChange={e => {
+                    const value = parseInt(e.target.value) || 0;
+                    setFormData({ ...formData, nav_order: value });
+                    clearValidationError('nav_order');
+                  }}
                   placeholder="0"
+                  min={0}
+                  max={999}
+                  {...getControlProps('nav_order')}
                 />
+                <Form.Control.Feedback type="invalid">
+                  {validationErrors.nav_order}
+                </Form.Control.Feedback>
                 <Form.Text className="text-muted">
-                  Lower numbers appear first
+                  Lower numbers appear first (0-999)
                 </Form.Text>
               </Form.Group>
             </Col>
@@ -535,14 +783,34 @@ const RouteEditModal: React.FC<RouteEditModalProps> = ({
                   onChange={e => setFormData({
                     ...formData,
                     badge_text: e.target.value,
-                    badge_type: e.target.value ? 'success' : null
+                    badge_type: e.target.value ? formData.badge_type || 'success' : null
                   })}
                   placeholder="New"
                 />
                 {formData.badge_text && (
-                  <Form.Text className="text-muted">
-                    Preview: <Badge bg={formData.badge_type || 'secondary'}>{formData.badge_text}</Badge>
-                  </Form.Text>
+                  <>
+                    <Form.Select
+                      className="mt-2"
+                      value={formData.badge_type || 'success'}
+                      onChange={e => {
+                        setFormData({ ...formData, badge_type: e.target.value });
+                        clearValidationError('badge_type');
+                      }}
+                      {...getControlProps('badge_type')}
+                    >
+                      {BADGE_TYPES.map(type => (
+                        <option key={type} value={type}>
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    <Form.Control.Feedback type="invalid">
+                      {validationErrors.badge_type}
+                    </Form.Control.Feedback>
+                    <Form.Text className="text-muted">
+                      Preview: <Badge bg={formData.badge_type || 'success'}>{formData.badge_text}</Badge>
+                    </Form.Text>
+                  </>
                 )}
               </Form.Group>
             </Col>

@@ -49,7 +49,7 @@ import {
 import '../../assets/css/sitemap-tree.css';
 import '../../assets/css/sitemap-admin.css';
 
-interface RouteFormData extends Omit<SitemapRoute, 'id' | 'created_at' | 'updated_at'> {}
+interface RouteFormData extends Omit<SitemapRoute, 'id' | 'created_at' | 'updated_at' | 'depth' | 'children_count' | 'folder_path' | 'is_expanded'> {}
 
 const HierarchicalSitemapAdmin: React.FC = () => {
   // State management
@@ -80,13 +80,18 @@ const HierarchicalSitemapAdmin: React.FC = () => {
   // Memoized drag drop callbacks with stable dependencies
   const handleItemMove = useCallback(async (itemId: string, newParentId: string | null) => {
     try {
-      await moveItem.mutateAsync({ itemId, newParentId });
+      // Find the route to get the correct route_id (backend expects route_id, not MongoDB _id)
+      const route = adminRoutes?.routes?.find(r => r.id === itemId);
+      if (!route) {
+        throw new Error('Route not found');
+      }
+      await moveItem.mutateAsync({ itemId: route.route_id, newParentId });
       toast.success('Item moved successfully');
     } catch (error) {
       console.error('Error moving item:', error);
       toast.error('Failed to move item');
     }
-  }, [moveItem.mutateAsync]);
+  }, [moveItem.mutateAsync, adminRoutes?.routes]);
 
   const handleReorder = useCallback(async (items: Array<{ id: string; nav_order: number }>) => {
     try {

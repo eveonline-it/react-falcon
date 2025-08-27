@@ -19,16 +19,20 @@ export interface SitemapRoute {
   required_permissions: string[] | null;
   required_groups: string[] | null;
   description: string | null;
-  keywords: string | null;
+  keywords: string[] | null;
   group: string | null;
   feature_flags: string[] | null;
   is_enabled: boolean;
-  props: any;
+  props: object;
   lazy_load: boolean;
   exact: boolean;
   newtab: boolean;
-  badge_type?: string | null;
-  badge_text?: string | null;
+  is_expanded: boolean;
+  badge_type: string | null;
+  badge_text: string | null;
+  depth: number;
+  children_count: number;
+  folder_path: string;
   created_at: string;
   updated_at: string;
 }
@@ -121,12 +125,13 @@ export const useCreateRoute = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (route: Omit<SitemapRoute, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (route: Omit<SitemapRoute, 'id' | 'created_at' | 'updated_at' | 'depth' | 'children_count' | 'folder_path' | 'is_expanded'>) => {
+      const { route_id, is_folder, ...createData } = route;
       const response = await fetch(`${API_BASE_URL}/admin/sitemap`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(route)
+        body: JSON.stringify(createData)
       });
       if (!response.ok) throw new Error('Failed to create route');
       return response.json();
@@ -151,10 +156,13 @@ export const useUpdateRoute = () => {
         depth,
         folder_path,
         children_count,
+        is_expanded,
         route_id,
         is_folder,
         ...updateData 
       } = route;
+      
+      
       const response = await fetch(`${API_BASE_URL}/admin/sitemap/${id}`, {
         method: 'PUT',
         credentials: 'include',
@@ -177,12 +185,13 @@ export const useUpdateRouteFields = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, fields }: { id: string; fields: Partial<Omit<SitemapRoute, 'id' | 'created_at' | 'updated_at' | 'depth' | 'folder_path' | 'children_count' | 'route_id' | 'is_folder'>> }) => {
+    mutationFn: async ({ id, fields }: { id: string; fields: Partial<Omit<SitemapRoute, 'id' | 'created_at' | 'updated_at' | 'depth' | 'folder_path' | 'children_count' | 'is_expanded'>> }) => {
+      const { route_id, is_folder, ...updateFields } = fields as any;
       const response = await fetch(`${API_BASE_URL}/admin/sitemap/${id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(fields)
+        body: JSON.stringify(updateFields)
       });
       if (!response.ok) throw new Error('Failed to update route');
       return response.json();
