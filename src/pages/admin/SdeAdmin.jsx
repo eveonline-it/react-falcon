@@ -39,17 +39,75 @@ const SdeAdmin = () => {
     refetchStats,
   } = useSdeManager(true);
 
-  // Available SDE data types (typical EVE SDE data)
-  const availableDataTypes = [
-    { value: 'characters', label: 'Characters', icon: faUsers },
-    { value: 'corporations', label: 'Corporations', icon: faBuilding },
-    { value: 'alliances', label: 'Alliances', icon: faGlobe },
-    { value: 'systems', label: 'Solar Systems', icon: faGlobe },
-    { value: 'types', label: 'Item Types', icon: faCubes },
-    { value: 'ships', label: 'Ships', icon: faShip },
-    { value: 'stations', label: 'Stations', icon: faBuilding },
-    { value: 'regions', label: 'Regions', icon: faLayerGroup }
-  ];
+  // Icon mapping for SDE data types
+  const dataTypeIcons = {
+    'characters': faUsers,
+    'corporations': faBuilding,
+    'alliances': faGlobe,
+    'systems': faGlobe,
+    'solar_systems': faGlobe,
+    'types': faCubes,
+    'item_types': faCubes,
+    'ships': faShip,
+    'stations': faBuilding,
+    'regions': faLayerGroup,
+    'categories': faLayerGroup,
+    'groups': faLayerGroup,
+    'market_groups': faLayerGroup,
+    'blueprints': faFileImport,
+    'dogma_attributes': faCubes,
+    'dogma_effects': faCubes,
+    'map_regions': faGlobe,
+    'map_constellations': faGlobe,
+    'map_solar_systems': faGlobe
+  };
+
+  // Label mapping for better display names
+  const dataTypeLabels = {
+    'characters': 'Characters',
+    'corporations': 'Corporations', 
+    'alliances': 'Alliances',
+    'systems': 'Solar Systems',
+    'solar_systems': 'Solar Systems',
+    'types': 'Item Types',
+    'item_types': 'Item Types',
+    'ships': 'Ships',
+    'stations': 'Stations',
+    'regions': 'Regions',
+    'categories': 'Categories',
+    'groups': 'Groups',
+    'market_groups': 'Market Groups',
+    'blueprints': 'Blueprints',
+    'dogma_attributes': 'Dogma Attributes',
+    'dogma_effects': 'Dogma Effects',
+    'map_regions': 'Map Regions',
+    'map_constellations': 'Constellations',
+    'map_solar_systems': 'Solar Systems'
+  };
+
+  // Get available data types from backend stats, fallback to common types if stats not loaded
+  const availableDataTypes = useMemo(() => {
+    if (stats?.data_types && Object.keys(stats.data_types).length > 0) {
+      // Use actual data types from backend
+      return Object.keys(stats.data_types).map(type => ({
+        value: type,
+        label: dataTypeLabels[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        icon: dataTypeIcons[type] || faCubes
+      }));
+    }
+    
+    // Fallback to common types when stats aren't loaded yet
+    return [
+      { value: 'characters', label: 'Characters', icon: faUsers },
+      { value: 'corporations', label: 'Corporations', icon: faBuilding },
+      { value: 'alliances', label: 'Alliances', icon: faGlobe },
+      { value: 'systems', label: 'Solar Systems', icon: faGlobe },
+      { value: 'types', label: 'Item Types', icon: faCubes },
+      { value: 'ships', label: 'Ships', icon: faShip },
+      { value: 'stations', label: 'Stations', icon: faBuilding },
+      { value: 'regions', label: 'Regions', icon: faLayerGroup }
+    ];
+  }, [stats?.data_types]);
 
   // Calculate import progress if available
   const importProgress = useMemo(() => {
@@ -244,7 +302,7 @@ const SdeAdmin = () => {
                   {isLoadingStats ? (
                     <Spinner size="sm" animation="border" />
                   ) : (
-                    <h4 className="mb-0">{stats?.total_records || 0}</h4>
+                    <h4 className="mb-0">{stats?.total_keys || 0}</h4>
                   )}
                 </div>
               </div>
@@ -278,7 +336,7 @@ const SdeAdmin = () => {
                   {isLoadingStats ? (
                     <Spinner size="sm" animation="border" />
                   ) : (
-                    <h5 className="mb-0">{stats?.storage_size || '0 MB'}</h5>
+                    <h5 className="mb-0">{stats?.redis_memory_used || '0 MB'}</h5>
                   )}
                 </div>
               </div>
@@ -364,7 +422,7 @@ const SdeAdmin = () => {
                 <div className="text-center py-4">
                   <Spinner animation="border" />
                 </div>
-              ) : stats?.data_breakdown ? (
+              ) : stats?.data_types ? (
                 <Table hover responsive>
                   <thead>
                     <tr>
@@ -375,7 +433,7 @@ const SdeAdmin = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.entries(stats.data_breakdown).map(([type, data]) => {
+                    {Object.entries(stats.data_types).map(([type, data]) => {
                       const typeInfo = availableDataTypes.find(dt => dt.value === type);
                       return (
                         <tr key={type}>
@@ -566,10 +624,10 @@ const SdeAdmin = () => {
             Are you sure you want to clear all SDE data? This will permanently delete 
             all imported records from the database.
           </p>
-          {stats?.total_records && (
+          {stats?.total_keys && (
             <p className="text-muted">
-              This will remove <strong>{stats.total_records.toLocaleString()}</strong> records 
-              totaling <strong>{stats.storage_size}</strong> of data.
+              This will remove <strong>{stats.total_keys.toLocaleString()}</strong> records 
+              totaling <strong>{stats.redis_memory_used}</strong> of data.
             </p>
           )}
         </Modal.Body>

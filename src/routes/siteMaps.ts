@@ -1,4 +1,3 @@
-import React from 'react';
 import paths, { rootPaths } from './paths';
 import { sitemapService } from '../services/sitemapService';
 
@@ -1232,7 +1231,7 @@ export function getRouteGroups(): RouteGroup[] {
 }
 
 // Component registry for dynamic route loading
-export const routeComponents = {
+export const routeComponents: Record<string, () => Promise<any>> = {
   // Dashboard components (in demos folder)
   'DefaultDashboard': () => import('../demos/dashboards/DefaultDashboard'),
   'AnalyticsDashboard': () => import('../demos/dashboards/AnalyticsDashboard'),
@@ -1265,6 +1264,7 @@ export const routeComponents = {
   'SchedulerAdmin': () => import('../pages/admin/SchedulerAdmin'),
   'TaskAnalyticsAdmin': () => import('../pages/admin/TaskAnalyticsAdmin'),
   'SettingsAdmin': () => import('../pages/admin/SettingsAdmin'),
+  'SdeAdmin': () => import('../pages/admin/SdeAdmin'),
   'HierarchicalSitemapAdmin': () => import('../pages/admin/HierarchicalSitemapAdmin'),
   
   // Public pages  

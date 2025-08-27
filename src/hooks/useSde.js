@@ -113,7 +113,7 @@ export const useClearSde = () => {
   return useMutation({
     mutationFn: async () => {
       const response = await fetch(`${BASE_URL}/sde/clear`, {
-        method: 'POST',
+        method: 'DELETE',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
