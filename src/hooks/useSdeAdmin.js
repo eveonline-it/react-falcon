@@ -149,7 +149,7 @@ export const useReloadSdeData = () => {
       return response.json();
     },
     onSuccess: (data) => {
-      const reloadedTypes = data.body?.reloaded_data_types || [];
+      const reloadedTypes = data.reloaded_data_types || [];
       const message = reloadedTypes.length > 0 
         ? `Successfully reloaded ${reloadedTypes.length} data types`
         : 'SDE data reload completed';
@@ -177,10 +177,10 @@ export const useSdeAdminManager = (enablePolling = true) => {
 
   return {
     // Data
-    moduleStatus: moduleStatus.data?.body,
-    memoryStatus: memoryStatus.data?.body,
-    stats: stats.data?.body,
-    integrity: integrity.data?.body,
+    moduleStatus: moduleStatus.data,
+    memoryStatus: memoryStatus.data,
+    stats: stats.data,
+    integrity: integrity.data,
     
     // Loading states
     isLoadingModuleStatus: moduleStatus.isLoading,
@@ -207,11 +207,11 @@ export const useSdeAdminManager = (enablePolling = true) => {
     integrityQuery: integrity,
     
     // Computed values
-    isHealthy: moduleStatus.data?.body?.status === 'healthy',
-    totalDataTypes: memoryStatus.data?.body?.total_data_types || 0,
-    loadedDataTypes: memoryStatus.data?.body?.loaded_data_types?.length || 0,
-    memoryUsageMB: memoryStatus.data?.body?.memory_usage?.total_estimated_mb || 0,
-    totalItems: stats.data?.body?.total_items || 0,
+    isHealthy: moduleStatus.data?.status === 'healthy',
+    totalDataTypes: memoryStatus.data?.total_data_types || 0,
+    loadedDataTypes: memoryStatus.data?.loaded_data_types?.length || 0,
+    memoryUsageMB: memoryStatus.data?.total_memory_usage ? (memoryStatus.data.total_memory_usage / (1024 * 1024)) : 0,
+    totalItems: memoryStatus.data?.total_items || 0,
   };
 };
 

@@ -7,7 +7,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faDatabase, faSync, faCheckCircle, faExclamationTriangle, faInfoCircle,
-  faClock, faServer, faFileImport,
+  faServer, faFileImport,
   faLayerGroup, faCubes, faGlobe, faUsers, faBuilding, faShip,
   faChartPie, faHistory
 } from '@fortawesome/free-solid-svg-icons';
@@ -135,9 +135,9 @@ const SdeAdmin = () => {
     'translationLanguages': 'Translation Languages'
   };
 
-  // Get available data types from memory status or stats
+  // Get available data types from memory status
   const availableDataTypes = useMemo(() => {
-    // First try to get from memory status loaded data types
+    // Use loaded data types from memory status
     if (memoryStatus?.loaded_data_types && memoryStatus.loaded_data_types.length > 0) {
       return memoryStatus.loaded_data_types.map(type => ({
         value: type,
@@ -146,9 +146,9 @@ const SdeAdmin = () => {
       }));
     }
     
-    // Fallback to stats data types if available
-    if (stats?.data_types && Object.keys(stats.data_types).length > 0) {
-      return Object.keys(stats.data_types).map(type => ({
+    // Fallback to data type statuses if available
+    if (memoryStatus?.data_type_statuses && Object.keys(memoryStatus.data_type_statuses).length > 0) {
+      return Object.keys(memoryStatus.data_type_statuses).map(type => ({
         value: type,
         label: dataTypeLabels[type] || type.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
         icon: dataTypeIcons[type] || faCubes
@@ -166,7 +166,7 @@ const SdeAdmin = () => {
       { value: 'factions', label: 'Factions', icon: faGlobe },
       { value: 'dogmaAttributes', label: 'Dogma Attributes', icon: faCubes }
     ];
-  }, [memoryStatus?.loaded_data_types, stats?.data_types]);
+  }, [memoryStatus?.loaded_data_types, memoryStatus?.data_type_statuses]);
 
   // Memory usage as a simple indicator (no system memory available)
   const memoryUsagePercent = useMemo(() => {
@@ -372,13 +372,15 @@ const SdeAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faClock} size="2x" className="text-info me-3" />
+                <FontAwesomeIcon icon={faCheckCircle} size="2x" className="text-info me-3" />
                 <div>
-                  <h6 className="mb-0">Last Reload</h6>
+                  <h6 className="mb-0">Status</h6>
                   {isLoadingMemoryStatus ? (
                     <Spinner size="sm" animation="border" />
                   ) : (
-                    <div className="small">{formatDateTime(memoryStatus?.last_reload)}</div>
+                    <Badge bg={memoryStatus?.is_loaded ? 'success' : 'secondary'}>
+                      {memoryStatus?.is_loaded ? 'Loaded' : 'Not Loaded'}
+                    </Badge>
                   )}
                 </div>
               </div>
@@ -478,19 +480,19 @@ const SdeAdmin = () => {
                 <div className="text-center py-4">
                   <Spinner animation="border" />
                 </div>
-              ) : stats?.data_types ? (
+              ) : memoryStatus?.data_type_statuses ? (
                 <Table hover responsive>
                   <thead>
                     <tr>
                       <th>Data Type</th>
                       <th>Items</th>
                       <th>Memory</th>
-                      <th>Last Accessed</th>
+                      <th>File Path</th>
                       <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.entries(stats.data_types).map(([type, data]) => {
+                    {Object.entries(memoryStatus.data_type_statuses).map(([type, data]) => {
                       const typeInfo = availableDataTypes.find(dt => dt.value === type);
                       return (
                         <tr key={type}>
@@ -506,17 +508,17 @@ const SdeAdmin = () => {
                           </td>
                           <td>
                             <small className="text-muted">
-                              {data.estimated_memory_mb?.toFixed(2) || '0'} MB
+                              {data.memory_bytes ? (data.memory_bytes / (1024 * 1024)).toFixed(2) : '0'} MB
                             </small>
                           </td>
                           <td>
                             <small className="text-muted">
-                              {formatDateTime(data.last_accessed)}
+                              {data.file_path || 'N/A'}
                             </small>
                           </td>
                           <td>
-                            <Badge bg={data.count > 0 ? 'success' : 'secondary'}>
-                              {data.status || (data.count > 0 ? 'Loaded' : 'Empty')}
+                            <Badge bg={data.loaded ? 'success' : 'secondary'}>
+                              {data.loaded ? 'Loaded' : 'Not Loaded'}
                             </Badge>
                           </td>
                         </tr>
@@ -527,7 +529,7 @@ const SdeAdmin = () => {
               ) : (
                 <Alert variant="info">
                   <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
-                  No data statistics available. Data types will appear here once loaded in memory.
+                  No data available. Data types will appear here once loaded in memory.
                 </Alert>
               )}
             </Card.Body>
@@ -699,8 +701,12 @@ const SdeAdmin = () => {
                         <td><small>{moduleStatus?.message || 'N/A'}</small></td>
                       </tr>
                       <tr>
-                        <td>Last Reload:</td>
-                        <td><small>{formatDateTime(memoryStatus?.last_reload)}</small></td>
+                        <td>Data Loaded:</td>
+                        <td>
+                          <Badge bg={memoryStatus?.is_loaded ? 'success' : 'secondary'}>
+                            {memoryStatus?.is_loaded ? 'Yes' : 'No'}
+                          </Badge>
+                        </td>
                       </tr>
                     </tbody>
                   </Table>
