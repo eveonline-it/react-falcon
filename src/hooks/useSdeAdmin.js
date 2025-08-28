@@ -10,8 +10,6 @@ const SDE_ADMIN_QUERY_KEYS = {
   stats: () => ['sde', 'stats'],
   verify: () => ['sde', 'verify'],
   checkUpdates: () => ['sde', 'check-updates'],
-  backups: () => ['sde', 'backups'],
-  sources: () => ['sde', 'sources'],
 };
 
 /**
@@ -195,57 +193,7 @@ export const useSdeCheckUpdates = () => {
   });
 };
 
-/**
- * Hook to list SDE backups
- */
-export const useSdeBackups = (options = {}) => {
-  return useQuery({
-    queryKey: SDE_ADMIN_QUERY_KEYS.backups(),
-    queryFn: async () => {
-      const response = await fetch(`${BASE_URL}/sde/backups`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch SDE backups: ${response.statusText}`);
-      }
-
-      return response.json();
-    },
-    staleTime: 60000, // 1 minute for backups list
-    ...options,
-  });
-};
-
-/**
- * Hook to get SDE sources configuration
- */
-export const useSdeSources = (options = {}) => {
-  return useQuery({
-    queryKey: SDE_ADMIN_QUERY_KEYS.sources(),
-    queryFn: async () => {
-      const response = await fetch(`${BASE_URL}/sde/sources`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch SDE sources: ${response.statusText}`);
-      }
-
-      return response.json();
-    },
-    staleTime: 300000, // 5 minutes for sources config
-    ...options,
-  });
-};
 
 /**
  * Hook to update SDE data from external sources
@@ -254,15 +202,10 @@ export const useUpdateSdeData = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ source, convertToJson = true, backupCurrent = true, format, url } = {}) => {
+    mutationFn: async ({ convertToJson = true } = {}) => {
       const requestBody = {
-        source,
         convert_to_json: convertToJson,
-        backup_current: backupCurrent,
       };
-      
-      if (format) requestBody.format = format;
-      if (url) requestBody.url = url;
 
       const response = await fetch(`${BASE_URL}/sde/update`, {
         method: 'POST',
@@ -281,11 +224,7 @@ export const useUpdateSdeData = () => {
       return response.json();
     },
     onSuccess: (data) => {
-      const message = data.backup_created 
-        ? `SDE updated successfully. Backup created: ${data.backup_id}`
-        : 'SDE updated successfully';
-      
-      toast.success(message);
+      toast.success('SDE updated successfully');
       
       // Invalidate all related queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['sde'] });
@@ -296,50 +235,6 @@ export const useUpdateSdeData = () => {
   });
 };
 
-/**
- * Hook to restore SDE from backup
- */
-export const useRestoreSdeBackup = () => {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ backupId, deleteBackup = false } = {}) => {
-      const requestBody = {
-        backup_id: backupId,
-        delete_backup: deleteBackup,
-      };
-
-      const response = await fetch(`${BASE_URL}/sde/restore`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.detail || `Failed to restore SDE backup: ${response.statusText}`);
-      }
-
-      return response.json();
-    },
-    onSuccess: (data) => {
-      const message = data.backup_deleted 
-        ? `SDE restored successfully from backup ${data.backup_id}. Backup deleted.`
-        : `SDE restored successfully from backup ${data.backup_id}`;
-      
-      toast.success(message);
-      
-      // Invalidate all related queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['sde'] });
-    },
-    onError: (error) => {
-      toast.error(`Failed to restore SDE backup: ${error.message}`);
-    },
-  });
-};
 
 /**
  * Combined hook for all SDE admin operations with real-time monitoring
@@ -353,10 +248,7 @@ export const useSdeAdminManager = (enablePolling = true) => {
   
   // New update functionality hooks
   const checkUpdates = useSdeCheckUpdates();
-  const backups = useSdeBackups();
-  const sources = useSdeSources();
   const updateMutation = useUpdateSdeData();
-  const restoreMutation = useRestoreSdeBackup();
 
   return {
     // Data
@@ -365,8 +257,6 @@ export const useSdeAdminManager = (enablePolling = true) => {
     stats: stats.data,
     integrity: integrity.data,
     updateStatus: checkUpdates.data,
-    backups: backups.data,
-    sources: sources.data,
     
     // Loading states
     isLoadingModuleStatus: moduleStatus.isLoading,
@@ -375,10 +265,7 @@ export const useSdeAdminManager = (enablePolling = true) => {
     isLoadingIntegrity: integrity.isLoading,
     isReloading: reloadMutation.isPending,
     isCheckingUpdates: checkUpdates.isLoading,
-    isLoadingBackups: backups.isLoading,
-    isLoadingSources: sources.isLoading,
     isUpdating: updateMutation.isPending,
-    isRestoring: restoreMutation.isPending,
     
     // Error states
     moduleStatusError: moduleStatus.error,
@@ -387,30 +274,21 @@ export const useSdeAdminManager = (enablePolling = true) => {
     integrityError: integrity.error,
     reloadError: reloadMutation.error,
     updateCheckError: checkUpdates.error,
-    backupsError: backups.error,
-    sourcesError: sources.error,
     updateError: updateMutation.error,
-    restoreError: restoreMutation.error,
     
     // Actions
     reloadData: reloadMutation.mutate,
     verifyIntegrity: () => integrity.refetch(),
     checkForUpdates: () => checkUpdates.refetch(),
     updateSdeData: updateMutation.mutate,
-    restoreBackup: restoreMutation.mutate,
     refetchMemoryStatus: memoryStatus.refetch,
     refetchStats: stats.refetch,
-    refetchBackups: backups.refetch,
-    refetchSources: sources.refetch,
     
     // Mutation objects for advanced usage
     reloadMutation,
     integrityQuery: integrity,
     checkUpdatesQuery: checkUpdates,
-    backupsQuery: backups,
-    sourcesQuery: sources,
     updateMutation,
-    restoreMutation,
     
     // Computed values
     isHealthy: moduleStatus.data?.status === 'healthy',
@@ -419,8 +297,6 @@ export const useSdeAdminManager = (enablePolling = true) => {
     memoryUsageMB: memoryStatus.data?.total_memory_usage ? (memoryStatus.data.total_memory_usage / (1024 * 1024)) : 0,
     totalItems: memoryStatus.data?.total_items || 0,
     updatesAvailable: checkUpdates.data?.updates_available || false,
-    totalBackups: backups.data?.total_count || 0,
-    totalBackupSizeMB: backups.data?.total_size_mb || 0,
   };
 };
 

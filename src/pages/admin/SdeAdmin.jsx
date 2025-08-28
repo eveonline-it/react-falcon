@@ -7,9 +7,9 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faDatabase, faSync, faCheckCircle, faExclamationTriangle, faInfoCircle,
-  faServer, faFileImport, faDownload, faUpload, faArchive, faUndo,
+  faServer, faFileImport, faDownload, faUpload,
   faLayerGroup, faCubes, faGlobe, faUsers, faBuilding, faShip,
-  faChartPie, faHistory, faCloudDownloadAlt, faBackward, faFolderOpen
+  faChartPie, faHistory, faCloudDownloadAlt
 } from '@fortawesome/free-solid-svg-icons';
 
 import { useSdeAdminManager } from 'hooks/useSdeAdmin';
@@ -18,17 +18,12 @@ const SdeAdmin = () => {
   const [showReloadModal, setShowReloadModal] = useState(false);
   const [showSystemModal, setShowSystemModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [showBackupsModal, setShowBackupsModal] = useState(false);
-  const [showSourcesModal, setShowSourcesModal] = useState(false);
   const [reloadConfig, setReloadConfig] = useState({
     dataTypes: []
   });
   const [updateConfig, setUpdateConfig] = useState({
-    source: 'ccp-official',
-    convertToJson: true,
-    backupCurrent: true
+    convertToJson: true
   });
-  const [selectedBackup, setSelectedBackup] = useState(null);
 
   // Enable real-time polling for status updates
   const {
@@ -37,36 +32,24 @@ const SdeAdmin = () => {
     stats,
     integrity,
     updateStatus,
-    backups,
-    sources,
     isLoadingMemoryStatus,
     isLoadingStats,
     isReloading,
     isCheckingUpdates,
-    isLoadingBackups,
-    isLoadingSources,
     isUpdating,
     isRestoring,
     memoryStatusError,
-    updateCheckError,
-    backupsError,
-    sourcesError,
     reloadData,
     verifyIntegrity,
     checkForUpdates,
     updateSdeData,
-    restoreBackup,
     refetchMemoryStatus,
     refetchStats,
-    refetchBackups,
-    refetchSources,
     totalDataTypes,
     loadedDataTypes,
     memoryUsageMB,
     totalItems,
     updatesAvailable,
-    totalBackups,
-    totalBackupSizeMB
   } = useSdeAdminManager(true);
 
   // Icon mapping for SDE data types (in-memory architecture)
@@ -239,26 +222,7 @@ const SdeAdmin = () => {
     setShowUpdateModal(false);
   };
 
-  const handleRestoreBackup = () => {
-    if (selectedBackup) {
-      restoreBackup({ 
-        backupId: selectedBackup.id,
-        deleteBackup: false 
-      });
-      setShowBackupsModal(false);
-      setSelectedBackup(null);
-    }
-  };
 
-  const handleOpenBackupsModal = () => {
-    setShowBackupsModal(true);
-    refetchBackups();
-  };
-
-  const handleOpenSourcesModal = () => {
-    setShowSourcesModal(true);
-    refetchSources();
-  };
 
   const formatDateTime = (dateString) => {
     if (!dateString) return '-';
@@ -363,15 +327,6 @@ const SdeAdmin = () => {
                 Reload Data
               </Button>
               <Button
-                variant="outline-warning"
-                className="me-2"
-                onClick={handleOpenBackupsModal}
-                disabled={isReloading || isUpdating}
-              >
-                <FontAwesomeIcon icon={faArchive} className="me-2" />
-                Backups ({totalBackups})
-              </Button>
-              <Button
                 variant="outline-info"
                 className="me-2"
                 onClick={handleVerifyIntegrity}
@@ -379,15 +334,6 @@ const SdeAdmin = () => {
               >
                 <FontAwesomeIcon icon={faCheckCircle} className="me-2" />
                 Verify Integrity
-              </Button>
-              <Button
-                variant="outline-secondary"
-                className="me-2"
-                onClick={handleOpenSourcesModal}
-                disabled={isReloading || isUpdating}
-              >
-                <FontAwesomeIcon icon={faFolderOpen} className="me-2" />
-                Sources
               </Button>
               <Button 
                 variant="outline-secondary" 
@@ -890,18 +836,6 @@ const SdeAdmin = () => {
               </Alert>
             )}
             
-            <Form.Group className="mb-3">
-              <Form.Label>Update Source</Form.Label>
-              <Form.Select
-                value={updateConfig.source}
-                onChange={(e) => setUpdateConfig(prev => ({ ...prev, source: e.target.value }))}
-              >
-                <option value="ccp-official">CCP (Official)</option>
-              </Form.Select>
-              <div className="small text-muted mt-1">
-                Official CCP source is recommended for production use
-              </div>
-            </Form.Group>
 
             <Form.Check
               type="checkbox"
@@ -912,20 +846,11 @@ const SdeAdmin = () => {
               className="mb-2"
             />
             
-            <Form.Check
-              type="checkbox"
-              id="backup-current"
-              label="Create backup before update"
-              checked={updateConfig.backupCurrent}
-              onChange={(e) => setUpdateConfig(prev => ({ ...prev, backupCurrent: e.target.checked }))}
-              className="mb-3"
-            />
 
             <Alert variant="warning">
               <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-              <strong>Warning:</strong> This will download and extract the latest SDE data, 
-              replacing the current version. The process may take several minutes.
-              {updateConfig.backupCurrent && ' A backup will be created automatically.'}
+              <strong>Warning:</strong> This will download and extract the latest SDE data 
+              from the official CCP source, replacing the current version. The process may take several minutes.
             </Alert>
           </Form>
         </Modal.Body>
@@ -952,151 +877,7 @@ const SdeAdmin = () => {
         </Modal.Footer>
       </Modal>
 
-      {/* Backups Management Modal */}
-      <Modal show={showBackupsModal} onHide={() => setShowBackupsModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>
-            <FontAwesomeIcon icon={faArchive} className="me-2" />
-            SDE Backups
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {isLoadingBackups ? (
-            <div className="text-center py-4">
-              <Spinner animation="border" />
-              <div className="mt-2">Loading backups...</div>
-            </div>
-          ) : backupsError ? (
-            <Alert variant="danger">
-              <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-              Failed to load backups: {backupsError.message}
-            </Alert>
-          ) : backups?.backups && backups.backups.length > 0 ? (
-            <div>
-              <div className="d-flex justify-content-between mb-3">
-                <div>
-                  <strong>{totalBackups}</strong> backups available
-                </div>
-                <div>
-                  Total size: <strong>{totalBackupSizeMB.toFixed(1)} MB</strong>
-                </div>
-              </div>
-              <Table hover responsive>
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th>Backup ID</th>
-                    <th>Created</th>
-                    <th>Size</th>
-                    <th>Version</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {backups.backups.map((backup) => (
-                    <tr 
-                      key={backup.id} 
-                      className={selectedBackup?.id === backup.id ? 'table-active' : ''}
-                    >
-                      <td>
-                        <Form.Check
-                          type="radio"
-                          name="selectedBackup"
-                          checked={selectedBackup?.id === backup.id}
-                          onChange={() => setSelectedBackup(backup)}
-                        />
-                      </td>
-                      <td><code>{backup.id}</code></td>
-                      <td>{formatDateTime(backup.created_at)}</td>
-                      <td>{backup.size_mb?.toFixed(1)} MB</td>
-                      <td>{backup.version || 'N/A'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </div>
-          ) : (
-            <Alert variant="info">
-              <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
-              No backups available
-            </Alert>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowBackupsModal(false)}>
-            Close
-          </Button>
-          <Button 
-            variant="warning" 
-            onClick={handleRestoreBackup}
-            disabled={!selectedBackup || isRestoring}
-          >
-            <FontAwesomeIcon icon={isRestoring ? faSync : faUndo} className="me-2" />
-            {isRestoring ? 'Restoring...' : 'Restore Selected'}
-          </Button>
-        </Modal.Footer>
-      </Modal>
 
-      {/* Sources Configuration Modal */}
-      <Modal show={showSourcesModal} onHide={() => setShowSourcesModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>
-            <FontAwesomeIcon icon={faFolderOpen} className="me-2" />
-            SDE Sources Configuration
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {isLoadingSources ? (
-            <div className="text-center py-4">
-              <Spinner animation="border" />
-              <div className="mt-2">Loading sources...</div>
-            </div>
-          ) : sourcesError ? (
-            <Alert variant="danger">
-              <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-              Failed to load sources: {sourcesError.message}
-            </Alert>
-          ) : sources?.sources && sources.sources.length > 0 ? (
-            <Table hover responsive>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Type</th>
-                  <th>URL</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sources.sources.map((source, index) => (
-                  <tr key={index}>
-                    <td><strong>{source.name}</strong></td>
-                    <td>
-                      <Badge bg="primary">{source.type}</Badge>
-                    </td>
-                    <td>
-                      <small className="text-muted">{source.url}</small>
-                    </td>
-                    <td>
-                      <Badge bg={source.enabled ? 'success' : 'secondary'}>
-                        {source.enabled ? 'Enabled' : 'Disabled'}
-                      </Badge>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          ) : (
-            <Alert variant="info">
-              <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
-              No sources configured
-            </Alert>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowSourcesModal(false)}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </Container>
   );
 };
