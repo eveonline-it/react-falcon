@@ -10,6 +10,7 @@ const SDE_ADMIN_QUERY_KEYS = {
   stats: () => ['sde', 'stats'],
   verify: () => ['sde', 'verify'],
   checkUpdates: () => ['sde', 'check-updates'],
+  system: () => ['system', 'info'],
 };
 
 /**
@@ -39,6 +40,35 @@ export const useSdeAdminStatus = (options = {}) => {
 };
 
 /**
+ * Hook to get system info including SDE status
+ */
+export const useSystemInfo = (options = {}) => {
+  return useQuery({
+    queryKey: SDE_ADMIN_QUERY_KEYS.system(),
+    queryFn: async () => {
+      const response = await fetch(`${BASE_URL}/sde/system`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch system info: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
+    staleTime: 0, // Always consider data stale for real-time updates
+    refetchInterval: options.enablePolling ? 5000 : false, // Poll every 5 seconds when enabled
+    refetchIntervalInBackground: false, // Don't poll when window is not focused
+    refetchOnWindowFocus: true, // Immediately refetch when window regains focus
+    ...options,
+  });
+};
+
+/**
  * Hook to get SDE memory status and usage
  */
 export const useSdeMemoryStatus = (options = {}) => {
@@ -59,8 +89,10 @@ export const useSdeMemoryStatus = (options = {}) => {
 
       return response.json();
     },
-    staleTime: 30000, // 30 seconds for real-time memory monitoring
-    refetchInterval: options.enablePolling ? 10000 : false, // Poll every 10 seconds when enabled
+    staleTime: 0, // Always consider data stale for real-time updates
+    refetchInterval: options.enablePolling ? 5000 : false, // Poll every 5 seconds when enabled
+    refetchIntervalInBackground: false, // Don't poll when window is not focused
+    refetchOnWindowFocus: true, // Immediately refetch when window regains focus
     ...options,
   });
 };
@@ -241,6 +273,7 @@ export const useUpdateSdeData = () => {
  */
 export const useSdeAdminManager = (enablePolling = true) => {
   const moduleStatus = useSdeAdminStatus();
+  const systemInfo = useSystemInfo({ enablePolling });
   const memoryStatus = useSdeMemoryStatus({ enablePolling });
   const stats = useSdeStats();
   const integrity = useSdeVerifyIntegrity({ enabled: false }); // Manual trigger only
@@ -253,6 +286,7 @@ export const useSdeAdminManager = (enablePolling = true) => {
   return {
     // Data
     moduleStatus: moduleStatus.data,
+    systemInfo: systemInfo.data,
     memoryStatus: memoryStatus.data,
     stats: stats.data,
     integrity: integrity.data,
@@ -260,6 +294,7 @@ export const useSdeAdminManager = (enablePolling = true) => {
     
     // Loading states
     isLoadingModuleStatus: moduleStatus.isLoading,
+    isLoadingSystemInfo: systemInfo.isLoading,
     isLoadingMemoryStatus: memoryStatus.isLoading,
     isLoadingStats: stats.isLoading,
     isLoadingIntegrity: integrity.isLoading,
@@ -269,6 +304,7 @@ export const useSdeAdminManager = (enablePolling = true) => {
     
     // Error states
     moduleStatusError: moduleStatus.error,
+    systemInfoError: systemInfo.error,
     memoryStatusError: memoryStatus.error,
     statsError: stats.error,
     integrityError: integrity.error,
@@ -281,6 +317,7 @@ export const useSdeAdminManager = (enablePolling = true) => {
     verifyIntegrity: () => integrity.refetch(),
     checkForUpdates: () => checkUpdates.refetch(),
     updateSdeData: updateMutation.mutate,
+    refetchSystemInfo: systemInfo.refetch,
     refetchMemoryStatus: memoryStatus.refetch,
     refetchStats: stats.refetch,
     
@@ -291,11 +328,12 @@ export const useSdeAdminManager = (enablePolling = true) => {
     updateMutation,
     
     // Computed values
-    isHealthy: moduleStatus.data?.status === 'healthy',
-    totalDataTypes: memoryStatus.data?.total_data_types || 0,
-    loadedDataTypes: memoryStatus.data?.loaded_data_types?.length || 0,
-    memoryUsageMB: memoryStatus.data?.total_memory_usage ? (memoryStatus.data.total_memory_usage / (1024 * 1024)) : 0,
-    totalItems: memoryStatus.data?.total_items || 0,
+    isHealthy: systemInfo.data?.status === 'healthy' || moduleStatus.data?.status === 'healthy',
+    totalDataTypes: systemInfo.data?.total_data_types || memoryStatus.data?.total_data_types || 0,
+    loadedDataTypes: systemInfo.data?.loaded_data_types || memoryStatus.data?.loaded_data_types?.length || 0,
+    memoryUsageMB: systemInfo.data?.estimated_memory_mb || (memoryStatus.data?.total_memory_usage ? (memoryStatus.data.total_memory_usage / (1024 * 1024)) : 0),
+    systemMemoryMB: systemInfo.data?.system_memory_mb || 0,
+    totalItems: systemInfo.data?.total_items || memoryStatus.data?.total_items || 0,
     updatesAvailable: checkUpdates.data?.updates_available || false,
   };
 };
