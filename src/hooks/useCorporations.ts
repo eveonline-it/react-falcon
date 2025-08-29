@@ -3,7 +3,51 @@ import { toast } from 'react-toastify';
 
 const API_BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.it';
 
-const fetcher = async (url, options = {}) => {
+// Types
+export interface Corporation {
+  corporation_id: number;
+  name: string;
+  ticker: string;
+  member_count: number;
+  description?: string;
+  alliance_id?: number;
+  ceo_id?: number;
+  date_founded?: string;
+  url?: string;
+  faction_id?: number;
+  home_station_id?: number;
+  tax_rate?: number;
+}
+
+export interface ManagedCorporation {
+  id: number;
+  corporation_id: number;
+  name: string;
+  ticker: string;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CorporationFilters {
+  enabled?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface FetchOptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: string;
+}
+
+interface CustomError extends Error {
+  status?: number;
+  response?: any;
+}
+
+const fetcher = async (url: string, options: FetchOptions = {}): Promise<any> => {
   const response = await fetch(`${API_BASE_URL}${url}`, {
     ...options,
     credentials: 'include',
@@ -14,7 +58,7 @@ const fetcher = async (url, options = {}) => {
   });
 
   if (!response.ok) {
-    const error = new Error(`HTTP error! status: ${response.status}`);
+    const error: CustomError = new Error(`HTTP error! status: ${response.status}`);
     error.status = response.status;
     error.response = await response.json().catch(() => ({}));
     throw error;
@@ -24,7 +68,7 @@ const fetcher = async (url, options = {}) => {
 };
 
 // Get managed corporations
-export const useManagedCorporations = (filters = {}) => {
+export const useManagedCorporations = (filters: CorporationFilters = {}) => {
   return useQuery({
     queryKey: ['managedCorporations', filters],
     queryFn: () => {
@@ -37,7 +81,7 @@ export const useManagedCorporations = (filters = {}) => {
       return fetcher(`/site-settings/corporations?${params.toString()}`);
     },
     staleTime: 1000 * 60 * 5,
-    retry: (failureCount, error) => {
+    retry: (failureCount: number, error: any) => {
       if (error.status === 401 || error.status === 403) return false;
       return failureCount < 3;
     },
@@ -45,7 +89,7 @@ export const useManagedCorporations = (filters = {}) => {
 };
 
 // Get specific managed corporation
-export const useManagedCorporation = (corpId) => {
+export const useManagedCorporation = (corpId: number | string) => {
   return useQuery({
     queryKey: ['managedCorporations', corpId],
     queryFn: () => fetcher(`/site-settings/corporations/${corpId}`),
@@ -55,7 +99,7 @@ export const useManagedCorporation = (corpId) => {
 };
 
 // Search corporations (EVE Online database)
-export const useSearchCorporations = (query) => {
+export const useSearchCorporations = (query: string) => {
   return useQuery({
     queryKey: ['searchCorporations', query],
     queryFn: () => {
@@ -70,7 +114,7 @@ export const useSearchCorporations = (query) => {
 };
 
 // Get corporation info from EVE Online
-export const useCorporationInfo = (corporationId) => {
+export const useCorporationInfo = (corporationId: number | string | undefined) => {
   return useQuery({
     queryKey: ['corporationInfo', corporationId],
     queryFn: () => fetcher(`/corporations/${corporationId}`),
@@ -84,7 +128,7 @@ export const useAddManagedCorporation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data) => {
+    mutationFn: (data: any) => {
       return fetcher('/site-settings/corporations', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -95,7 +139,7 @@ export const useAddManagedCorporation = () => {
       toast.success('Corporation added successfully');
       return data;
     },
-    onError: (error) => {
+    onError: (error: any) => {
       const message = error.response?.error || 'Failed to add corporation';
       toast.error(message);
       throw error;
@@ -108,7 +152,7 @@ export const useUpdateCorporationStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ corpId, enabled }) => {
+    mutationFn: ({ corpId, enabled }: { corpId: number | string; enabled: boolean }) => {
       return fetcher(`/site-settings/corporations/${corpId}/status`, {
         method: 'PUT',
         body: JSON.stringify({ enabled }),
@@ -120,7 +164,7 @@ export const useUpdateCorporationStatus = () => {
       toast.success(`Corporation ${data.enabled ? 'enabled' : 'disabled'} successfully`);
       return data;
     },
-    onError: (error) => {
+    onError: (error: any) => {
       const message = error.response?.error || 'Failed to update corporation status';
       toast.error(message);
       throw error;
@@ -133,7 +177,7 @@ export const useRemoveManagedCorporation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (corpId) => {
+    mutationFn: (corpId: number | string) => {
       return fetcher(`/site-settings/corporations/${corpId}`, {
         method: 'DELETE',
       });
@@ -144,7 +188,7 @@ export const useRemoveManagedCorporation = () => {
       toast.success('Corporation removed successfully');
       return data;
     },
-    onError: (error) => {
+    onError: (error: any) => {
       const message = error.response?.error || 'Failed to remove corporation';
       toast.error(message);
       throw error;
@@ -157,7 +201,7 @@ export const useBulkUpdateCorporations = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (corporations) => {
+    mutationFn: (corporations: any[]) => {
       return fetcher('/site-settings/corporations', {
         method: 'PUT',
         body: JSON.stringify({ corporations }),
@@ -168,7 +212,7 @@ export const useBulkUpdateCorporations = () => {
       toast.success('Corporations updated successfully');
       return data;
     },
-    onError: (error) => {
+    onError: (error: any) => {
       const message = error.response?.error || 'Failed to update corporations';
       toast.error(message);
       throw error;

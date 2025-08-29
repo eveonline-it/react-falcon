@@ -1239,6 +1239,7 @@ export const routeComponents: Record<string, () => Promise<any>> = {
   'ProjectManagement': () => import('../demos/dashboards/ProjectManagementDashboard'),
   'SaasDashboard': () => import('../demos/dashboards/SaasDashboard'),
   'SupportDesk': () => import('../demos/dashboards/SupportDeskDashboard'),
+  'CorporationDashboard': () => import('../pages/corporations/dashboard/CorporationDashboard'),
   
   // App components (in features folder)
   'Calendar': () => import('../features/calendar/Calendar'),
