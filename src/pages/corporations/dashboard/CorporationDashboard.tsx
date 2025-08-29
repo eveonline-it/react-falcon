@@ -16,7 +16,6 @@ import CorporationLogo from 'components/common/eve/CorporationLogo';
 import CharacterPortrait from 'components/common/eve/CharacterPortrait';
 import AllianceLogo from 'components/common/eve/AllianceLogo';
 import { useCorporationInfo, useCorporationMemberTracking } from 'hooks/useCorporations';
-// @ts-ignore - useAlliances is a JS file
 import { useAllianceInfo } from 'hooks/useAlliances';
 import FalconLoader from 'components/common/FalconLoader';
 import { calculateTimeDuration } from 'helpers/dateHelpers';
