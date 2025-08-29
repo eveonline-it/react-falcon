@@ -156,11 +156,11 @@ export const useSdeVerifyIntegrity = (options = {}) => {
  */
 export const useReloadSdeData = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ dataTypes } = {}) => {
       const requestBody = {};
-      
+
       if (dataTypes && dataTypes.length > 0) {
         requestBody.data_types = dataTypes;
       }
@@ -183,12 +183,12 @@ export const useReloadSdeData = () => {
     },
     onSuccess: (data) => {
       const reloadedTypes = data.reloaded_data_types || [];
-      const message = reloadedTypes.length > 0 
+      const message = reloadedTypes.length > 0
         ? `Successfully reloaded ${reloadedTypes.length} data types`
         : 'SDE data reload completed';
-      
+
       toast.success(message);
-      
+
       // Invalidate all related queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['sde'] });
     },
@@ -232,12 +232,10 @@ export const useSdeCheckUpdates = () => {
  */
 export const useUpdateSdeData = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ convertToJson = true } = {}) => {
-      const requestBody = {
-        convert_to_json: convertToJson,
-      };
+      const requestBody = {};
 
       const response = await fetch(`${BASE_URL}/sde/update`, {
         method: 'POST',
@@ -257,7 +255,7 @@ export const useUpdateSdeData = () => {
     },
     onSuccess: (data) => {
       toast.success('SDE updated successfully');
-      
+
       // Invalidate all related queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['sde'] });
     },
@@ -278,7 +276,7 @@ export const useSdeAdminManager = (enablePolling = true) => {
   const stats = useSdeStats();
   const integrity = useSdeVerifyIntegrity({ enabled: false }); // Manual trigger only
   const reloadMutation = useReloadSdeData();
-  
+
   // New update functionality hooks
   const checkUpdates = useSdeCheckUpdates();
   const updateMutation = useUpdateSdeData();
@@ -291,7 +289,7 @@ export const useSdeAdminManager = (enablePolling = true) => {
     stats: stats.data,
     integrity: integrity.data,
     updateStatus: checkUpdates.data,
-    
+
     // Loading states
     isLoadingModuleStatus: moduleStatus.isLoading,
     isLoadingSystemInfo: systemInfo.isLoading,
@@ -301,7 +299,7 @@ export const useSdeAdminManager = (enablePolling = true) => {
     isReloading: reloadMutation.isPending,
     isCheckingUpdates: checkUpdates.isLoading,
     isUpdating: updateMutation.isPending,
-    
+
     // Error states
     moduleStatusError: moduleStatus.error,
     systemInfoError: systemInfo.error,
@@ -311,7 +309,7 @@ export const useSdeAdminManager = (enablePolling = true) => {
     reloadError: reloadMutation.error,
     updateCheckError: checkUpdates.error,
     updateError: updateMutation.error,
-    
+
     // Actions
     reloadData: reloadMutation.mutate,
     verifyIntegrity: () => integrity.refetch(),
@@ -320,13 +318,13 @@ export const useSdeAdminManager = (enablePolling = true) => {
     refetchSystemInfo: systemInfo.refetch,
     refetchMemoryStatus: memoryStatus.refetch,
     refetchStats: stats.refetch,
-    
+
     // Mutation objects for advanced usage
     reloadMutation,
     integrityQuery: integrity,
     checkUpdatesQuery: checkUpdates,
     updateMutation,
-    
+
     // Computed values
     isHealthy: systemInfo.data?.status === 'healthy' || moduleStatus.data?.status === 'healthy',
     totalDataTypes: systemInfo.data?.total_data_types || memoryStatus.data?.total_data_types || 0,

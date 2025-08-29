@@ -320,6 +320,7 @@ const CorporationsAdmin = () => {
       await addCorporationMutation.mutateAsync({
         corporation_id: corp.corporation_id,
         name: corp.name,
+        ticker: corp.ticker,
         enabled: true,
         position: corporations.length // Add at the end
       });
