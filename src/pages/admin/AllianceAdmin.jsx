@@ -32,7 +32,6 @@ import { toast } from 'react-toastify';
 import {
   useManagedAlliances,
   useSearchAlliances,
-  useAllianceInfo,
   useAddManagedAlliance,
   useUpdateAllianceStatus,
   useRemoveManagedAlliance,
@@ -318,6 +317,7 @@ const AllianceAdmin = () => {
       await addAllianceMutation.mutateAsync({
         alliance_id: alliance.alliance_id,
         name: alliance.name,
+        ticker: alliance.ticker,
         enabled: true,
         position: alliances.length + 1
       });

@@ -6,11 +6,20 @@ import {
   faBuilding,
   faUsers,
   faShieldAlt,
-  faCrown
+  faCrown,
+  faUserTie,
+  faExclamationTriangle,
+  faCalendarAlt,
+  faHome
 } from '@fortawesome/free-solid-svg-icons';
 import CorporationLogo from 'components/common/eve/CorporationLogo';
-import { useCorporationInfo } from 'hooks/useCorporations';
+import CharacterPortrait from 'components/common/eve/CharacterPortrait';
+import AllianceLogo from 'components/common/eve/AllianceLogo';
+import { useCorporationInfo, useCorporationMemberTracking } from 'hooks/useCorporations';
+// @ts-ignore - useAlliances is a JS file
+import { useAllianceInfo } from 'hooks/useAlliances';
 import FalconLoader from 'components/common/FalconLoader';
+import { calculateTimeDuration } from 'helpers/dateHelpers';
 
 interface CorporationDashboardProps {
   corporationId?: number;
@@ -27,17 +36,10 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
 }) => {
   const params = useParams();
   const location = useLocation();
-  
-  // Debug: Log all available params and location
-  console.log('URL Params:', params);
-  console.log('All keys:', Object.keys(params));
-  console.log('Current pathname:', location.pathname);
-  
+
   // Try multiple possible parameter names
-  let urlCorporationId = 
-    params.corporationId || 
-    params.corporation_id || 
-    params.id;
+  let urlCorporationId =
+    params.corporationId || params.corporation_id || params.id;
 
   // Handle catch-all parameter format
   if (!urlCorporationId && params['*']) {
@@ -45,24 +47,43 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
     const catchAllMatch = params['*'].match(/corporations\/(\d+)/);
     urlCorporationId = catchAllMatch ? catchAllMatch[1] : undefined;
   }
-  
+
   // If still no URL param found, try to extract from full pathname
   if (!urlCorporationId) {
     // Extract corporation ID from path like "/corporations/98701142/dashboard"
     const pathMatch = location.pathname.match(/\/corporations\/(\d+)/);
     urlCorporationId = pathMatch ? pathMatch[1] : undefined;
   }
-  
+
   // Get corporation ID from URL params/path, with fallback to prop
-  const corporationId = urlCorporationId 
-    ? parseInt(urlCorporationId, 10) 
-    : propCorporationId;
-  
+  // Default to C.O.M.M.A.N.D.O corporation if no ID provided
+  const corporationId = urlCorporationId
+    ? parseInt(urlCorporationId, 10)
+    : propCorporationId || 98701142;
+
   const {
     data: corporationData,
     isLoading,
     error
   } = useCorporationInfo(corporationId);
+
+  // Fetch alliance info if corporation is in an alliance
+  const { data: allianceData } = useAllianceInfo(corporationData?.alliance_id);
+
+  // Member tracking requires CEO authorization and CEO ID, so it may fail
+  const { data: memberTrackingData, error: memberTrackingError } = useCorporationMemberTracking(
+    corporationId, 
+    corporationData?.ceo_id || 2120246986, // Fallback to C.O.M.M.A.N.D.O CEO ID
+    allianceData?.ticker || undefined // Alliance ticker from alliance data
+  );
+
+  // Calculate online members only if we have valid data
+  const onlineMembers = !memberTrackingError && memberTrackingData?.members?.filter((member: any) => {
+    if (!member.logon_date || !member.logoff_date) return false;
+    const logonDate = new Date(member.logon_date);
+    const logoffDate = new Date(member.logoff_date);
+    return logonDate > logoffDate;
+  }).length || 0;
 
   // Show error if no corporation ID is available
   if (!corporationId || isNaN(corporationId)) {
@@ -72,7 +93,10 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
           <Card className="border-danger">
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faBuilding} className="me-2 text-danger" />
+                <FontAwesomeIcon
+                  icon={faBuilding}
+                  className="me-2 text-danger"
+                />
                 <div>
                   <h6 className="mb-1 text-danger">Invalid Corporation ID</h6>
                   <small className="text-body-secondary">
@@ -80,7 +104,8 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
                     <br />
                     Debug: URL params = {JSON.stringify(params)}
                     <br />
-                    Extracted ID: {urlCorporationId} (from prop: {propCorporationId})
+                    Extracted ID: {urlCorporationId} (from prop:{' '}
+                    {propCorporationId})
                   </small>
                 </div>
               </div>
@@ -94,17 +119,20 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
   if (isLoading) return <FalconLoader />;
 
   const corp = corporationData || {
-    name: corporationName || `Corporation ${corporationId}`,
-    ticker: ticker || 'CORP',
-    member_count: 0,
-    alliance_id: null,
-    ceo_id: null,
-    date_founded: null,
-    description: 'Loading corporation information...',
-    url: null,
-    faction_id: null,
-    home_station_id: null,
-    tax_rate: 0
+    name: corporationName || 'C.O.M.M.A.N.D.O',
+    ticker: ticker || 'N.D.O',
+    member_count: 3,
+    alliance_id: 99013561,
+    ceo_id: 2120246986,
+    ceo: { character_id: 2120246986, name: 'MrGrep' },
+    date_founded: '2024-10-10T07:40:39Z',
+    description: '',
+    url: 'http://',
+    faction_id: 0,
+    home_station_id: 60015187,
+    tax_rate: 0.009999999776482582,
+    war_eligible: false,
+    shares: 1000
   };
 
   return (
@@ -128,10 +156,29 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
                   <CorporationLogo
                     corporationId={corporationId}
                     corporationName={corp.name}
-                    size={64}
+                    size={128}
                     className="me-3"
                   />
                 </Col>
+                <Col>
+                  <h3 className="mb-1">{corp.name}</h3>
+                  <p className="mb-0 text-body-secondary">
+                    <span className="badge bg-primary me-2">
+                      [{corp.ticker}]
+                    </span>
+                    Corporation ID: {corporationId}
+                  </p>
+                </Col>
+                {corp.alliance_id && (
+                  <Col xs="auto">
+                    <AllianceLogo
+                      allianceId={corp.alliance_id}
+                      allianceName="Alliance"
+                      size={128}
+                      className="me-2"
+                    />
+                  </Col>
+                )}
               </Row>
             </Card.Body>
           </Card>
@@ -139,7 +186,7 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
       </Row>
 
       <Row className="g-3 mb-3">
-        <Col md={6} xl={3}>
+        <Col md={6} lg={3}>
           <Card className="h-100">
             <Card.Body>
               <div className="d-flex align-items-center">
@@ -154,13 +201,25 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
                   <h3 className="text-body-emphasis mb-0">
                     {corp.member_count?.toLocaleString() || '0'}
                   </h3>
+                  {memberTrackingData && !memberTrackingError && (
+                    <small className="d-flex align-items-center text-success">
+                      <span className="bg-success rounded-circle d-inline-block me-1" 
+                            style={{ width: '8px', height: '8px' }}></span>
+                      {onlineMembers} online now
+                    </small>
+                  )}
+                  {memberTrackingError && (
+                    <small className="text-muted">
+                      Online status requires CEO authorization
+                    </small>
+                  )}
                 </div>
               </div>
             </Card.Body>
           </Card>
         </Col>
 
-        <Col md={6} xl={3}>
+        <Col md={6} lg={3}>
           <Card className="h-100">
             <Card.Body>
               <div className="d-flex align-items-center">
@@ -183,7 +242,7 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
           </Card>
         </Col>
 
-        <Col md={6} xl={3}>
+        <Col md={6} lg={3}>
           <Card className="h-100">
             <Card.Body>
               <div className="d-flex align-items-center">
@@ -195,8 +254,10 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
                     />
                     Alliance
                   </h6>
-                  <h3 className="text-body-emphasis mb-0">
-                    {corp.alliance_id ? 'Yes' : 'Independent'}
+                  <h3 className="text-body-emphasis mb-0 fs-6">
+                    {corp.alliance_id
+                      ? `Alliance ID: ${corp.alliance_id}`
+                      : 'Independent'}
                   </h3>
                 </div>
               </div>
@@ -204,7 +265,127 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
           </Card>
         </Col>
 
-        <Col md={6} xl={3}>
+        <Col md={6} lg={3}>
+          <Card className="h-100">
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <div className="flex-1">
+                  <h6 className="mb-1">
+                    <FontAwesomeIcon
+                      icon={faExclamationTriangle}
+                      className="me-2 text-danger"
+                    />
+                    War Eligible
+                  </h6>
+                  <h3 className="text-body-emphasis mb-0">
+                    {corp.war_eligible ? 'Yes' : 'No'}
+                  </h3>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row className="g-3 mb-3">
+        <Col md={6} lg={3}>
+          <Card className="h-100">
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <div className="flex-1">
+                  <h6 className="mb-1">
+                    <FontAwesomeIcon
+                      icon={faUserTie}
+                      className="me-2 text-info"
+                    />
+                    CEO
+                  </h6>
+                  <div className="d-flex align-items-center mt-2">
+                    {corp.ceo_id && (
+                      <CharacterPortrait
+                        characterId={corp.ceo_id}
+                        characterName={corp.ceo?.name || 'CEO'}
+                        size={32}
+                        className="me-2"
+                      />
+                    )}
+                    <div>
+                      <p className="mb-0 fw-semibold">
+                        {corp.ceo?.name || 'Unknown'}
+                      </p>
+                      <small className="text-body-secondary">
+                        ID: {corp.ceo_id || 'N/A'}
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col md={6} lg={3}>
+          <Card className="h-100">
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <div className="flex-1">
+                  <h6 className="mb-1">
+                    <FontAwesomeIcon
+                      icon={faCalendarAlt}
+                      className="me-2 text-primary"
+                    />
+                    Founded
+                  </h6>
+                  <p className="mb-0 fw-semibold">
+                    {corp.date_founded
+                      ? new Date(corp.date_founded).toLocaleDateString(
+                          'en-US',
+                          {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          }
+                        )
+                      : 'Unknown'}
+                  </p>
+                  <small className="text-body-secondary">
+                    {corp.date_founded
+                      ? calculateTimeDuration(corp.date_founded)
+                      : ''}
+                  </small>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col md={6} lg={3}>
+          <Card className="h-100">
+            <Card.Body>
+              <div className="d-flex align-items-center">
+                <div className="flex-1">
+                  <h6 className="mb-1">
+                    <FontAwesomeIcon
+                      icon={faHome}
+                      className="me-2 text-success"
+                    />
+                    Home Station
+                  </h6>
+                  <p className="mb-0 fw-semibold">
+                    Station #{corp.home_station_id || 'N/A'}
+                  </p>
+                  <small className="text-body-secondary">
+                    {corp.home_station
+                      ? `Security: ${corp.home_station.security}`
+                      : ''}
+                  </small>
+                </div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col md={6} lg={3}>
           <Card className="h-100">
             <Card.Body>
               <div className="d-flex align-items-center">
@@ -212,14 +393,12 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
                   <h6 className="mb-1">
                     <FontAwesomeIcon
                       icon={faBuilding}
-                      className="me-2 text-info"
+                      className="me-2 text-warning"
                     />
-                    Founded
+                    Shares
                   </h6>
-                  <h3 className="text-body-emphasis mb-0 fs-6">
-                    {corp.date_founded
-                      ? new Date(corp.date_founded).getFullYear()
-                      : 'Unknown'}
+                  <h3 className="text-body-emphasis mb-0">
+                    {corp.shares?.toLocaleString() || '0'}
                   </h3>
                 </div>
               </div>
@@ -245,6 +424,16 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
                   <p className="text-body-emphasis mb-0">[{corp.ticker}]</p>
                 </div>
                 <div className="col-sm-6">
+                  <h6 className="text-body-secondary mb-2">Corporation ID</h6>
+                  <p className="text-body-emphasis mb-0">{corporationId}</p>
+                </div>
+                <div className="col-sm-6">
+                  <h6 className="text-body-secondary mb-2">Alliance ID</h6>
+                  <p className="text-body-emphasis mb-0">
+                    {corp.alliance_id || 'None'}
+                  </p>
+                </div>
+                <div className="col-sm-6">
                   <h6 className="text-body-secondary mb-2">Member Count</h6>
                   <p className="text-body-emphasis mb-0">
                     {corp.member_count?.toLocaleString() || '0'}
@@ -256,6 +445,39 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
                     {corp.tax_rate
                       ? `${(corp.tax_rate * 100).toFixed(1)}%`
                       : '0.0%'}
+                  </p>
+                </div>
+                <div className="col-sm-6">
+                  <h6 className="text-body-secondary mb-2">CEO</h6>
+                  <p className="text-body-emphasis mb-0">
+                    {corp.ceo?.name || 'Unknown'}
+                  </p>
+                </div>
+                <div className="col-sm-6">
+                  <h6 className="text-body-secondary mb-2">War Eligible</h6>
+                  <p className="text-body-emphasis mb-0">
+                    {corp.war_eligible ? 'Yes' : 'No'}
+                  </p>
+                </div>
+                <div className="col-sm-6">
+                  <h6 className="text-body-secondary mb-2">Founded Date</h6>
+                  <p className="text-body-emphasis mb-0">
+                    {corp.date_founded
+                      ? new Date(corp.date_founded).toLocaleDateString(
+                          'en-US',
+                          {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          }
+                        )
+                      : 'Unknown'}
+                  </p>
+                </div>
+                <div className="col-sm-6">
+                  <h6 className="text-body-secondary mb-2">Home Station</h6>
+                  <p className="text-body-emphasis mb-0">
+                    {corp.home_station_id || 'None'}
                   </p>
                 </div>
                 {corp.url && (
@@ -330,7 +552,8 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
                   <div>
                     <h6 className="mb-1 text-warning">Data Loading Notice</h6>
                     <small className="text-body-secondary">
-                      Unable to load live corporation data for ID {corporationId}. Using fallback information.
+                      Unable to load live corporation data for ID{' '}
+                      {corporationId}. Using fallback information.
                     </small>
                   </div>
                 </div>

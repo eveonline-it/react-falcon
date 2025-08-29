@@ -228,3 +228,22 @@ export const useCorporationHealth = () => {
     staleTime: 1000 * 60,
   });
 };
+
+// Get corporation member tracking
+export const useCorporationMemberTracking = (
+  corporationId: number | string | undefined, 
+  ceoId: number | string | undefined, 
+  allianceTicker?: string
+) => {
+  return useQuery({
+    queryKey: ['corporationMemberTracking', corporationId, ceoId, allianceTicker],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (ceoId) params.append('ceo_id', ceoId.toString());
+      if (allianceTicker) params.append('alliance_ticker', allianceTicker);
+      return fetcher(`/corporations/${corporationId}/membertracking?${params.toString()}`);
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    enabled: !!corporationId && !!ceoId,
+  });
+};
