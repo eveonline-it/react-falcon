@@ -1,9 +1,17 @@
 import React from 'react';
 import classNames from 'classnames';
 import IconItem from './IconItem';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
 
 interface IconData {
-  [key: string]: any; // IconItem props - would need IconItem interface to be more specific
+  icon: IconProp;
+  bg?: string;
+  size?: string | number;
+  color?: string;
+  transform?: any;
+  iconClass?: string;
+  tag?: React.ElementType;
+  [key: string]: any;
 }
 
 interface IconGroupProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -13,8 +21,8 @@ interface IconGroupProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const IconGroup: React.FC<IconGroupProps> = ({ icons, className, ...rest }) => (
   <div className={classNames('icon-group', className)} {...rest}>
-    {icons.map((icon, index) => (
-      <IconItem {...icon} key={index} />
+    {icons.map((iconData, index) => (
+      <IconItem {...iconData} key={index} />
     ))}
   </div>
 );

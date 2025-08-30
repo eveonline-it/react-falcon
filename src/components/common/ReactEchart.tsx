@@ -1,8 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import ReactEChartsCore from 'echarts-for-react/lib/core';
 import { useAppContext } from 'providers/AppProvider';
 
-const ReactEchart = ({ref, ...rest }) => {
+interface ReactEchartProps {
+  ref?: any;
+  option: any;
+  [key: string]: any;
+}
+
+const ReactEchart = ({ ref, ...rest }: ReactEchartProps) => {
   const chartRef = ref ? ref : useRef(null);
   const {
     config: { isFluid, isNavbarVerticalCollapsed }

@@ -1,6 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
-import React from 'react';
 import { Button } from 'react-bootstrap';
 import Flex from '../Flex';
 import { useAdvanceTableContext } from 'providers/AdvanceTableProvider';

@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import Lightbox from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 
-const FalconLightBox = ({ image, children }) => {
+interface FalconLightBoxProps {
+  image: string;
+  children: ReactNode;
+}
+
+const FalconLightBox = ({ image, children }: FalconLightBoxProps) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <>

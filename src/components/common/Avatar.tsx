@@ -46,8 +46,8 @@ const Avatar: React.FC<AvatarProps> = ({
     }
 
     if (src) {
-      if (isIterableArray(src)) {
-        const srcArray = Array.isArray(src) ? src : [src];
+      if (Array.isArray(src) && isIterableArray(src)) {
+        const srcArray = src;
         return (
           <div className={`${mediaClasses} overflow-hidden h-100 d-flex`}>
             <div className="w-50 border-right">

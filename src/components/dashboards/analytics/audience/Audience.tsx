@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, Col, Row, Tab, Nav, Form } from 'react-bootstrap';
 import Flex from 'components/common/Flex';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

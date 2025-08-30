@@ -99,7 +99,7 @@ const FalconDropzone: React.FC<FalconDropzoneProps> = ({
             <Flex justifyContent="between" alignItems="center" className="ms-3">
               <div>
                 <h6 data-dz-name="">{path}</h6>
-                <Flex className="position-relative" align="center">
+                <Flex className="position-relative" alignItems="center">
                   <p className="mb-0 fs-10 text-400 line-height-1">
                     {getSize(size)}
                   </p>

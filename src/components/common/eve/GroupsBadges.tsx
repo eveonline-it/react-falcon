@@ -43,7 +43,7 @@ const GroupsBadges: React.FC<GroupsBadgesProps> = ({
         overlay={
           <Tooltip>
             <div>
-              {groups.map((group, index) => (
+              {groups.map((group: any) => (
                 <div key={group.id}>
                   <FontAwesomeIcon icon={faUsersCog} className="me-1" />
                   {group.name}
@@ -65,7 +65,7 @@ const GroupsBadges: React.FC<GroupsBadgesProps> = ({
   
   return (
     <div className={`d-flex flex-wrap gap-2 ${className}`}>
-      {groups.map((group) => {
+      {groups.map((group: any) => {
         // Determine badge style based on group type
         let badgeVariant = 'primary';
         let badgeIcon = faUsersCog;

@@ -1,4 +1,3 @@
-import React from 'react';
 import * as echarts from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import {

@@ -7,7 +7,7 @@ type AlignItems = 'start' | 'end' | 'center' | 'baseline' | 'stretch';
 type AlignContent = 'start' | 'end' | 'center' | 'between' | 'around' | 'stretch';
 type FlexWrap = 'wrap' | 'nowrap' | 'wrap-reverse';
 type Breakpoint = 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
-type FlexTag = keyof JSX.IntrinsicElements;
+type FlexTag = keyof React.JSX.IntrinsicElements;
 
 interface FlexProps extends React.HTMLAttributes<HTMLElement> {
   justifyContent?: JustifyContent;

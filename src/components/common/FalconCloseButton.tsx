@@ -30,9 +30,8 @@ const FalconCloseButton: React.FC<FalconCloseButtonProps> = ({
       variant={variant ? variant : isDark ? 'white' : undefined}
       className={classNames('btn', {
         [`btn-${size}`]: size,
-        'outline-none': noOutline,
-        [className]: className
-      })}
+        'outline-none': noOutline
+      }, className)}
       onClick={onClick}
       {...rest}
     />

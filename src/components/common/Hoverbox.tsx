@@ -6,14 +6,6 @@ interface HoverboxProps {
   className?: string;
 }
 
-const Hoverbox: React.FC<HoverboxProps> = ({ children, className }) => {
-  return (
-    <div className={classNames('hoverbox', { [className as string]: className })}>
-      {children}
-    </div>
-  );
-};
-
 interface HoverboxContentProps {
   children?: React.ReactNode;
   className?: string;
@@ -21,11 +13,23 @@ interface HoverboxContentProps {
 
 export const HoverboxContent: React.FC<HoverboxContentProps> = ({ children, className }) => {
   return (
-    <div className={classNames('hoverbox-content', { [className as string]: className })}>
+    <div className={classNames('hoverbox-content', className)}>
       {children}
     </div>
   );
 };
+
+interface HoverboxComponent extends React.FC<HoverboxProps> {
+  Content: React.FC<HoverboxContentProps>;
+}
+
+const Hoverbox = (({ children, className }: HoverboxProps) => {
+  return (
+    <div className={classNames('hoverbox', className)}>
+      {children}
+    </div>
+  );
+}) as HoverboxComponent;
 
 Hoverbox.Content = HoverboxContent;
 

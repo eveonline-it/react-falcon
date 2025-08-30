@@ -1,4 +1,4 @@
-import React, { Ref, forwardRef } from 'react';
+import { forwardRef } from 'react';
 import Select, { Props as SelectProps, GroupBase } from 'react-select';
 
 interface OptionType {

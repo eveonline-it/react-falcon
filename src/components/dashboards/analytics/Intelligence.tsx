@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card } from 'react-bootstrap';
 import Flex from 'components/common/Flex';
 import signalImg from 'assets/img/icons/signal.png';
@@ -6,8 +5,21 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Link } from 'react-router';
 import FalconLink from 'components/common/FalconLink';
 import SimpleBar from 'simplebar-react';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
 
-const SingleItem = ({ icon, title, description }) => {
+interface IntelligenceItem {
+  icon: IconProp;
+  title: string;
+  description: string;
+}
+
+interface SingleItemProps {
+  icon: IconProp;
+  title: string;
+  description: string;
+}
+
+const SingleItem = ({ icon, title, description }: SingleItemProps) => {
   return (
     <div className="border border-1 border-300 rounded-2 p-3 ask-analytics-item position-relative mb-3">
       <Flex alignItems="center" className="mb-3">
@@ -21,7 +33,11 @@ const SingleItem = ({ icon, title, description }) => {
   );
 };
 
-const Intelligence = ({ data }) => {
+interface IntelligenceProps {
+  data: IntelligenceItem[];
+}
+
+const Intelligence = ({ data }: IntelligenceProps) => {
   return (
     <Card className="h-100">
       <Card.Header as={Flex} alignItems="center">
@@ -33,7 +49,7 @@ const Intelligence = ({ data }) => {
       <Card.Body className="p-0">
         <SimpleBar className="ask-analytics">
           <div className="pt-0 px-x1">
-            {data.map(item => (
+            {data.map((item: IntelligenceItem) => (
               <SingleItem
                 key={item.title}
                 icon={item.icon}

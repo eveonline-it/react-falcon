@@ -11,7 +11,7 @@ import * as echarts from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { getPastDates, rgbaColor } from 'helpers/utils';
 import { useAppContext } from 'providers/AppProvider';
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 
 echarts.use([
   TitleComponent,

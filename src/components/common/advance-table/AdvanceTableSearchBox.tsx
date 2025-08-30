@@ -2,14 +2,19 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
 import { useAdvanceTableContext } from 'providers/AdvanceTableProvider';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button, FormControl, InputGroup } from 'react-bootstrap';
 
-const AdvanceTableSearchBox = ({ placeholder = 'Search...', className }) => {
+interface AdvanceTableSearchBoxProps {
+  placeholder?: string;
+  className?: string;
+}
+
+const AdvanceTableSearchBox = ({ placeholder = 'Search...', className }: AdvanceTableSearchBoxProps) => {
   const { globalFilter, setGlobalFilter } = useAdvanceTableContext();
   const [value, setValue] = useState(globalFilter);
 
-  const onChange = value => setGlobalFilter(value || undefined);
+  const onChange = (value: string) => setGlobalFilter(value || undefined);
 
   return (
     <InputGroup className={classNames(className, 'position-relative')}>
