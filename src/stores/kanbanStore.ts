@@ -11,7 +11,128 @@ import {
 } from 'data/kanban';
 import { createDevToolsConfig, createActionLogger, createPerformanceTracker } from './devtools';
 
-const initialState = {
+// Type definitions
+export interface KanbanMember {
+  id: string;
+  name: string;
+  avatar?: string;
+  email?: string;
+}
+
+export interface KanbanLabel {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface KanbanAttachment {
+  id: string;
+  name: string;
+  src: string;
+  size?: number;
+  type?: string;
+}
+
+export interface KanbanComment {
+  id: string;
+  author: string;
+  avatar?: string;
+  content: string;
+  timestamp: Date | string;
+}
+
+export interface KanbanActivity {
+  id: string;
+  type: string;
+  user: string;
+  description: string;
+  timestamp: Date | string;
+}
+
+export interface KanbanTask {
+  id: string;
+  title: string;
+  description?: string;
+  labels?: KanbanLabel[];
+  members?: KanbanMember[];
+  attachments?: KanbanAttachment[];
+  comments?: KanbanComment[];
+  dueDate?: Date | string;
+  priority?: 'low' | 'medium' | 'high';
+  completed?: boolean;
+}
+
+export interface KanbanColumn {
+  id: string;
+  title: string;
+  items: KanbanTask[];
+  color?: string;
+  limit?: number;
+}
+
+export interface KanbanModal {
+  show: boolean;
+  modalContent: {
+    image?: string;
+    [key: string]: any;
+  };
+}
+
+export interface CurrentUser {
+  name: string;
+  avatarSrc: string;
+  profileLink: string;
+  institutionLink: string;
+}
+
+export interface KanbanState {
+  members: KanbanMember[];
+  labels: KanbanLabel[];
+  attachments: KanbanAttachment[];
+  kanbanItems: KanbanColumn[];
+  comments: KanbanComment[];
+  activities: KanbanActivity[];
+  kanbanModal: KanbanModal;
+  cardHeight: number;
+  currentUser: CurrentUser;
+}
+
+export interface KanbanActions {
+  // Modal actions
+  openKanbanModal: (image: string) => void;
+  toggleKanbanModal: () => void;
+  
+  // Column actions
+  addKanbanColumn: (newColumn: KanbanColumn) => void;
+  removeKanbanColumn: (columnId: string) => void;
+  
+  // Task card actions
+  addTaskCard: (targetListId: string, newCard: KanbanTask) => void;
+  removeTaskCard: (cardId: string) => void;
+  
+  // Drag and drop actions
+  updateSingleColumn: (column: KanbanColumn, reorderedItems: KanbanTask[]) => void;
+  updateDualColumn: (
+    sourceColumn: KanbanColumn,
+    destColumn: KanbanColumn,
+    updatedSourceItems: KanbanTask[],
+    updatedDestItems: KanbanTask[]
+  ) => void;
+  
+  // UI state actions
+  setCardHeight: (height: number) => void;
+  
+  // Utility actions
+  resetKanbanState: () => void;
+  
+  // Selectors
+  getKanbanItemById: (id: string) => KanbanColumn | undefined;
+  getTaskById: (taskId: string) => KanbanTask | null;
+}
+
+export type KanbanStore = KanbanState & KanbanActions;
+
+const initialState: KanbanState = {
   members: members,
   labels: labels,
   attachments: attachments,
@@ -35,13 +156,13 @@ const initialState = {
 const actionLogger = createActionLogger('Kanban Store');
 const performanceTracker = createPerformanceTracker('Kanban Store');
 
-export const useKanbanStore = create(
+export const useKanbanStore = create<KanbanStore>()(
   devtools(
     (set, get) => ({
       ...initialState,
 
       // Modal actions
-      openKanbanModal: (image) =>
+      openKanbanModal: (image: string) =>
         set(
           (state) => ({
             kanbanModal: {
@@ -70,7 +191,7 @@ export const useKanbanStore = create(
         ),
 
       // Column actions
-      addKanbanColumn: (newColumn) =>
+      addKanbanColumn: (newColumn: KanbanColumn) =>
         set(
           (state) => ({
             kanbanItems: [...state.kanbanItems, newColumn]
@@ -79,7 +200,7 @@ export const useKanbanStore = create(
           'addKanbanColumn'
         ),
 
-      removeKanbanColumn: (columnId) =>
+      removeKanbanColumn: (columnId: string) =>
         set(
           (state) => ({
             kanbanItems: state.kanbanItems.filter(
@@ -91,7 +212,7 @@ export const useKanbanStore = create(
         ),
 
       // Task card actions
-      addTaskCard: (targetListId, newCard) =>
+      addTaskCard: (targetListId: string, newCard: KanbanTask) =>
         set(
           (state) => ({
             kanbanItems: state.kanbanItems.map((kanbanItem) =>
@@ -104,7 +225,7 @@ export const useKanbanStore = create(
           'addTaskCard'
         ),
 
-      removeTaskCard: (cardId) =>
+      removeTaskCard: (cardId: string) =>
         set(
           (state) => ({
             kanbanItems: state.kanbanItems.map((kanbanItem) => ({
@@ -117,7 +238,7 @@ export const useKanbanStore = create(
         ),
 
       // Drag and drop actions - optimized for performance
-      updateSingleColumn: (column, reorderedItems) => {
+      updateSingleColumn: (column: KanbanColumn, reorderedItems: KanbanTask[]) => {
         performanceTracker.start('updateSingleColumn');
         const prevState = get();
         
@@ -140,7 +261,12 @@ export const useKanbanStore = create(
         actionLogger('updateSingleColumn', prevState, get());
       },
 
-      updateDualColumn: (sourceColumn, destColumn, updatedSourceItems, updatedDestItems) => {
+      updateDualColumn: (
+        sourceColumn: KanbanColumn,
+        destColumn: KanbanColumn,
+        updatedSourceItems: KanbanTask[],
+        updatedDestItems: KanbanTask[]
+      ) => {
         performanceTracker.start('updateDualColumn');
         const prevState = get();
         
@@ -170,7 +296,7 @@ export const useKanbanStore = create(
       },
 
       // UI state actions
-      setCardHeight: (height) =>
+      setCardHeight: (height: number) =>
         set(
           { cardHeight: height },
           false,
@@ -186,12 +312,12 @@ export const useKanbanStore = create(
         ),
 
       // Selectors (derived state)
-      getKanbanItemById: (id) => {
+      getKanbanItemById: (id: string): KanbanColumn | undefined => {
         const state = get();
         return state.kanbanItems.find(item => item.id === id);
       },
 
-      getTaskById: (taskId) => {
+      getTaskById: (taskId: string): KanbanTask | null => {
         const state = get();
         for (const column of state.kanbanItems) {
           const task = column.items.find(item => item.id === taskId);
@@ -206,15 +332,15 @@ export const useKanbanStore = create(
 
 // Export individual action creators for easier testing and usage
 export const kanbanActions = {
-  openKanbanModal: (image) => useKanbanStore.getState().openKanbanModal(image),
+  openKanbanModal: (image: string) => useKanbanStore.getState().openKanbanModal(image),
   toggleKanbanModal: () => useKanbanStore.getState().toggleKanbanModal(),
-  addKanbanColumn: (column) => useKanbanStore.getState().addKanbanColumn(column),
-  removeKanbanColumn: (id) => useKanbanStore.getState().removeKanbanColumn(id),
-  addTaskCard: (targetListId, newCard) => useKanbanStore.getState().addTaskCard(targetListId, newCard),
-  removeTaskCard: (id) => useKanbanStore.getState().removeTaskCard(id),
-  updateSingleColumn: (column, items) => useKanbanStore.getState().updateSingleColumn(column, items),
-  updateDualColumn: (sourceColumn, destColumn, sourceItems, destItems) => 
+  addKanbanColumn: (column: KanbanColumn) => useKanbanStore.getState().addKanbanColumn(column),
+  removeKanbanColumn: (id: string) => useKanbanStore.getState().removeKanbanColumn(id),
+  addTaskCard: (targetListId: string, newCard: KanbanTask) => useKanbanStore.getState().addTaskCard(targetListId, newCard),
+  removeTaskCard: (id: string) => useKanbanStore.getState().removeTaskCard(id),
+  updateSingleColumn: (column: KanbanColumn, items: KanbanTask[]) => useKanbanStore.getState().updateSingleColumn(column, items),
+  updateDualColumn: (sourceColumn: KanbanColumn, destColumn: KanbanColumn, sourceItems: KanbanTask[], destItems: KanbanTask[]) => 
     useKanbanStore.getState().updateDualColumn(sourceColumn, destColumn, sourceItems, destItems),
-  setCardHeight: (height) => useKanbanStore.getState().setCardHeight(height),
+  setCardHeight: (height: number) => useKanbanStore.getState().setCardHeight(height),
   resetKanbanState: () => useKanbanStore.getState().resetKanbanState()
 };

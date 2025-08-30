@@ -1,11 +1,21 @@
 import React from 'react';
 import classNames from 'classnames';
-import { Card, Col, Row } from 'react-bootstrap';
+import { Card, Col, Row, CardProps } from 'react-bootstrap';
 import Background from './Background';
 import corner4 from 'assets/img/illustrations/corner-4.png';
 import createMarkup from 'helpers/createMarkup';
 
-const PageHeader = ({
+interface PageHeaderProps extends Omit<CardProps, 'children'> {
+  title: string;
+  preTitle?: string;
+  titleTag?: React.ElementType;
+  description?: string;
+  image?: string;
+  col?: Record<string, any>;
+  children?: React.ReactNode;
+}
+
+const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   preTitle,
   titleTag: TitleTag = 'h3',
@@ -28,7 +38,7 @@ const PageHeader = ({
       <Row>
         <Col {...col}>
           {preTitle && <h6 className="text-600">{preTitle}</h6>}
-          <TitleTag className="mb-0">{title}</TitleTag>
+          {React.createElement(TitleTag, { className: "mb-0" }, title)}
           {description && (
             <p
               className={classNames('mt-2', { 'mb-0': !children })}

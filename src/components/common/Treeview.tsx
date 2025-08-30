@@ -2,8 +2,36 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
 import React, { useEffect, useRef, useState } from 'react';
 import { Collapse } from 'react-bootstrap';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
 
-const TreeviewListItem = ({
+interface TreeviewItem {
+  id: string | number;
+  name: string;
+  icon?: IconProp;
+  iconClass?: string;
+  expanded?: boolean;
+  children?: TreeviewItem[];
+}
+
+interface TreeviewListItemProps {
+  item: TreeviewItem;
+  openedItems: (string | number)[];
+  setOpenedItems: React.Dispatch<React.SetStateAction<(string | number)[]>>;
+  selectedItems: (string | number)[];
+  setSelectedItems: React.Dispatch<React.SetStateAction<(string | number)[]>>;
+  selection?: boolean;
+  index?: number;
+}
+
+interface TreeviewProps {
+  data: TreeviewItem[];
+  selection?: boolean;
+  expanded?: (string | number)[];
+  selectedItems?: (string | number)[];
+  setSelectedItems?: React.Dispatch<React.SetStateAction<(string | number)[]>>;
+}
+
+const TreeviewListItem: React.FC<TreeviewListItemProps> = ({
   item,
   openedItems,
   setOpenedItems,
@@ -11,16 +39,16 @@ const TreeviewListItem = ({
   setSelectedItems,
   selection
 }) => {
-  const [open, setOpen] = useState(openedItems.indexOf(item.id) !== -1);
-  const [children, setChildren] = useState([]);
-  const [firstChildren, setFirstChildren] = useState([]);
-  const [childrenOpen, setChildrenOpen] = useState(false);
-  const checkRef = useRef();
+  const [open, setOpen] = useState<boolean>(openedItems.indexOf(item.id) !== -1);
+  const [children, setChildren] = useState<(string | number)[]>([]);
+  const [firstChildren, setFirstChildren] = useState<(string | number)[]>([]);
+  const [childrenOpen, setChildrenOpen] = useState<boolean>(false);
+  const checkRef = useRef<HTMLInputElement>(null);
 
-  const getChildrens = item => {
-    function flatInnter(item) {
-      let flat = [];
-      item.map(child => {
+  const getChildrens = (item: TreeviewItem): (string | number)[] => {
+    function flatInnter(item: TreeviewItem[]): (string | number)[] {
+      let flat: (string | number)[] = [];
+      item.map((child: TreeviewItem) => {
         if (child.children) {
           flat = [...flat, child.id, ...flatInnter(child.children)];
         } else {
@@ -37,30 +65,30 @@ const TreeviewListItem = ({
     }
   };
 
-  const isChildrenOpen = () => {
-    return openedItems.some(item => firstChildren.indexOf(item) !== -1);
+  const isChildrenOpen = (): boolean => {
+    return openedItems.some((item: string | number) => firstChildren.indexOf(item) !== -1);
   };
 
-  const handleOnExiting = () => {
-    setOpenedItems(openedItems.filter(openedItem => openedItem !== item.id));
+  const handleOnExiting = (): void => {
+    setOpenedItems(openedItems.filter((openedItem: string | number) => openedItem !== item.id));
   };
-  const handleEntering = () => {
+  const handleEntering = (): void => {
     setOpenedItems([...openedItems, item.id]);
   };
 
-  const handleSingleCheckboxChange = e => {
+  const handleSingleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     if (e.target.checked) {
       setSelectedItems([...selectedItems, item.id]);
     } else {
       setSelectedItems(
-        selectedItems.filter(selectedItem => selectedItem !== item.id)
+        selectedItems.filter((selectedItem: string | number) => selectedItem !== item.id)
       );
     }
   };
 
-  const handleParentCheckboxChange = e => {
+  const handleParentCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const filteredItems = selectedItems.filter(
-      selectedItem => children.indexOf(selectedItem) === -1
+      (selectedItem: string | number) => children.indexOf(selectedItem) === -1
     );
     if (e.target.checked) {
       setSelectedItems([...filteredItems, ...children]);
@@ -72,9 +100,9 @@ const TreeviewListItem = ({
   useEffect(() => {
     setChildren(getChildrens(item));
     if (item.children) {
-      setFirstChildren(item.children.map(child => child.id));
+      setFirstChildren(item.children.map((child: TreeviewItem) => child.id));
     }
-  }, []);
+  }, [item]);
 
   useEffect(() => {
     setChildrenOpen(isChildrenOpen());
@@ -82,10 +110,10 @@ const TreeviewListItem = ({
 
   useEffect(() => {
     const childrenSelected = selectedItems.some(
-      selectedItem => children.indexOf(selectedItem) !== -1
+      (selectedItem: string | number) => children.indexOf(selectedItem) !== -1
     );
     const allChildrenSelected = children.every(
-      child => selectedItems.indexOf(child) !== -1
+      (child: string | number) => selectedItems.indexOf(child) !== -1
     );
     if (childrenSelected && checkRef.current) {
       checkRef.current.indeterminate = true;
@@ -100,7 +128,7 @@ const TreeviewListItem = ({
     if (!allChildrenSelected && checkRef.current) {
       checkRef.current.checked = false;
     }
-  }, [selectedItems, checkRef.current]);
+  }, [selectedItems, children]);
 
   return (
     <li className="treeview-list-item">
@@ -120,7 +148,10 @@ const TreeviewListItem = ({
                 collapsed: open || item.expanded
               })}
               href="#!"
-              onClick={() => setOpen(!open)}
+              onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+                e.preventDefault();
+                setOpen(!open);
+              }}
             >
               <p
                 className={classNames('treeview-text', { 'ms-2': !selection })}
@@ -141,7 +172,7 @@ const TreeviewListItem = ({
                 'treeview-border-transparent': childrenOpen
               })}
             >
-              {item.children.map((nestedItem, index) => (
+              {item.children!.map((nestedItem: TreeviewItem, index: number) => (
                 <TreeviewListItem
                   key={index}
                   item={nestedItem}
@@ -166,12 +197,18 @@ const TreeviewListItem = ({
               checked={selectedItems.indexOf(item.id) !== -1}
             />
           )}
-          <a href="#!" className="flex-1">
+          <a 
+            href="#!" 
+            className="flex-1"
+            onClick={(e: React.MouseEvent<HTMLAnchorElement>) => e.preventDefault()}
+          >
             <p className="treeview-text">
-              <FontAwesomeIcon
-                icon={item.icon}
-                className={classNames('me-2', item.iconClass)}
-              />
+              {item.icon && (
+                <FontAwesomeIcon
+                  icon={item.icon}
+                  className={classNames('me-2', item.iconClass)}
+                />
+              )}
               {item.name}
             </p>
           </a>
@@ -181,25 +218,25 @@ const TreeviewListItem = ({
   );
 };
 
-const Treeview = ({
+const Treeview: React.FC<TreeviewProps> = ({
   data,
   selection,
   expanded = [],
   selectedItems = [],
   setSelectedItems
 }) => {
-  const [openedItems, setOpenedItems] = useState(expanded);
+  const [openedItems, setOpenedItems] = useState<(string | number)[]>(expanded);
 
   return (
     <ul className="treeview treeview-select">
-      {data.map((treeviewItem, index) => (
+      {data.map((treeviewItem: TreeviewItem, index: number) => (
         <TreeviewListItem
           key={index}
           item={treeviewItem}
           openedItems={openedItems}
           setOpenedItems={setOpenedItems}
-          selectedItems={selectedItems}
-          setSelectedItems={setSelectedItems}
+          selectedItems={selectedItems || []}
+          setSelectedItems={setSelectedItems || (() => {})}
           selection={selection}
         />
       ))}

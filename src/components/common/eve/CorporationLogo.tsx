@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuilding } from '@fortawesome/free-solid-svg-icons';
 
 interface CorporationLogoProps {
-  corporationId?: number | null;
+  corporationId?: number | string | null;
   corporationName?: string;
   size?: number;
   className?: string;
@@ -21,7 +21,10 @@ const CorporationLogo: React.FC<CorporationLogoProps> = ({
     setImageError(true);
   };
 
-  if (imageError || !corporationId) {
+  // Convert to number and check validity
+  const numericId = typeof corporationId === 'string' ? parseInt(corporationId, 10) : corporationId;
+
+  if (imageError || !numericId || isNaN(numericId)) {
     return (
       <div
         className={`rounded bg-light border d-flex align-items-center justify-content-center ${className}`}
@@ -37,7 +40,7 @@ const CorporationLogo: React.FC<CorporationLogoProps> = ({
 
   return (
     <img
-      src={`https://images.evetech.net/corporations/${corporationId}/logo?size=${size > 24 ? 128 : 64}`}
+      src={`https://images.evetech.net/corporations/${numericId}/logo?size=${size > 24 ? 128 : 64}`}
       alt={corporationName || 'Corporation Logo'}
       className={`rounded border ${className}`}
       width={size}

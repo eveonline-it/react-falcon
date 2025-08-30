@@ -11,9 +11,9 @@ import {
   Spinner
 } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { SitemapRoute } from '../../hooks/admin/useSitemap';
+import { SitemapRoute } from 'hooks/admin/useSitemap';
 // @ts-ignore - useGroups is a JS file
-import { useGroups } from '../../hooks/useGroups';
+import { useGroups } from 'hooks/useGroups';
 
 // Type definitions for groups data
 interface GroupData {

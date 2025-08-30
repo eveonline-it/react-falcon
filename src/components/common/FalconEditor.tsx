@@ -4,7 +4,16 @@ import { LiveEditor, LiveError, LivePreview, LiveProvider } from 'react-live';
 import { themes } from 'prism-react-renderer';
 import classNames from 'classnames';
 
-const FalconEditor = ({
+interface FalconEditorProps {
+  code: string;
+  scope?: Record<string, any>;
+  language?: string;
+  hidePreview?: boolean;
+  theme?: any;
+  className?: string;
+}
+
+const FalconEditor: React.FC<FalconEditorProps> = ({
   code,
   scope,
   language = 'markup',
@@ -16,13 +25,13 @@ const FalconEditor = ({
     /import(?:["'\s]*([\w*{}\n, ]+)from\s*)["'\s]*([@\w/_-]+)["'\s]*;?/gm;
   const requireRegex =
     /(const|let|var)\s*([\w{}\n, ]+\s*)=\s*require\s*\(["'\s]*([@\w/_-]+)["'\s]*\s*\);?/gm;
-  const imports = {
+  const imports: Record<string, string> = {
     CardDropdown: 'CardDropdown '
   };
 
-  const transformCode = code => {
+  const transformCode = (code: string): string => {
     return code
-      .replace(importRegex, (match, p1, p2) => {
+      .replace(importRegex, (match: string, p1: string, p2: string) => {
         const matchingImport = imports[p2];
         if (!matchingImport) {
           // leave it alone if we don't have a matching import
@@ -31,7 +40,7 @@ const FalconEditor = ({
 
         return 'var ' + p1 + ' = ' + matchingImport + ';';
       })
-      .replace(requireRegex, (match, p1, p2, p3) => {
+      .replace(requireRegex, (match: string, p1: string, p2: string, p3: string) => {
         const matchingImport = imports[p3];
         if (!matchingImport) {
           // leave it alone if we don't have a matching import
@@ -53,9 +62,9 @@ const FalconEditor = ({
     >
       {!hidePreview && <LivePreview className="mb-3" />}
       <LiveEditor
-        className={classNames('rounded border-top border-bottom', {
-          [className]: !!className
-        })}
+        className={classNames('rounded border-top border-bottom', 
+          className && { [className]: true }
+        )}
       />
       {!hidePreview && <LiveError />}
     </LiveProvider>

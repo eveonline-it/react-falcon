@@ -1,10 +1,85 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSchedulerExecutions, useTaskHistory } from './useScheduler';
+import type { ExecutionListResponse } from 'types/scheduler';
 
 const API_BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.it';
 
+// Interfaces
+interface Execution {
+  id: string;
+  task_id: string;
+  status: 'success' | 'failed' | 'running' | 'timeout' | 'cancelled';
+  started_at: string;
+  completed_at?: string;
+  duration?: number;
+  error_message?: string;
+}
+
+interface RecentErrorMessage {
+  id: string;
+  timestamp: string;
+  message: string;
+}
+
+interface DurationTrend {
+  execution: number;
+  duration: number;
+  timestamp: string;
+}
+
+interface TaskStatistics {
+  totalExecutions: number;
+  successCount: number;
+  failureCount: number;
+  runningCount: number;
+  timeoutCount: number;
+  cancelledCount: number;
+  successRate: number;
+  failureRate: number;
+  averageDuration: number | null;
+  medianDuration: number | null;
+  minDuration: number | null;
+  maxDuration: number | null;
+  totalDuration: number;
+  executionsToday: number;
+  executionsThisWeek: number;
+  executionsThisMonth: number;
+  performanceTrend: 'improving' | 'degrading' | 'stable';
+  recentErrorMessages: RecentErrorMessage[];
+  executionsByHour: number[];
+  executionsByDay: number[];
+  durationTrend: DurationTrend[];
+}
+
+interface TaskStatisticsResult {
+  statistics: TaskStatistics;
+  isLoading: boolean;
+  error: Error | null;
+  hasData: boolean;
+}
+
+interface PerformanceMetrics {
+  overall: TaskStatistics;
+  byType: Record<string, TaskStatistics>;
+}
+
+interface DailyTrend extends TaskStatistics {
+  date: string;
+}
+
+interface SystemPerformanceTrends {
+  trends: DailyTrend[];
+  overall: TaskStatistics;
+  timeRange: string;
+}
+
+interface TaskStatisticsParams {
+  limit?: number;
+  [key: string]: any;
+}
+
 // Enhanced statistics calculator
-export const calculateTaskStatistics = (executions = []) => {
+export const calculateTaskStatistics = (executions: Execution[] = []): TaskStatistics => {
   if (!executions.length) {
     return {
       totalExecutions: 0,
@@ -49,7 +124,7 @@ export const calculateTaskStatistics = (executions = []) => {
 
   // Duration analysis (only for completed executions)
   const completedExecutions = executions.filter(e => e.duration && e.status !== 'running');
-  const durations = completedExecutions.map(e => e.duration).sort((a, b) => a - b);
+  const durations = completedExecutions.map(e => e.duration!).sort((a, b) => a - b);
   
   const averageDuration = durations.length > 0 
     ? durations.reduce((sum, d) => sum + d, 0) / durations.length 
@@ -71,25 +146,25 @@ export const calculateTaskStatistics = (executions = []) => {
   const executionsThisMonth = executions.filter(e => new Date(e.started_at) >= monthAgo).length;
 
   // Performance trend analysis
-  let performanceTrend = 'stable';
+  let performanceTrend: 'improving' | 'degrading' | 'stable' = 'stable';
   if (completedExecutions.length >= 10) {
     const recent = completedExecutions.slice(0, 5);
     const older = completedExecutions.slice(-5);
-    const recentAvg = recent.reduce((sum, e) => sum + e.duration, 0) / recent.length;
-    const olderAvg = older.reduce((sum, e) => sum + e.duration, 0) / older.length;
+    const recentAvg = recent.reduce((sum, e) => sum + e.duration!, 0) / recent.length;
+    const olderAvg = older.reduce((sum, e) => sum + e.duration!, 0) / older.length;
     
     if (recentAvg < olderAvg * 0.85) performanceTrend = 'improving';
     else if (recentAvg > olderAvg * 1.15) performanceTrend = 'degrading';
   }
 
   // Recent error messages
-  const recentErrorMessages = executions
+  const recentErrorMessages: RecentErrorMessage[] = executions
     .filter(e => e.status === 'failed' && e.error_message)
     .slice(0, 5)
     .map(e => ({
       id: e.id,
       timestamp: e.started_at,
-      message: e.error_message
+      message: e.error_message!
     }));
 
   // Execution distribution by hour of day
@@ -107,12 +182,12 @@ export const calculateTaskStatistics = (executions = []) => {
   });
 
   // Duration trend over time (last 20 executions)
-  const durationTrend = completedExecutions
+  const durationTrend: DurationTrend[] = completedExecutions
     .slice(0, 20)
     .reverse()
     .map((e, index) => ({
       execution: index + 1,
-      duration: e.duration,
+      duration: e.duration!,
       timestamp: e.started_at
     }));
 
@@ -142,7 +217,7 @@ export const calculateTaskStatistics = (executions = []) => {
 };
 
 // Hook for task-specific statistics
-export const useTaskStatistics = (taskId, params = {}) => {
+export const useTaskStatistics = (taskId: string, params: TaskStatisticsParams = {}): TaskStatisticsResult => {
   const { data: historyData, isLoading, error } = useTaskHistory(taskId, {
     limit: 100, // Get more data for better statistics
     ...params
@@ -154,12 +229,12 @@ export const useTaskStatistics = (taskId, params = {}) => {
     statistics,
     isLoading,
     error,
-    hasData: historyData?.executions?.length > 0
+    hasData: (historyData?.executions?.length ?? 0) > 0
   };
 };
 
 // Hook for global execution statistics
-export const useGlobalExecutionStatistics = (params = {}) => {
+export const useGlobalExecutionStatistics = (params: TaskStatisticsParams = {}): TaskStatisticsResult => {
   const { data: executionsData, isLoading, error } = useSchedulerExecutions({
     limit: 200, // Get more data for comprehensive statistics
     ...params
@@ -171,13 +246,13 @@ export const useGlobalExecutionStatistics = (params = {}) => {
     statistics,
     isLoading,
     error,
-    hasData: executionsData?.executions?.length > 0
+    hasData: (executionsData?.executions?.length ?? 0) > 0
   };
 };
 
 // Hook for performance metrics by task type
 export const useTaskTypePerformanceMetrics = () => {
-  return useQuery({
+  return useQuery<PerformanceMetrics, Error>({
     queryKey: ['scheduler', 'performance', 'by-task-type'],
     queryFn: async () => {
       // Fetch all executions and group by task type
@@ -190,7 +265,7 @@ export const useTaskTypePerformanceMetrics = () => {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data: ExecutionListResponse = await response.json();
       const executions = data.executions || [];
 
       // Group executions by task type (would need task info for this)
@@ -206,12 +281,12 @@ export const useTaskTypePerformanceMetrics = () => {
 };
 
 // Hook for system performance trends
-export const useSystemPerformanceTrends = (timeRange = '7d') => {
-  return useQuery({
+export const useSystemPerformanceTrends = (timeRange: '1d' | '7d' | '30d' = '7d') => {
+  return useQuery<SystemPerformanceTrends, Error>({
     queryKey: ['scheduler', 'performance', 'trends', timeRange],
     queryFn: async () => {
       const now = new Date();
-      let startDate;
+      let startDate: Date;
       
       switch (timeRange) {
         case '1d':
@@ -239,11 +314,11 @@ export const useSystemPerformanceTrends = (timeRange = '7d') => {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const data: ExecutionListResponse = await response.json();
       const executions = data.executions || [];
 
       // Group executions by day for trend analysis
-      const dailyStats = {};
+      const dailyStats: Record<string, Execution[]> = {};
       executions.forEach(execution => {
         const date = new Date(execution.started_at).toISOString().split('T')[0];
         if (!dailyStats[date]) {
@@ -253,12 +328,12 @@ export const useSystemPerformanceTrends = (timeRange = '7d') => {
       });
 
       // Calculate statistics for each day
-      const trends = Object.entries(dailyStats)
+      const trends: DailyTrend[] = Object.entries(dailyStats)
         .map(([date, dayExecutions]) => ({
           date,
           ...calculateTaskStatistics(dayExecutions)
         }))
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
       return {
         trends,

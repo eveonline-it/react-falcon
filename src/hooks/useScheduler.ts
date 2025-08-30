@@ -16,9 +16,22 @@ import type {
   TaskControlAction,
   ManualExecutionRequest,
   TaskExecutionResponse
-} from '../types/scheduler';
+} from 'types/scheduler';
 
 const API_BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.it';
+
+// Custom error interface for API errors
+interface ApiError extends Error {
+  status?: number;
+  data?: any;
+}
+
+const createApiError = (message: string, status?: number, data?: any): ApiError => {
+  const error = new Error(message) as ApiError;
+  if (status) error.status = status;
+  if (data) error.data = data;
+  return error;
+};
 
 // API utility functions
 const schedulerApi = {
@@ -31,10 +44,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      error.status = res.status;
-      error.data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
     
     return res.json();
@@ -48,10 +62,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      error.status = res.status;
-      error.data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
     
     return res.json();
@@ -77,10 +92,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
     
     return res.json();
@@ -96,10 +112,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
     
     return res.json();
@@ -113,10 +130,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
     
     return res.json();
@@ -132,10 +150,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
     
     return res.json();
@@ -150,10 +169,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
   },
 
@@ -167,10 +187,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
   },
 
@@ -183,10 +204,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
   },
 
@@ -199,10 +221,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
   },
 
@@ -215,10 +238,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
   },
 
@@ -231,10 +255,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
   },
 
@@ -255,10 +280,11 @@ const schedulerApi = {
         errorData,
         executeParams: executeParams || {}
       });
-      const error = new Error(errorData.detail || errorData.message || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || errorData.message || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
     
     return res.json();
@@ -284,10 +310,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
     
     return res.json();
@@ -304,10 +331,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
     
     return res.json();
@@ -334,10 +362,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
     
     return res.json();
@@ -354,10 +383,11 @@ const schedulerApi = {
     
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      const error = new Error(errorData.detail || `HTTP ${res.status}: ${res.statusText}`);
-      (error as any).status = res.status;
-      (error as any).data = errorData;
-      throw error;
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
     }
     
     return res.json();
@@ -373,7 +403,7 @@ export const useSchedulerStatus = () => {
     refetchInterval: 60000, // Refetch every minute
     retry: (failureCount, error) => {
       // Don't retry on permission errors
-      if ((error as any)?.status === 403) return false;
+      if ((error as ApiError)?.status === 403) return false;
       return failureCount < 3;
     }
   });
@@ -387,7 +417,7 @@ export const useSchedulerStats = () => {
     refetchInterval: 120000, // Refetch every 2 minutes
     retry: (failureCount, error) => {
       // Don't retry on permission errors
-      if ((error as any)?.status === 403) return false;
+      if ((error as ApiError)?.status === 403) return false;
       return failureCount < 3;
     }
   });

@@ -3,12 +3,19 @@ import classNames from 'classnames';
 import { useAppContext } from 'providers/AppProvider';
 import { Editor } from '@tinymce/tinymce-react';
 
-const TinymceEditor = ({ value, handleChange, height = '50vh', isInvalid }) => {
+interface TinymceEditorProps {
+  value?: string;
+  handleChange?: (value: string, editor: any) => void;
+  height?: string | number;
+  isInvalid?: boolean;
+}
+
+const TinymceEditor: React.FC<TinymceEditorProps> = ({ value, handleChange, height = '50vh', isInvalid }) => {
   const {
     config: { isDark, isRTL },
     getThemeColor
   } = useAppContext();
-  const editorRef = useRef(null);
+  const editorRef = useRef<any>(null);
 
   useEffect(() => {
     if (editorRef.current) {
@@ -24,7 +31,7 @@ const TinymceEditor = ({ value, handleChange, height = '50vh', isInvalid }) => {
     <div className={classNames({ 'is-invalid': isInvalid })}>
       <Editor
         tinymceScriptSrc="/tinymce/tinymce.min.js"
-        onInit={(evt, editor) => (editorRef.current = editor)}
+        onInit={(_evt: any, editor: any) => (editorRef.current = editor)}
         value={value}
         onEditorChange={handleChange}
         apiKey={import.meta.env.VITE_REACT_APP_TINYMCE_APIKEY}

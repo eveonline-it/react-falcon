@@ -21,10 +21,10 @@ import {
   FolderCreateModal, 
   RouteEditModal,
   FolderFormData 
-} from '../../components/admin';
+} from 'components/admin';
 
 // Hooks
-import { useSitemap } from '../../hooks/useSitemap';
+import { useSitemap } from 'hooks/useSitemap';
 import {
   useSitemapRoutes,
   useCreateRoute,
@@ -36,19 +36,19 @@ import {
   useMoveItem,
   useReorderRoutes,
   SitemapRoute
-} from '../../hooks/admin/useSitemap';
+} from 'hooks/admin/useSitemap';
 
 // Services & Utils
-import { sitemapService, HierarchicalNavItem } from '../../services/sitemapService';
+import { sitemapService, HierarchicalNavItem } from 'services/sitemapService';
 import { 
   HierarchicalDragDropHandler, 
   createHierarchicalDragDropHandler,
   DragDropContext as HierarchicalDragDropContext
-} from '../../utils/hierarchicalDragDrop';
+} from 'utils/hierarchicalDragDrop';
 
 // Styles
-import '../../assets/css/sitemap-tree.css';
-import '../../assets/css/sitemap-admin.css';
+import 'assets/css/sitemap-tree.css';
+import 'assets/css/sitemap-admin.css';
 
 interface RouteFormData extends Omit<SitemapRoute, 'id' | 'created_at' | 'updated_at' | 'depth' | 'children_count' | 'folder_path' | 'is_expanded'> {}
 

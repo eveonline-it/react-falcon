@@ -1,17 +1,27 @@
 import React from 'react';
 import classNames from 'classnames';
 
-const Hoverbox = ({ children, className }) => {
+interface HoverboxProps {
+  children?: React.ReactNode;
+  className?: string;
+}
+
+const Hoverbox: React.FC<HoverboxProps> = ({ children, className }) => {
   return (
-    <div className={classNames('hoverbox', { [className]: className })}>
+    <div className={classNames('hoverbox', { [className as string]: className })}>
       {children}
     </div>
   );
 };
 
-export const HoverboxContent = ({ children, className }) => {
+interface HoverboxContentProps {
+  children?: React.ReactNode;
+  className?: string;
+}
+
+export const HoverboxContent: React.FC<HoverboxContentProps> = ({ children, className }) => {
   return (
-    <div className={classNames('hoverbox-content', { [className]: className })}>
+    <div className={classNames('hoverbox-content', { [className as string]: className })}>
       {children}
     </div>
   );

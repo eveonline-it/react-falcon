@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, Badge, Button, ButtonGroup, Dropdown } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { HierarchicalNavItem } from '../../services/sitemapService';
+import { HierarchicalNavItem } from 'services/sitemapService';
 
 interface SitemapTreeViewProps {
   treeData: HierarchicalNavItem[];

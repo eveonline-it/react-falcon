@@ -3,8 +3,27 @@ import classNames from 'classnames';
 import { isIterableArray } from 'helpers/utils';
 import Flex from './Flex';
 import cloudUpload from 'assets/img/icons/cloud-upload.svg';
+import { ReactNode } from 'react';
 
-const getSize = size => {
+// TypeScript interfaces
+interface DropzoneFile {
+  id?: string;
+  path: string;
+  base64: string | ArrayBuffer | null;
+  size: number;
+  type: string;
+}
+
+interface FalconDropzoneProps {
+  placeholder?: ReactNode;
+  className?: string;
+  onChange: (files: DropzoneFile[]) => void;
+  files?: DropzoneFile[];
+  preview?: boolean;
+  [key: string]: any; // For rest props
+}
+
+const getSize = (size: number): ReactNode => {
   if (size < 1024) {
     return (
       <>
@@ -26,7 +45,7 @@ const getSize = size => {
   }
 };
 
-const FalconDropzone = ({
+const FalconDropzone: React.FC<FalconDropzoneProps> = ({
   placeholder = <img src={cloudUpload} alt="" width={25} className="me-2" />,
   className,
   onChange,
@@ -37,7 +56,7 @@ const FalconDropzone = ({
   <>
     <Dropzone
       onDrop={acceptedFiles => {
-        const stringFiles = [];
+        const stringFiles: DropzoneFile[] = [];
         if (acceptedFiles.length) {
           acceptedFiles.map(file => {
             const reader = new FileReader();
@@ -47,7 +66,7 @@ const FalconDropzone = ({
                 // id: uuid(),
                 base64: reader.result,
                 size: file.size,
-                path: file.path,
+                path: file.name || 'unnamed',
                 type: file.type
               });
               onChange([...stringFiles]);
@@ -76,7 +95,7 @@ const FalconDropzone = ({
             className="py-3 border-bottom btn-reveal-trigger"
             key={id}
           >
-            <img className="img-fluid" width={38} src={base64} alt={path} />
+            <img className="img-fluid" width={38} src={base64 as string} alt={path} />
             <Flex justifyContent="between" alignItems="center" className="ms-3">
               <div>
                 <h6 data-dz-name="">{path}</h6>

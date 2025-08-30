@@ -4,8 +4,31 @@ import classNames from 'classnames';
 import { HashLink } from 'react-router-hash-link';
 import Flex from './Flex';
 import { useLocation } from 'react-router';
-import { camelize } from '../../helpers/utils';
+import { camelize } from 'helpers/utils';
 import { useAppContext } from 'providers/AppProvider';
+import { ReactNode } from 'react';
+
+// TypeScript interfaces
+interface FalconComponentCardHeaderProps {
+  light?: boolean;
+  className?: string;
+  title?: string;
+  children?: ReactNode;
+  noPreview?: boolean;
+}
+
+interface FalconComponentCardProps {
+  children: ReactNode;
+  multiSections?: boolean;
+  noGuttersBottom?: boolean;
+  [key: string]: any; // For rest props
+}
+
+// Type for the component with attached sub-components
+interface FalconComponentCardType extends React.FC<FalconComponentCardProps> {
+  Header: React.FC<FalconComponentCardHeaderProps>;
+  Body: any; // FalconCardBody type
+}
 
 const PreviewCode = () => {
   return (
@@ -34,7 +57,7 @@ const PreviewCode = () => {
   );
 };
 
-const FalconComponentCardHeader = ({
+const FalconComponentCardHeader: React.FC<FalconComponentCardHeaderProps> = ({
   light,
   className,
   title,
@@ -105,7 +128,7 @@ const FalconComponentCardHeader = ({
   );
 };
 
-const FalconComponentCard = ({
+const FalconComponentCard = (({
   children,
   multiSections,
   noGuttersBottom,
@@ -120,7 +143,7 @@ const FalconComponentCard = ({
       )}
     </Card>
   );
-};
+}) as FalconComponentCardType;
 
 FalconComponentCard.Header = FalconComponentCardHeader;
 FalconComponentCard.Body = FalconCardBody;

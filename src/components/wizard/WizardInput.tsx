@@ -1,28 +1,53 @@
-import React, { useState } from 'react';
+import React, { forwardRef, useState } from 'react';
 import { Form } from 'react-bootstrap';
 import DatePicker from 'react-datepicker';
+import { UseFormSetValue } from 'react-hook-form';
 
-const CustomDateInput = (
-  { value, onClick, isInvalid, isValid, formControlProps, errorMessage, ref }
-) => {
-  return (
-    <>
-      <Form.Control
-        ref={ref}
-        isInvalid={isInvalid}
-        isValid={isValid}
-        value={value}
-        onClick={onClick}
-        {...formControlProps}
-      />
-      <Form.Control.Feedback type="invalid">
-        {errorMessage}
-      </Form.Control.Feedback>
-    </>
-  );
-};
+interface CustomDateInputProps {
+  value?: string;
+  onClick?: () => void;
+  isInvalid?: boolean;
+  isValid?: boolean;
+  formControlProps?: Record<string, any>;
+  errorMessage?: string;
+}
 
-const WizardInput = ({
+const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
+  ({ value, onClick, isInvalid, isValid, formControlProps, errorMessage }, ref) => {
+    return (
+      <>
+        <Form.Control
+          ref={ref}
+          isInvalid={isInvalid}
+          isValid={isValid}
+          value={value || ''}
+          onClick={onClick}
+          {...formControlProps}
+        />
+        <Form.Control.Feedback type="invalid">
+          {errorMessage}
+        </Form.Control.Feedback>
+      </>
+    );
+  }
+);
+
+CustomDateInput.displayName = 'CustomDateInput';
+
+interface WizardInputProps {
+  label?: React.ReactNode;
+  name: string;
+  errors: Record<string, { message?: string } | undefined>;
+  type?: 'text' | 'number' | 'email' | 'password' | 'date' | 'select' | 'textarea' | 'checkbox' | 'switch' | 'radio';
+  options?: string[];
+  placeholder?: string;
+  formControlProps?: Record<string, any>;
+  formGroupProps?: Record<string, any>;
+  setValue?: UseFormSetValue<any>;
+  datepickerProps?: Record<string, any>;
+}
+
+const WizardInput: React.FC<WizardInputProps> = ({
   label,
   name,
   errors,
@@ -34,7 +59,7 @@ const WizardInput = ({
   setValue,
   datepickerProps
 }) => {
-  const [date, setDate] = useState(null);
+  const [date, setDate] = useState<Date | null>(null);
 
   if (type === 'date') {
     return (
@@ -43,9 +68,9 @@ const WizardInput = ({
 
         <DatePicker
           selected={date}
-          onChange={date => {
-            setDate(date);
-            setValue(name, date);
+          onChange={(selectedDate: Date | null) => {
+            setDate(selectedDate);
+            setValue?.(name, selectedDate);
           }}
           customInput={
             <CustomDateInput
@@ -88,7 +113,7 @@ const WizardInput = ({
           isValid={Object.keys(errors).length > 0 && !errors[name]}
         >
           <option value="">{placeholder}</option>
-          {options.map(option => (
+          {options.map((option: string) => (
             <option value={option} key={option}>
               {option}
             </option>

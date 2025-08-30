@@ -8,6 +8,14 @@ interface BackgroundPosition {
   y?: string;
 }
 
+interface BackgroundProps {
+  image?: string;
+  overlay?: boolean | string;
+  position?: string | BackgroundPosition;
+  video?: string[];
+  className?: string;
+}
+
 interface SectionProps extends React.HTMLAttributes<HTMLElement> {
   fluid?: boolean;
   bg?: string;
@@ -32,8 +40,8 @@ const Section: React.FC<SectionProps> = ({
   children,
   ...rest
 }) => {
-  const bgProps: any = { image, overlay, position, video };
-  bgClassName && (bgProps.className = bgClassName);
+  const bgProps: BackgroundProps = { image, overlay, position, video };
+  if (bgClassName) bgProps.className = bgClassName;
 
   return (
     <section className={classNames({ [`bg-${bg}`]: bg }, className)} {...rest}>

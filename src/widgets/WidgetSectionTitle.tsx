@@ -1,8 +1,18 @@
+import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import Flex from 'components/common/Flex';
 import { Col } from 'react-bootstrap';
 
-const WidgetSectionTitle = ({
+interface WidgetSectionTitleProps {
+  title: string;
+  subtitle?: string;
+  icon: IconProp;
+  transform?: string;
+  className?: string;
+}
+
+const WidgetSectionTitle: React.FC<WidgetSectionTitleProps> = ({
   title,
   subtitle,
   icon,

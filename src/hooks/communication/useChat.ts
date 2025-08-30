@@ -4,8 +4,123 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery, UseQueryOption
  * Chat system query hooks for real-time messaging features
  */
 
+// Type definitions
+interface ChatUser {
+  id: string;
+  name: string;
+  avatar?: string;
+  status?: 'online' | 'away' | 'offline';
+}
+
+interface ChatMessage {
+  id: string;
+  message: string;
+  attachments?: ChatAttachment[];
+  createdAt: string;
+  updatedAt?: string;
+  sender: ChatUser;
+  isOptimistic?: boolean;
+  threadId: string;
+}
+
+interface ChatAttachment {
+  id?: string;
+  name: string;
+  type: string;
+  url?: string;
+  size?: number;
+}
+
+interface ChatThread {
+  id: string;
+  participants: ChatUser[];
+  isGroup: boolean;
+  groupName?: string;
+  lastMessage?: ChatMessage;
+  unreadCount: number;
+  isRead: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ChatContact {
+  id: string;
+  name: string;
+  avatar?: string;
+  status?: 'online' | 'away' | 'offline';
+  lastSeen?: string;
+}
+
+interface ChatGroup {
+  id: string;
+  name: string;
+  description?: string;
+  avatar?: string;
+  participantCount: number;
+  createdAt: string;
+}
+
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+interface ChatThreadsResponse {
+  threads: ChatThread[];
+  total: number;
+  pagination?: PaginationInfo;
+}
+
+interface ChatMessagesResponse {
+  messages: ChatMessage[];
+  totalCount: number;
+  pagination?: PaginationInfo;
+}
+
+interface ChatThreadFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+}
+
+interface ChatMessageFilters {
+  threadId: string;
+  page?: number;
+  limit?: number;
+}
+
+interface SendMessageParams {
+  threadId: string;
+  message: string;
+  attachments?: File[];
+}
+
+interface CreateThreadParams {
+  participants: string[];
+  isGroup?: boolean;
+  groupName?: string;
+}
+
+interface UpdateMessageParams {
+  messageId: string;
+  updates: Partial<Pick<ChatMessage, 'message'>>;
+}
+
+interface ParticipantParams {
+  threadId: string;
+  userId: string;
+}
+
+interface SearchMessagesParams {
+  query: string;
+  threadId?: string;
+}
+
 // API functions
-const fetchChatThreads = async ({ page = 1, limit = 20, search = '' }) => {
+const fetchChatThreads = async ({ page = 1, limit = 20, search = '' }: ChatThreadFilters): Promise<ChatThreadsResponse> => {
   const params = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
@@ -19,7 +134,7 @@ const fetchChatThreads = async ({ page = 1, limit = 20, search = '' }) => {
   return response.json();
 };
 
-const fetchChatThread = async (threadId) => {
+const fetchChatThread = async (threadId: string): Promise<ChatThread> => {
   const response = await fetch(`/api/chat/threads/${threadId}`);
   if (!response.ok) {
     throw new Error('Failed to fetch chat thread');
@@ -27,7 +142,7 @@ const fetchChatThread = async (threadId) => {
   return response.json();
 };
 
-const fetchChatMessages = async ({ threadId, page = 1, limit = 50 }) => {
+const fetchChatMessages = async ({ threadId, page = 1, limit = 50 }: ChatMessageFilters): Promise<ChatMessagesResponse> => {
   const params = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
@@ -40,7 +155,7 @@ const fetchChatMessages = async ({ threadId, page = 1, limit = 50 }) => {
   return response.json();
 };
 
-const fetchChatContacts = async () => {
+const fetchChatContacts = async (): Promise<ChatContact[]> => {
   const response = await fetch('/api/chat/contacts');
   if (!response.ok) {
     throw new Error('Failed to fetch chat contacts');
@@ -48,7 +163,7 @@ const fetchChatContacts = async () => {
   return response.json();
 };
 
-const fetchChatGroups = async () => {
+const fetchChatGroups = async (): Promise<ChatGroup[]> => {
   const response = await fetch('/api/chat/groups');
   if (!response.ok) {
     throw new Error('Failed to fetch chat groups');
@@ -56,12 +171,12 @@ const fetchChatGroups = async () => {
   return response.json();
 };
 
-const sendMessage = async ({ threadId, message, attachments = [] }) => {
+const sendMessage = async ({ threadId, message, attachments = [] }: SendMessageParams): Promise<ChatMessage> => {
   const formData = new FormData();
   formData.append('message', message);
   formData.append('threadId', threadId);
   
-  attachments.forEach((file, index) => {
+  attachments.forEach((file: File, index: number) => {
     formData.append(`attachments[${index}]`, file);
   });
 
@@ -76,7 +191,7 @@ const sendMessage = async ({ threadId, message, attachments = [] }) => {
   return response.json();
 };
 
-const createThread = async ({ participants, isGroup = false, groupName = '' }) => {
+const createThread = async ({ participants, isGroup = false, groupName = '' }: CreateThreadParams): Promise<ChatThread> => {
   const response = await fetch('/api/chat/threads', {
     method: 'POST',
     headers: {
@@ -91,7 +206,7 @@ const createThread = async ({ participants, isGroup = false, groupName = '' }) =
   return response.json();
 };
 
-const markThreadAsRead = async (threadId) => {
+const markThreadAsRead = async (threadId: string): Promise<ChatThread> => {
   const response = await fetch(`/api/chat/threads/${threadId}/read`, {
     method: 'PATCH',
   });
@@ -102,7 +217,7 @@ const markThreadAsRead = async (threadId) => {
   return response.json();
 };
 
-const deleteMessage = async (messageId) => {
+const deleteMessage = async (messageId: string): Promise<ChatMessage> => {
   const response = await fetch(`/api/chat/messages/${messageId}`, {
     method: 'DELETE',
   });
@@ -113,7 +228,7 @@ const deleteMessage = async (messageId) => {
   return response.json();
 };
 
-const updateMessage = async ({ messageId, updates }) => {
+const updateMessage = async ({ messageId, updates }: UpdateMessageParams): Promise<ChatMessage> => {
   const response = await fetch(`/api/chat/messages/${messageId}`, {
     method: 'PATCH',
     headers: {
@@ -128,7 +243,7 @@ const updateMessage = async ({ messageId, updates }) => {
   return response.json();
 };
 
-const addParticipantToThread = async ({ threadId, userId }) => {
+const addParticipantToThread = async ({ threadId, userId }: ParticipantParams): Promise<ChatThread> => {
   const response = await fetch(`/api/chat/threads/${threadId}/participants`, {
     method: 'POST',
     headers: {
@@ -143,7 +258,7 @@ const addParticipantToThread = async ({ threadId, userId }) => {
   return response.json();
 };
 
-const removeParticipantFromThread = async ({ threadId, userId }) => {
+const removeParticipantFromThread = async ({ threadId, userId }: ParticipantParams): Promise<ChatThread> => {
   const response = await fetch(`/api/chat/threads/${threadId}/participants/${userId}`, {
     method: 'DELETE',
   });
@@ -154,7 +269,7 @@ const removeParticipantFromThread = async ({ threadId, userId }) => {
   return response.json();
 };
 
-const searchMessages = async ({ query, threadId }) => {
+const searchMessages = async ({ query, threadId }: SearchMessagesParams): Promise<ChatMessage[]> => {
   const params = new URLSearchParams({
     query,
     ...(threadId && { threadId }),
@@ -168,17 +283,17 @@ const searchMessages = async ({ query, threadId }) => {
 };
 
 // Query hooks
-export const useChatThreads = (filters = {}, options = {}) => {
+export const useChatThreads = (filters: ChatThreadFilters = {}, options?: Omit<UseQueryOptions<ChatThreadsResponse, Error>, 'queryKey' | 'queryFn'>) => {
   return useQuery({
     queryKey: ['chat', 'threads', filters],
     queryFn: () => fetchChatThreads(filters),
     staleTime: 1000 * 60 * 2, // 2 minutes
     refetchOnWindowFocus: true, // Keep chat threads fresh
-    ...options,
+    ...(options || {}),
   });
 };
 
-export const useChatThread = (threadId, options = {}) => {
+export const useChatThread = (threadId: string, options?: Omit<UseQueryOptions<ChatThread, Error>, 'queryKey' | 'queryFn'>) => {
   return useQuery({
     queryKey: ['chat', 'threads', threadId],
     queryFn: () => fetchChatThread(threadId),
@@ -188,7 +303,7 @@ export const useChatThread = (threadId, options = {}) => {
   });
 };
 
-export const useChatMessages = (threadId, options = {}) => {
+export const useChatMessages = (threadId: string, options?: Omit<UseInfiniteQueryOptions<ChatMessagesResponse, Error>, 'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam' | 'getPreviousPageParam'>) => {
   return useInfiniteQuery({
     queryKey: ['chat', 'messages', threadId],
     queryFn: ({ pageParam = 1 }) => fetchChatMessages({ threadId, page: pageParam }),
@@ -212,7 +327,7 @@ export const useChatMessages = (threadId, options = {}) => {
   });
 };
 
-export const useChatContacts = (options = {}) => {
+export const useChatContacts = (options?: Omit<UseQueryOptions<ChatContact[], Error>, 'queryKey' | 'queryFn'>) => {
   return useQuery({
     queryKey: ['chat', 'contacts'],
     queryFn: fetchChatContacts,
@@ -221,7 +336,7 @@ export const useChatContacts = (options = {}) => {
   });
 };
 
-export const useChatGroups = (options = {}) => {
+export const useChatGroups = (options?: Omit<UseQueryOptions<ChatGroup[], Error>, 'queryKey' | 'queryFn'>) => {
   return useQuery({
     queryKey: ['chat', 'groups'],
     queryFn: fetchChatGroups,
@@ -230,10 +345,10 @@ export const useChatGroups = (options = {}) => {
   });
 };
 
-export const useSearchMessages = (query, threadId = null, options = {}) => {
+export const useSearchMessages = (query: string, threadId: string | null = null, options?: Omit<UseQueryOptions<ChatMessage[], Error>, 'queryKey' | 'queryFn'>) => {
   return useQuery({
     queryKey: ['chat', 'search', query, threadId],
-    queryFn: () => searchMessages({ query, threadId }),
+    queryFn: () => searchMessages({ query, threadId: threadId || undefined }),
     enabled: !!query && query.length >= 2, // Only search with at least 2 characters
     staleTime: 1000 * 60 * 5, // 5 minutes
     ...options,
@@ -241,7 +356,7 @@ export const useSearchMessages = (query, threadId = null, options = {}) => {
 };
 
 // Helper hook to flatten infinite messages
-export const useFlattenedChatMessages = (threadId, options = {}) => {
+export const useFlattenedChatMessages = (threadId: string, options?: Omit<UseInfiniteQueryOptions<ChatMessagesResponse, Error>, 'queryKey' | 'queryFn' | 'initialPageParam' | 'getNextPageParam' | 'getPreviousPageParam'>) => {
   const messagesQuery = useChatMessages(threadId, options);
   
   return {
@@ -252,12 +367,12 @@ export const useFlattenedChatMessages = (threadId, options = {}) => {
 };
 
 // Mutation hooks
-export const useSendMessage = (options = {}) => {
+export const useSendMessage = (options?: Omit<UseMutationOptions<ChatMessage, Error, SendMessageParams>, 'mutationFn'>) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: sendMessage,
-    onMutate: async ({ threadId, message, attachments }) => {
+    onMutate: async ({ threadId, message, attachments }: SendMessageParams) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['chat', 'messages', threadId] });
       await queryClient.cancelQueries({ queryKey: ['chat', 'threads'] });
@@ -267,19 +382,20 @@ export const useSendMessage = (options = {}) => {
       const previousThreads = queryClient.getQueryData(['chat', 'threads']);
 
       // Optimistically add the message
-      const tempMessage = {
+      const tempMessage: ChatMessage = {
         id: `temp-${Date.now()}`,
         message,
         attachments: attachments?.map(file => ({ name: file.name, type: file.type })) || [],
         createdAt: new Date().toISOString(),
         sender: { id: 'current-user', name: 'You' }, // Replace with actual user data
         isOptimistic: true,
+        threadId: threadId,
       };
 
       if (previousMessages) {
         queryClient.setQueryData(['chat', 'messages', threadId], {
           ...previousMessages,
-          pages: previousMessages.pages.map((page, index) => {
+          pages: (previousMessages as any).pages.map((page: any, index: number) => {
             if (index === 0) {
               return {
                 ...page,
@@ -295,7 +411,7 @@ export const useSendMessage = (options = {}) => {
       if (previousThreads) {
         queryClient.setQueryData(['chat', 'threads'], {
           ...previousThreads,
-          threads: previousThreads.threads.map(thread => 
+          threads: (previousThreads as ChatThreadsResponse).threads.map(thread => 
             thread.id === threadId 
               ? { ...thread, lastMessage: tempMessage, updatedAt: new Date().toISOString() }
               : thread
@@ -305,19 +421,19 @@ export const useSendMessage = (options = {}) => {
 
       return { previousMessages, previousThreads, tempMessage };
     },
-    onSuccess: (newMessage, { threadId }, context) => {
+    onSuccess: (newMessage: ChatMessage, { threadId }: SendMessageParams, context: any) => {
       // Replace the optimistic message with the real one
-      queryClient.setQueryData(['chat', 'messages', threadId], (oldData) => {
+      queryClient.setQueryData(['chat', 'messages', threadId], (oldData: any) => {
         if (!oldData) return oldData;
         
         return {
           ...oldData,
-          pages: oldData.pages.map((page, index) => {
+          pages: oldData.pages.map((page: any, index: number) => {
             if (index === 0) {
               return {
                 ...page,
-                messages: page.messages.map(msg => 
-                  msg.id === context.tempMessage.id ? newMessage : msg
+                messages: page.messages.map((msg: ChatMessage) => 
+                  msg.id === context?.tempMessage.id ? newMessage : msg
                 ),
               };
             }
@@ -327,11 +443,11 @@ export const useSendMessage = (options = {}) => {
       });
 
       // Update thread with real message
-      queryClient.setQueryData(['chat', 'threads'], (oldData) => {
+      queryClient.setQueryData(['chat', 'threads'], (oldData: any) => {
         if (!oldData) return oldData;
         return {
           ...oldData,
-          threads: oldData.threads.map(thread => 
+          threads: oldData.threads.map((thread: ChatThread) => 
             thread.id === threadId 
               ? { ...thread, lastMessage: newMessage }
               : thread
@@ -339,7 +455,7 @@ export const useSendMessage = (options = {}) => {
         };
       });
     },
-    onError: (err, { threadId }, context) => {
+    onError: (err: Error, { threadId }: SendMessageParams, context: any) => {
       // Roll back optimistic updates
       if (context?.previousMessages) {
         queryClient.setQueryData(['chat', 'messages', threadId], context.previousMessages);
@@ -348,7 +464,7 @@ export const useSendMessage = (options = {}) => {
         queryClient.setQueryData(['chat', 'threads'], context.previousThreads);
       }
     },
-    onSettled: (data, error, { threadId }) => {
+    onSettled: (data: ChatMessage | undefined, error: Error | null, { threadId }: SendMessageParams) => {
       // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['chat', 'messages', threadId] });
       queryClient.invalidateQueries({ queryKey: ['chat', 'threads'] });
@@ -357,14 +473,14 @@ export const useSendMessage = (options = {}) => {
   });
 };
 
-export const useCreateThread = (options = {}) => {
+export const useCreateThread = (options?: Omit<UseMutationOptions<ChatThread, Error, CreateThreadParams>, 'mutationFn'>) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: createThread,
-    onSuccess: (newThread) => {
+    onSuccess: (newThread: ChatThread) => {
       // Add to the threads list
-      queryClient.setQueryData(['chat', 'threads'], (oldData) => {
+      queryClient.setQueryData(['chat', 'threads'], (oldData: any) => {
         if (!oldData) return { threads: [newThread], total: 1 };
         return {
           ...oldData,
@@ -380,12 +496,12 @@ export const useCreateThread = (options = {}) => {
   });
 };
 
-export const useMarkThreadAsRead = (options = {}) => {
+export const useMarkThreadAsRead = (options?: Omit<UseMutationOptions<ChatThread, Error, string>, 'mutationFn'>) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: markThreadAsRead,
-    onMutate: async (threadId) => {
+    onMutate: async (threadId: string) => {
       // Optimistically update the thread
       await queryClient.cancelQueries({ queryKey: ['chat', 'threads'] });
       
@@ -394,7 +510,7 @@ export const useMarkThreadAsRead = (options = {}) => {
       if (previousThreads) {
         queryClient.setQueryData(['chat', 'threads'], {
           ...previousThreads,
-          threads: previousThreads.threads.map(thread => 
+          threads: (previousThreads as ChatThreadsResponse).threads.map(thread => 
             thread.id === threadId 
               ? { ...thread, unreadCount: 0, isRead: true }
               : thread
@@ -404,13 +520,13 @@ export const useMarkThreadAsRead = (options = {}) => {
       
       return { previousThreads };
     },
-    onError: (err, threadId, context) => {
+    onError: (err: Error, threadId: string, context: any) => {
       // Roll back on error
       if (context?.previousThreads) {
         queryClient.setQueryData(['chat', 'threads'], context.previousThreads);
       }
     },
-    onSettled: (data, error, threadId) => {
+    onSettled: (data: ChatThread | undefined, error: Error | null, threadId: string) => {
       // Refetch thread data
       queryClient.invalidateQueries({ queryKey: ['chat', 'threads', threadId] });
       queryClient.invalidateQueries({ queryKey: ['chat', 'threads'] });
@@ -419,24 +535,24 @@ export const useMarkThreadAsRead = (options = {}) => {
   });
 };
 
-export const useDeleteMessage = (options = {}) => {
+export const useDeleteMessage = (options?: Omit<UseMutationOptions<ChatMessage, Error, string>, 'mutationFn'>) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: deleteMessage,
-    onSuccess: (deletedMessage, messageId) => {
+    onSuccess: (deletedMessage: ChatMessage, messageId: string) => {
       // Remove message from all relevant thread message lists
       const queryCache = queryClient.getQueryCache();
       const messageQueries = queryCache.findAll(['chat', 'messages']);
       
       messageQueries.forEach(query => {
-        const oldData = query.state.data;
+        const oldData = query.state.data as any;
         if (oldData?.pages) {
           const updatedData = {
             ...oldData,
-            pages: oldData.pages.map(page => ({
+            pages: oldData.pages.map((page: any) => ({
               ...page,
-              messages: page.messages.filter(msg => msg.id !== messageId),
+              messages: page.messages.filter((msg: ChatMessage) => msg.id !== messageId),
             })),
           };
           queryClient.setQueryData(query.queryKey, updatedData);
@@ -447,24 +563,24 @@ export const useDeleteMessage = (options = {}) => {
   });
 };
 
-export const useUpdateMessage = (options = {}) => {
+export const useUpdateMessage = (options?: Omit<UseMutationOptions<ChatMessage, Error, UpdateMessageParams>, 'mutationFn'>) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: updateMessage,
-    onSuccess: (updatedMessage, { messageId }) => {
+    onSuccess: (updatedMessage: ChatMessage, { messageId }: UpdateMessageParams) => {
       // Update message across all relevant thread message lists
       const queryCache = queryClient.getQueryCache();
       const messageQueries = queryCache.findAll(['chat', 'messages']);
       
       messageQueries.forEach(query => {
-        const oldData = query.state.data;
+        const oldData = query.state.data as any;
         if (oldData?.pages) {
           const updatedData = {
             ...oldData,
-            pages: oldData.pages.map(page => ({
+            pages: oldData.pages.map((page: any) => ({
               ...page,
-              messages: page.messages.map(msg => 
+              messages: page.messages.map((msg: ChatMessage) => 
                 msg.id === messageId ? updatedMessage : msg
               ),
             })),
@@ -477,12 +593,12 @@ export const useUpdateMessage = (options = {}) => {
   });
 };
 
-export const useAddParticipant = (options = {}) => {
+export const useAddParticipant = (options?: Omit<UseMutationOptions<ChatThread, Error, ParticipantParams>, 'mutationFn'>) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: addParticipantToThread,
-    onSuccess: (updatedThread, { threadId }) => {
+    onSuccess: (updatedThread: ChatThread, { threadId }: ParticipantParams) => {
       // Update the thread with new participant
       queryClient.setQueryData(['chat', 'threads', threadId], updatedThread);
       
@@ -493,12 +609,12 @@ export const useAddParticipant = (options = {}) => {
   });
 };
 
-export const useRemoveParticipant = (options = {}) => {
+export const useRemoveParticipant = (options?: Omit<UseMutationOptions<ChatThread, Error, ParticipantParams>, 'mutationFn'>) => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: removeParticipantFromThread,
-    onSuccess: (updatedThread, { threadId }) => {
+    onSuccess: (updatedThread: ChatThread, { threadId }: ParticipantParams) => {
       // Update the thread with removed participant
       queryClient.setQueryData(['chat', 'threads', threadId], updatedThread);
       

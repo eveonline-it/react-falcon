@@ -3,6 +3,40 @@ import { toast } from 'react-toastify';
 
 const BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.it';
 
+// Fetch character groups
+const fetchCharacterGroups = async (characterId) => {
+  if (!characterId) {
+    throw new Error('Character ID is required');
+  }
+  
+  const response = await fetch(`${BASE_URL}/characters/${characterId}/groups`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to fetch character groups: ${response.status}`);
+  }
+
+  const data = await response.json();
+  
+  // Handle different response structures
+  if (Array.isArray(data)) {
+    return data;
+  } else if (data && data.groups && Array.isArray(data.groups)) {
+    return data.groups;
+  } else if (data && Array.isArray(data.data)) {
+    return data.data;
+  }
+  
+  // If no array found, return empty array
+  return [];
+};
+
 // Fetch user characters
 const fetchUserCharacters = async (userId) => {
   if (!userId) {
@@ -91,6 +125,18 @@ export const useUpdateCharacterPositions = (options = {}) => {
     onError: (error) => {
       toast.error(`Failed to update character positions: ${error.message}`);
     },
+    ...options,
+  });
+};
+
+// Hook for fetching character groups
+export const useCharacterGroups = (characterId, options = {}) => {
+  return useQuery({
+    queryKey: ['character', characterId, 'groups'],
+    queryFn: () => fetchCharacterGroups(characterId),
+    enabled: !!characterId,
+    staleTime: 1000 * 60 * 10, // Consider data fresh for 10 minutes
+    refetchOnWindowFocus: false,
     ...options,
   });
 };

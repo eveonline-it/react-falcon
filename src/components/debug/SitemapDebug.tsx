@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge, Accordion } from 'react-bootstrap';
 import { loadDynamicRouteGroups, getRouteGroups } from 'routes/siteMaps';
-import { sitemapService } from '../../services/sitemapService';
+import { sitemapService } from 'services/sitemapService';
 import type { RouteGroup } from 'routes/siteMaps';
 
 const SitemapDebug: React.FC = () => {

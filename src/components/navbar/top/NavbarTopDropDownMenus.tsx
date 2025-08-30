@@ -9,7 +9,7 @@ import {
   loadDynamicRouteGroups,
   RouteGroup
 } from 'routes/siteMaps';
-import { sitemapService } from '../../../services/sitemapService';
+import { sitemapService } from 'services/sitemapService';
 import { Dropdown } from 'react-bootstrap';
 import { Link } from 'react-router';
 import { flatRoutes } from 'helpers/utils';

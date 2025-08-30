@@ -3,7 +3,72 @@ import { toast } from 'react-toastify';
 
 const API_BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.it';
 
-const fetcher = async (url, options = {}) => {
+// Interfaces
+interface Permission {
+  id: string;
+  name: string;
+  description?: string;
+  service: string;
+  category: string;
+  static: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface PermissionsResponse {
+  permissions: Permission[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+interface PermissionCheckRequest {
+  permissionId: string;
+  characterId?: string | null;
+}
+
+interface PermissionCheckResponse {
+  granted: boolean;
+  reason?: string;
+  permission: Permission;
+  character?: {
+    id: string;
+    name: string;
+  };
+}
+
+interface PermissionsFilters {
+  service?: string;
+  category?: string;
+  static?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+interface PermissionsStats {
+  total_permissions: number;
+  services: string[];
+  categories: string[];
+  static_count: number;
+  dynamic_count: number;
+}
+
+interface PermissionsHealth {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  checks: Array<{
+    name: string;
+    status: 'pass' | 'fail';
+    message?: string;
+  }>;
+  timestamp: string;
+}
+
+interface ApiError extends Error {
+  status?: number;
+  response?: any;
+}
+
+const fetcher = async (url: string, options: RequestInit = {}): Promise<any> => {
   const response = await fetch(`${API_BASE_URL}${url}`, {
     ...options,
     credentials: 'include',
@@ -14,7 +79,7 @@ const fetcher = async (url, options = {}) => {
   });
 
   if (!response.ok) {
-    const error = new Error(`HTTP error! status: ${response.status}`);
+    const error = new Error(`HTTP error! status: ${response.status}`) as ApiError;
     error.status = response.status;
     error.response = await response.json().catch(() => ({}));
     throw error;
@@ -23,16 +88,16 @@ const fetcher = async (url, options = {}) => {
   return response.json();
 };
 
-export const usePermissions = (filters = {}) => {
-  return useQuery({
+export const usePermissions = (filters: PermissionsFilters = {}) => {
+  return useQuery<PermissionsResponse, ApiError>({
     queryKey: ['permissions', filters],
     queryFn: () => {
       const params = new URLSearchParams();
       if (filters.service) params.append('service', filters.service);
       if (filters.category) params.append('category', filters.category);
-      if (filters.static !== undefined) params.append('static', filters.static);
-      if (filters.page) params.append('page', filters.page);
-      if (filters.limit) params.append('limit', filters.limit);
+      if (filters.static !== undefined) params.append('static', String(filters.static));
+      if (filters.page) params.append('page', String(filters.page));
+      if (filters.limit) params.append('limit', String(filters.limit));
       
       return fetcher(`/permissions?${params.toString()}`);
     },
@@ -44,8 +109,8 @@ export const usePermissions = (filters = {}) => {
   });
 };
 
-export const usePermission = (id) => {
-  return useQuery({
+export const usePermission = (id: string) => {
+  return useQuery<Permission, ApiError>({
     queryKey: ['permissions', id],
     queryFn: () => fetcher(`/permissions/${id}`),
     staleTime: 1000 * 60 * 5,
@@ -53,8 +118,8 @@ export const usePermission = (id) => {
   });
 };
 
-export const useCheckPermission = (permissionId, characterId = null) => {
-  return useQuery({
+export const useCheckPermission = (permissionId: string, characterId: string | null = null) => {
+  return useQuery<PermissionCheckResponse, ApiError>({
     queryKey: ['permissions', permissionId, 'check', characterId],
     queryFn: () => {
       const params = new URLSearchParams();
@@ -74,7 +139,7 @@ export const useCheckPermission = (permissionId, characterId = null) => {
 export const usePermissionCheck = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
+  return useMutation<PermissionCheckResponse, ApiError, PermissionCheckRequest>({
     mutationFn: ({ permissionId, characterId }) => {
       const params = new URLSearchParams();
       if (characterId) params.append('character_id', characterId);
@@ -105,7 +170,7 @@ export const usePermissionCheck = () => {
 };
 
 export const usePermissionsStats = () => {
-  return useQuery({
+  return useQuery<PermissionsStats, ApiError>({
     queryKey: ['permissions', 'stats'],
     queryFn: () => fetcher('/permissions/stats'),
     staleTime: 1000 * 60 * 5,
@@ -117,7 +182,7 @@ export const usePermissionsStats = () => {
 };
 
 export const usePermissionsHealth = () => {
-  return useQuery({
+  return useQuery<PermissionsHealth, ApiError>({
     queryKey: ['permissions', 'health'],
     queryFn: () => fetcher('/permissions/health'),
     staleTime: 1000 * 60,

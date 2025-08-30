@@ -7,7 +7,7 @@ import UsersByCountryChart from './UsersByCountryChart';
 import WorldMap from './WorldMap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Flex from 'components/common/Flex';
-import { CountryData } from '../../types';
+import { CountryData } from 'components/dashboards/types';
 
 // TypeScript interfaces
 interface UsersByCountryProps {

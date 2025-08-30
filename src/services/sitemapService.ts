@@ -1,4 +1,4 @@
-import { NavItem, RouteGroup } from '../routes/siteMaps';
+import { NavItem, RouteGroup } from 'routes/siteMaps';
 
 // Updated interfaces to match new backend response
 export interface BackendRoute {
@@ -31,7 +31,7 @@ export interface BackendRoute {
   group?: string | null;
   feature_flags?: string[] | null;
   is_enabled?: boolean;
-  props?: any;
+  props?: Record<string, any>;
   lazy_load?: boolean;
   exact?: boolean;
   newtab?: boolean;

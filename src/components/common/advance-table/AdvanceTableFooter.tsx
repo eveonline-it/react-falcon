@@ -1,12 +1,21 @@
-/* eslint-disable react/prop-types */
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import classNames from 'classnames';
 import React, { useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 import Flex from '../Flex';
 import { useAdvanceTableContext } from 'providers/AdvanceTableProvider';
 
-export const AdvanceTableFooter = ({
+interface AdvanceTableFooterProps {
+  viewAllBtn?: boolean;
+  navButtons?: boolean;
+  className?: string;
+  rowInfo?: boolean;
+  rowsPerPageSelection?: boolean;
+  rowsPerPageOptions?: number[];
+}
+
+export const AdvanceTableFooter: React.FC<AdvanceTableFooterProps> = ({
   viewAllBtn,
   navButtons,
   className,
@@ -64,7 +73,7 @@ export const AdvanceTableFooter = ({
                 >
                   View {isAllVisible ? 'less' : 'all'}
                   <FontAwesomeIcon
-                    icon="chevron-right"
+                    icon={"chevron-right" as IconProp}
                     className="ms-1 fs-11"
                   />
                 </Button>
@@ -78,10 +87,10 @@ export const AdvanceTableFooter = ({
             <Form.Select
               size="sm"
               className="w-auto"
-              onChange={e => setPageSize(Number(e.target.value))}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setPageSize(Number(e.target.value))}
               defaultValue={pageSize}
             >
-              {rowsPerPageOptions.map(value => (
+              {rowsPerPageOptions.map((value: number) => (
                 <option value={value} key={value}>
                   {value}
                 </option>

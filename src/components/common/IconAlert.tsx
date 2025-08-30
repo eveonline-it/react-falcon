@@ -1,9 +1,19 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Alert, CloseButton } from 'react-bootstrap';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
+import { Alert, CloseButton, AlertProps } from 'react-bootstrap';
 import classNames from 'classnames';
 
-const IconAlert = ({
+type AlertVariant = 'success' | 'info' | 'warning' | 'danger';
+
+interface IconAlertProps extends Omit<AlertProps, 'variant'> {
+  variant: AlertVariant;
+  dismissible?: boolean;
+  children?: React.ReactNode;
+  onClose?: React.MouseEventHandler<HTMLButtonElement>;
+}
+
+const IconAlert: React.FC<IconAlertProps> = ({
   variant,
   dismissible,
   children,
@@ -11,7 +21,7 @@ const IconAlert = ({
   onClose,
   ...rest
 }) => {
-  const icon = {
+  const icon: Record<AlertVariant, IconProp> = {
     success: 'check-circle',
     info: 'info-circle',
     warning: 'exclamation-circle',

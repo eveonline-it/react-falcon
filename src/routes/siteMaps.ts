@@ -1,5 +1,5 @@
 import paths, { rootPaths } from './paths';
-import { sitemapService } from '../services/sitemapService';
+import { sitemapService } from 'services/sitemapService';
 
 export interface Badge {
   type: string;
@@ -1240,6 +1240,7 @@ export const routeComponents: Record<string, () => Promise<any>> = {
   'SaasDashboard': () => import('../demos/dashboards/SaasDashboard'),
   'SupportDesk': () => import('../demos/dashboards/SupportDeskDashboard'),
   'CorporationDashboard': () => import('../pages/corporations/dashboard/CorporationDashboard'),
+  'AllianceDashboard': () => import('../pages/alliances/dashboard/AllianceDashboard'),
   
   // App components (in features folder)
   'Calendar': () => import('../features/calendar/Calendar'),

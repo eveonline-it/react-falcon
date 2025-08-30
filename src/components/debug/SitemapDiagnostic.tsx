@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { sitemapService } from '../../services/sitemapService';
+import { sitemapService } from 'services/sitemapService';
 
 const SitemapDiagnostic = () => {
   const [diagnostics, setDiagnostics] = useState({

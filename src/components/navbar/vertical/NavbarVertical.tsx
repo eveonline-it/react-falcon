@@ -7,13 +7,13 @@ import Logo from 'components/common/Logo';
 import NavbarVerticalMenu from './NavbarVerticalMenu';
 import ToggleButton from './ToggleButton';
 import staticRoutes, { loadDynamicRouteGroups, RouteGroup } from 'routes/siteMaps';
-import { sitemapService } from '../../../services/sitemapService';
+import { sitemapService } from 'services/sitemapService';
 import { capitalize } from 'helpers/utils';
 import NavbarTopDropDownMenus from 'components/navbar/top/NavbarTopDropDownMenus';
 import PurchaseCard from './PurchaseCard';
 import bgNavbar from 'assets/img/generic/bg-navbar.png';
 import { useAppContext } from 'providers/AppProvider';
-import '../../../assets/css/hierarchical-navigation.css';
+import 'assets/css/hierarchical-navigation.css';
 
 const NavbarVertical = () => {
   const [routes, setRoutes] = useState<RouteGroup[]>([]);

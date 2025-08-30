@@ -1,10 +1,22 @@
 import React from 'react';
 import { Table } from 'react-bootstrap';
 import { useAdvanceTableContext } from 'providers/AdvanceTableProvider';
-import { flexRender } from '@tanstack/react-table';
+import { flexRender, Header, Row, Cell } from '@tanstack/react-table';
 import classNames from 'classnames';
 
-const AdvanceTable = ({
+interface CustomColumnMeta {
+  headerProps?: React.HTMLAttributes<HTMLTableHeaderCellElement>;
+  cellProps?: React.HTMLAttributes<HTMLTableDataCellElement>;
+}
+
+interface AdvanceTableProps {
+  headerClassName?: string;
+  bodyClassName?: string;
+  rowClassName?: string;
+  tableProps?: React.ComponentProps<typeof Table>;
+}
+
+const AdvanceTable: React.FC<AdvanceTableProps> = ({
   headerClassName,
   bodyClassName,
   rowClassName,
@@ -18,14 +30,14 @@ const AdvanceTable = ({
       <Table {...tableProps}>
         <thead className={headerClassName}>
           <tr>
-            {getFlatHeaders().map(header => {
+            {getFlatHeaders().map((header: Header<any, unknown>) => {
               return (
                 <th
                   key={header.id}
-                  {...header.column.columnDef.meta?.headerProps}
+                  {...(header.column.columnDef.meta as CustomColumnMeta)?.headerProps}
                   className={classNames(
                     'fs-10',
-                    header.column.columnDef.meta?.headerProps?.className,
+                    (header.column.columnDef.meta as CustomColumnMeta)?.headerProps?.className,
                     {
                       sort: header.column.getCanSort(),
                       desc: header.column.getIsSorted() === 'desc',
@@ -46,10 +58,10 @@ const AdvanceTable = ({
           </tr>
         </thead>
         <tbody className={bodyClassName}>
-          {getRowModel().rows.map(row => (
+          {getRowModel().rows.map((row: Row<any>) => (
             <tr key={row.id} className={rowClassName}>
-              {row.getVisibleCells().map(cell => (
-                <td key={cell.id} {...cell.column.columnDef.meta?.cellProps}>
+              {row.getVisibleCells().map((cell: Cell<any, unknown>) => (
+                <td key={cell.id} {...(cell.column.columnDef.meta as CustomColumnMeta)?.cellProps}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}

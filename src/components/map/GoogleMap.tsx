@@ -6,7 +6,7 @@ import {
   InfoWindow,
   useJsApiLoader
 } from '@react-google-maps/api';
-import mapMarker from '../../../src/assets/img/icons/map-marker.png';
+import mapMarker from 'assets/img/icons/map-marker.png';
 import { useAppContext } from 'providers/AppProvider';
 
 const GoogleMap = ({

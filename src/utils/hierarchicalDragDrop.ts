@@ -1,5 +1,5 @@
 import { DropResult } from '@hello-pangea/dnd';
-import { HierarchicalNavItem } from '../services/sitemapService';
+import { HierarchicalNavItem } from 'services/sitemapService';
 
 export interface ReorderResult {
   updatedTree: HierarchicalNavItem[];

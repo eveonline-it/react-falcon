@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser } from '@fortawesome/free-solid-svg-icons';
 
 interface CharacterPortraitProps {
-  characterId?: number | null;
+  characterId?: number | string | null;
   characterName?: string;
   size?: number;
   className?: string;
@@ -21,7 +21,10 @@ const CharacterPortrait: React.FC<CharacterPortraitProps> = ({
     setImageError(true);
   };
   
-  if (imageError || !characterId) {
+  // Convert to number and check validity
+  const numericId = typeof characterId === 'string' ? parseInt(characterId, 10) : characterId;
+  
+  if (imageError || !numericId || isNaN(numericId)) {
     return (
       <div 
         className={`rounded-circle bg-secondary d-flex align-items-center justify-content-center ${className}`}
@@ -41,7 +44,7 @@ const CharacterPortrait: React.FC<CharacterPortraitProps> = ({
   
   return (
     <img
-      src={`https://images.evetech.net/characters/${characterId}/portrait?size=${size > 32 ? 256 : 64}`}
+      src={`https://images.evetech.net/characters/${numericId}/portrait?size=${size > 32 ? 256 : 64}`}
       alt={characterName || 'Character Portrait'}
       className={`rounded-circle ${className}`}
       width={size}

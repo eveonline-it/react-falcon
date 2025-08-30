@@ -76,9 +76,9 @@ const AllianceDashboard: React.FC = () => {
     );
   }
 
-  const alliance = allianceData.alliance || allianceData;
+  const alliance = allianceData;
   console.log('alliance :', alliance);
-  const executor = allianceData.executor_corporation;
+  const executor = allianceData.executor_corporation_id;
 
   return (
     <div className="alliance-dashboard">
@@ -115,7 +115,7 @@ const AllianceDashboard: React.FC = () => {
                 className="text-primary mb-2"
               />
               <h5 className="mb-1">
-                {formatNumber(corporationsData?.corporations?.length || 0)}
+                {formatNumber(corporationsData?.length || 0)}
               </h5>
               <small className="text-muted">Member Corporations</small>
             </Card.Body>
@@ -130,7 +130,9 @@ const AllianceDashboard: React.FC = () => {
                 className="text-success mb-2"
               />
               <h5 className="mb-1">
-                {formatNumber(alliance.member_count || 0)}
+                {formatNumber(
+                  corporationsData?.reduce((total: number, corp: any) => total + (corp.member_count || 0), 0) || 0
+                )}
               </h5>
               <small className="text-muted">Total Members</small>
             </Card.Body>
@@ -184,19 +186,19 @@ const AllianceDashboard: React.FC = () => {
                 <Row className="align-items-center">
                   <Col xs="auto">
                     <CorporationLogo
-                      corporationId={executor.corporation_id}
+                      corporationId={executor}
                       size={64}
                     />
                   </Col>
                   <Col>
                     <h6 className="mb-1">
-                      {executor.name}
+                      Executor Corporation
                       <small className="text-muted ms-2">
-                        [{executor.ticker}]
+                        ID: {executor}
                       </small>
                     </h6>
                     <p className="text-muted mb-0">
-                      {formatNumber(executor.member_count || 0)} members
+                      Member details loading...
                     </p>
                   </Col>
                 </Row>
@@ -219,9 +221,9 @@ const AllianceDashboard: React.FC = () => {
                   Unable to load member corporations:{' '}
                   {corporationsError.message}
                 </Alert>
-              ) : corporationsData?.corporations?.length > 0 ? (
+              ) : corporationsData && corporationsData.length > 0 ? (
                 <Row>
-                  {corporationsData.corporations.map((corp: any) => (
+                  {corporationsData.map((corp: any) => (
                     <Col
                       md={6}
                       lg={4}
@@ -269,23 +271,14 @@ const AllianceDashboard: React.FC = () => {
               </h5>
             </Card.Header>
             <Card.Body>
-              {alliance.description ? (
-                <div>
-                  <h6 className="text-muted">Description</h6>
-                  <p className="mb-3" style={{ whiteSpace: 'pre-wrap' }}>
-                    {alliance.description}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-muted mb-3">No description available</p>
-              )}
+              <p className="text-muted mb-3">No description available</p>
 
               <hr />
 
               <Row className="g-2">
                 <Col xs={6}>
                   <small className="text-muted">Alliance ID:</small>
-                  <p className="mb-2">{alliance.alliance_id}</p>
+                  <p className="mb-2">{alliance.id}</p>
                 </Col>
                 <Col xs={6}>
                   <small className="text-muted">Ticker:</small>
@@ -302,7 +295,9 @@ const AllianceDashboard: React.FC = () => {
                 <Col xs={6}>
                   <small className="text-muted">Members:</small>
                   <p className="mb-2">
-                    {formatNumber(alliance.member_count || 0)}
+                    {formatNumber(
+                      corporationsData?.reduce((total: number, corp: any) => total + (corp.member_count || 0), 0) || 0
+                    )}
                   </p>
                 </Col>
               </Row>

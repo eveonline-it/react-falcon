@@ -1,18 +1,32 @@
-import React from 'react';
-import Select from 'react-select';
+import React, { Ref, forwardRef } from 'react';
+import Select, { Props as SelectProps, GroupBase } from 'react-select';
 
-const MultiSelect = ({ options, placeholder, ref, ...rest }) => {
-  return (
-    <Select
-      ref={ref}
-      closeMenuOnSelect={false}
-      isMulti
-      options={options}
-      placeholder={placeholder}
-      classNamePrefix="react-select"
-      {...rest}
-    />
-  );
-};
+interface OptionType {
+  value: any;
+  label: string;
+}
+
+interface MultiSelectProps extends Omit<SelectProps<OptionType, true, GroupBase<OptionType>>, 'isMulti' | 'closeMenuOnSelect'> {
+  options: OptionType[];
+  placeholder?: string;
+}
+
+const MultiSelect = forwardRef<Select<OptionType, true, GroupBase<OptionType>>, MultiSelectProps>(
+  ({ options, placeholder, ...rest }, ref) => {
+    return (
+      <Select
+        ref={ref}
+        closeMenuOnSelect={false}
+        isMulti
+        options={options}
+        placeholder={placeholder}
+        classNamePrefix="react-select"
+        {...rest}
+      />
+    );
+  }
+);
+
+MultiSelect.displayName = 'MultiSelect';
 
 export default MultiSelect;

@@ -1,21 +1,21 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
-  Container, Row, Col, Card, Button, Table, Form, Spinner,
-  Alert, Badge, Modal, OverlayTrigger, Tooltip
+  Container, Row, Col, Card, Button, Table, Spinner,
+  Alert, Badge, Modal
 } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUsers, faGripVertical, faEye, faSync, faExclamationTriangle,
-  faUser, faBuilding, faGlobe, faInfoCircle, faSave,
-  faCheckCircle, faTimesCircle, faBan
+  faUser, faInfoCircle, faSave,
+  faCheckCircle, faTimesCircle, faBan, faUserFriends
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { CharacterPortrait, CorporationLogo, AllianceLogo } from 'components/common';
 import { useCurrentUser } from 'hooks/auth';
-import { useUserCharacters, useUpdateCharacterPositions } from 'hooks/useUserCharacters';
+import { useUserCharacters, useUpdateCharacterPositions, useCharacterGroups } from 'hooks/useUserCharacters';
 
 // Drag and Drop functionality using HTML5 API
-const DraggableRow = ({ character, index, onDragStart, onDragEnd, onDragOver, onDrop, isDragging, onViewDetails }) => {
+const DraggableRow = ({ character, index, onDragStart, onDragEnd, onDragOver, onDrop, isDragging, onViewDetails, onViewGroups }) => {
   const handleDragStart = (e) => {
     onDragStart(index, character);
     e.dataTransfer.effectAllowed = 'move';
@@ -128,6 +128,16 @@ const DraggableRow = ({ character, index, onDragStart, onDragEnd, onDragOver, on
           </div>
         </div>
       </td>
+      <td className="py-2 align-middle d-none d-xl-table-cell">
+        <Button
+          variant="outline-secondary"
+          size="sm"
+          onClick={() => onViewGroups(character)}
+          title="View Groups"
+        >
+          <FontAwesomeIcon icon={faUserFriends} size="xs" />
+        </Button>
+      </td>
       <td className="py-2 align-middle">
         <Button
           variant="outline-info"
@@ -150,6 +160,94 @@ const getCharacterStatus = (character) => {
   return { value: 'valid', label: 'Valid', color: 'success', icon: faCheckCircle };
 };
 
+// Character Groups Modal Component
+const CharacterGroupsModal = ({ show, onHide, character }) => {
+  const { data: groups, isLoading, error } = useCharacterGroups(character?.character_id, {
+    enabled: show && !!character?.character_id
+  });
+
+  if (!character) return null;
+
+  return (
+    <Modal show={show} onHide={onHide} size="lg">
+      <Modal.Header closeButton>
+        <Modal.Title>
+          <FontAwesomeIcon icon={faUserFriends} className="me-2" />
+          Groups for {character.character_name}
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <div className="text-center mb-3">
+          <CharacterPortrait 
+            characterId={character.character_id}
+            characterName={character.character_name}
+            size={64}
+            className="me-3"
+          />
+          <h5 className="d-inline-block mb-0">{character.character_name}</h5>
+        </div>
+
+        {isLoading ? (
+          <div className="text-center py-3">
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Loading groups...</span>
+            </Spinner>
+            <div className="mt-2">Loading groups...</div>
+          </div>
+        ) : error ? (
+          <Alert variant="danger">
+            <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
+            Failed to load character groups: {error.message}
+          </Alert>
+        ) : !groups || groups.length === 0 ? (
+          <Alert variant="info">
+            <FontAwesomeIcon icon={faInfoCircle} className="me-2" />
+            This character is not a member of any groups.
+          </Alert>
+        ) : (
+          <div>
+            <h6 className="mb-3">
+              Group Memberships ({groups.length})
+            </h6>
+            <div className="row g-2">
+              {groups.map((group, index) => (
+                <div key={group.id || index} className="col-md-6">
+                  <Card className="h-100">
+                    <Card.Body className="py-2">
+                      <div className="d-flex align-items-center">
+                        <FontAwesomeIcon 
+                          icon={faUserFriends} 
+                          className="me-2 text-primary" 
+                        />
+                        <div className="flex-grow-1">
+                          <h6 className="mb-1">{group.name || 'Unknown Group'}</h6>
+                          {group.description && (
+                            <small className="text-muted">{group.description}</small>
+                          )}
+                          {group.id && (
+                            <div>
+                              <small className="text-muted">ID: {group.id}</small>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="secondary" onClick={onHide}>
+          Close
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
+};
+
 const Characters = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useCurrentUser();
   const [dragState, setDragState] = useState({
@@ -160,6 +258,8 @@ const Characters = () => {
   const [characters, setCharacters] = useState([]);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
+  const [showGroupsModal, setShowGroupsModal] = useState(false);
+  const [selectedCharacterForGroups, setSelectedCharacterForGroups] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   const userId = user?.user_id;
@@ -257,6 +357,11 @@ const Characters = () => {
   const handleViewDetails = useCallback((character) => {
     setSelectedCharacter(character);
     setShowDetailsModal(true);
+  }, []);
+
+  const handleViewGroups = useCallback((character) => {
+    setSelectedCharacterForGroups(character);
+    setShowGroupsModal(true);
   }, []);
 
   const formatDateTime = (dateString) => {
@@ -391,6 +496,7 @@ const Characters = () => {
                         <th>Status</th>
                         <th className="d-none d-md-table-cell">Corporation</th>
                         <th className="d-none d-lg-table-cell">Alliance</th>
+                        <th className="d-none d-xl-table-cell" style={{ width: '80px' }}>Groups</th>
                         <th style={{ width: '80px' }}>Actions</th>
                       </tr>
                     </thead>
@@ -406,6 +512,7 @@ const Characters = () => {
                           onDrop={handleDrop}
                           isDragging={dragState.draggedIndex === index}
                           onViewDetails={handleViewDetails}
+                          onViewGroups={handleViewGroups}
                         />
                       ))}
                     </tbody>
@@ -596,6 +703,13 @@ const Characters = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Character Groups Modal */}
+      <CharacterGroupsModal 
+        show={showGroupsModal}
+        onHide={() => setShowGroupsModal(false)}
+        character={selectedCharacterForGroups}
+      />
     </Container>
   );
 };
