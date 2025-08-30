@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, Col, Form, Row } from 'react-bootstrap';
 import FalconCardHeader from 'components/common/FalconCardHeader';
 import CardDropdown from 'components/common/CardDropdown';

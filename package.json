@@ -92,11 +92,7 @@
     "build": "tsc && vite build",
     "start": "react-scripts start",
     "preview": "vite preview",
-    "type-check": "tsc --noEmit",
-    "predeploy": "npm run build && cp ./dist/index.html ./dist/404.html",
-    "predeploy:beta": "npm run build && cp ./dist/index.html ./dist/404.html",
-    "deploy": "echo https://falconreact.prium.me > ./dist/CNAME && gh-pages -d dist",
-    "deploy:beta": "echo frlive.prium.me > ./dist/CNAME && gh-pages -d dist -r git@github.com:prium/falcon-react-alpha2.git"
+    "typecheck": "tsc --noEmit"
   },
   "eslintConfig": {
     "extends": [

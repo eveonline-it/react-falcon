@@ -17,7 +17,7 @@ echarts.use([
   CanvasRenderer
 ]);
 
-const getOptions = (color, data) => ({
+const getOptions = (color: string, data: number[]) => ({
   series: [
     {
       type: 'line',
@@ -51,7 +51,7 @@ const getOptions = (color, data) => ({
   grid: { right: '20px', left: '0', bottom: '0', top: '20px' }
 });
 
-const CampaignChart = ({ color, data }) => {
+const CampaignChart = ({ color, data }: { color: string; data: number[] }) => {
   return (
     <BasicECharts
       echarts={echarts}

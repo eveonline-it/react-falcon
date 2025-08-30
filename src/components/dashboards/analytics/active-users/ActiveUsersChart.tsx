@@ -77,7 +77,7 @@ const getOptions = (getThemeColor: (color: string) => string, data: ActiveUsersC
     },
     axisLabel: {
       color: getThemeColor('gray-600'),
-      formatter: value => dayjs(value).format('MMM DD'),
+      formatter: (value: string) => dayjs(value).format('MMM DD'),
       align: 'left',
       fontSize: 11,
       padding: [0, 0, 0, 5],
@@ -96,7 +96,7 @@ const getOptions = (getThemeColor: (color: string) => string, data: ActiveUsersC
     axisLabel: {
       show: true,
       color: getThemeColor('gray-600'),
-      formatter: value => `${Math.round((value / 1000) * 10) / 10}k`
+      formatter: (value: number) => `${Math.round((value / 1000) * 10) / 10}k`
     },
     axisTick: { show: false },
     axisLine: { show: false }

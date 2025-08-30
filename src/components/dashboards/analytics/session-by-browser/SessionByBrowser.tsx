@@ -1,4 +1,3 @@
-import React from 'react';
 import { Card, Col, Form, Row, Table } from 'react-bootstrap';
 import FalconCardHeader from 'components/common/FalconCardHeader';
 import CardDropdown from 'components/common/CardDropdown';
@@ -7,7 +6,7 @@ import FalconLink from 'components/common/FalconLink';
 import SessionByBrowserChart from './SessionByBrowserChart';
 import TableRow from './TableRow';
 
-const SessionByBrowser = ({ data }) => {
+const SessionByBrowser = ({ data }: { data: any }) => {
   return (
     <Card className="h-100">
       <FalconCardHeader

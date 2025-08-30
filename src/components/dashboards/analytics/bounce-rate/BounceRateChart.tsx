@@ -71,7 +71,7 @@ const getOptions = (getThemeColor: (color: string) => string, data: number[]) =>
     },
     axisLabel: {
       color: getThemeColor('gray-600'),
-      formatter: value => dayjs(value).format('MMM DD'),
+      formatter: (value: string) => dayjs(value).format('MMM DD'),
       fontSize: 11
     }
   },
@@ -86,7 +86,7 @@ const getOptions = (getThemeColor: (color: string) => string, data: number[]) =>
     axisLabel: {
       show: true,
       color: getThemeColor('gray-600'),
-      formatter: value => `${value}%`,
+      formatter: (value: number) => `${value}%`,
       margin: 15
     },
     axisTick: { show: false },

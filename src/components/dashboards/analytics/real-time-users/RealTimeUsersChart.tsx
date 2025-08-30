@@ -10,7 +10,7 @@ import * as echarts from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { getRandomNumber, rgbaColor } from 'helpers/utils';
 import { useAppContext } from 'providers/AppProvider';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 echarts.use([
   TitleComponent,

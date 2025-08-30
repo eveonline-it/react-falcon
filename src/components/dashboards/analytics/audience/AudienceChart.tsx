@@ -22,7 +22,7 @@ echarts.use([
   LegendComponent
 ]);
 
-const getOptions = (getThemeColor, data) => ({
+const getOptions = (getThemeColor: (color: string) => string, data: any) => ({
   color: getThemeColor('gray-100'),
   tooltip: {
     trigger: 'axis',
@@ -35,7 +35,7 @@ const getOptions = (getThemeColor, data) => ({
     axisPointer: {
       type: 'none'
     },
-    formatter: params => {
+    formatter: (params: any) => {
       const percentage =
         ((params[0].value - params[1].value) / params[1].value) * 100;
       const perTemp = `
@@ -72,7 +72,7 @@ const getOptions = (getThemeColor, data) => ({
     data: getPastDates(7),
     axisLabel: {
       color: getThemeColor('gray-600'),
-      formatter: value => dayjs(value).format('MMM DD'),
+      formatter: (value: string) => dayjs(value).format('MMM DD'),
       align: 'left',
       fontSize: 11,
       padding: [0, 0, 0, 5],
@@ -158,7 +158,7 @@ const getOptions = (getThemeColor, data) => ({
   }
 });
 
-const AudienceChart = ({ data }) => {
+const AudienceChart = ({ data }: { data: any }) => {
   const chartRef = useRef(null);
   const { getThemeColor } = useAppContext();
 

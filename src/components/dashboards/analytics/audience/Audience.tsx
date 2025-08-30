@@ -6,7 +6,7 @@ import FalconLink from 'components/common/FalconLink';
 import SimpleBar from 'simplebar-react';
 import classNames from 'classnames';
 
-const TabTitle = ({ title, value, percentage, progress }) => (
+const TabTitle = ({ title, value, percentage, progress }: { title: string; value: string; percentage: string; progress: boolean }) => (
   <div className="p-2 pe-4 text-start cursor-pointer">
     <h6 className="text-800 fs-11 text-nowrap">{title}</h6>
     <h5 className="text-800">{value}</h5>
@@ -26,7 +26,7 @@ const TabTitle = ({ title, value, percentage, progress }) => (
   </div>
 );
 
-const Audience = ({ chartData, className }) => {
+const Audience = ({ chartData, className }: { chartData: any; className?: string }) => {
   return (
     <Card className={classNames(className, 'overflow-hidden')}>
       <Tab.Container id="audience-tab" defaultActiveKey="users">

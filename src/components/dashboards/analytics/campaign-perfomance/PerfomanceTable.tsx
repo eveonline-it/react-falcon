@@ -1,8 +1,7 @@
-import React from 'react';
 import { Table } from 'react-bootstrap';
 import SimpleBar from 'simplebar-react';
 
-const PerfomanceTableRow = ({ campaigns, cost, revenue }) => {
+const PerfomanceTableRow = ({ campaigns, cost, revenue }: { campaigns: string; cost: number; revenue: number }) => {
   return (
     <tr>
       <td className="text-truncate">{campaigns}</td>
@@ -13,7 +12,7 @@ const PerfomanceTableRow = ({ campaigns, cost, revenue }) => {
 };
 
 
-const PerfomanceTable = ({ data }) => {
+const PerfomanceTable = ({ data }: { data: Array<{ id: number; campaigns: string; cost: number; revenue: number }> }) => {
   return (
     <SimpleBar>
       <Table className="fs-10 mb-0 overflow-hidden">
@@ -25,7 +24,7 @@ const PerfomanceTable = ({ data }) => {
           </tr>
         </thead>
         <tbody>
-          {data.map(item => (
+          {data.map((item: { id: number; campaigns: string; cost: number; revenue: number }) => (
             <PerfomanceTableRow
               key={item.id}
               campaigns={item.campaigns}
