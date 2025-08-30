@@ -1,12 +1,16 @@
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useState } from 'react';
 import classNames from 'classnames';
-import { Nav, Navbar, Row, Col } from 'react-bootstrap';
+import { Nav, Navbar, Row, Col, Collapse } from 'react-bootstrap';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { navbarBreakPoint, topNavbarBreakpoint } from 'config';
 import Flex from 'components/common/Flex';
 import Logo from 'components/common/Logo';
 import NavbarVerticalMenu from './NavbarVerticalMenu';
 import ToggleButton from './ToggleButton';
-import staticRoutes, { loadDynamicRouteGroups, RouteGroup } from 'routes/siteMaps';
+import staticRoutes, {
+  loadDynamicRouteGroups,
+  RouteGroup
+} from 'routes/siteMaps';
 import { sitemapService } from 'services/sitemapService';
 import { capitalize } from 'helpers/utils';
 import NavbarTopDropDownMenus from 'components/navbar/top/NavbarTopDropDownMenus';
@@ -44,18 +48,21 @@ const NavbarVertical = () => {
   // Load dynamic routes from backend
   const loadRoutes = async (forceRefresh = false) => {
     if (isLoadingRoutes && !forceRefresh) return;
-    
+
     setIsLoadingRoutes(true);
     try {
       const dynamicRoutes = await loadDynamicRouteGroups(forceRefresh);
-      
+
       if (dynamicRoutes.length > 0) {
         setRoutes(dynamicRoutes);
       } else {
         setRoutes(staticRoutes);
       }
     } catch (error) {
-      console.warn('Failed to load dynamic routes in NavbarVertical, using static fallback:', error);
+      console.warn(
+        'Failed to load dynamic routes in NavbarVertical, using static fallback:',
+        error
+      );
       setRoutes(staticRoutes);
     } finally {
       setIsLoadingRoutes(false);
@@ -90,6 +97,51 @@ const NavbarVertical = () => {
       clearTimeout(time);
     }
     HTMLClassList.remove('navbar-vertical-collapsed-hover');
+  };
+
+  // Collapsible group component for route groups with labels
+  const CollapsibleRouteGroup = ({ route }: { route: RouteGroup }) => {
+    // Use localStorage to persist collapse state
+    const storageKey = `navbar-group-collapsed-${route.label}`;
+    const [isCollapsed, setIsCollapsed] = useState(() => {
+      const stored = localStorage.getItem(storageKey);
+      return stored === 'true';
+    });
+
+    const handleToggle = () => {
+      const newState = !isCollapsed;
+      setIsCollapsed(newState);
+      localStorage.setItem(storageKey, String(newState));
+    };
+
+    return (
+      <>
+        <Nav.Item as="li" className="navbar-vertical-group-wrapper">
+          <div
+            onClick={handleToggle}
+            className="navbar-vertical-group-toggle cursor-pointer"
+            aria-expanded={!isCollapsed}
+            role="button"
+          >
+            <span className="navbar-vertical-group-indicator">
+              <FontAwesomeIcon
+                icon={`chevron-${isCollapsed ? 'right' : 'down'}`}
+                className="fs--2"
+              />
+            </span>
+            <span className="navbar-vertical-group-label">
+              {capitalize(route.label)}
+            </span>
+            <div className="navbar-vertical-group-divider"></div>
+          </div>
+        </Nav.Item>
+        <Collapse in={!isCollapsed}>
+          <Nav className="flex-column" as="ul">
+            <NavbarVerticalMenu routes={route.children} />
+          </Nav>
+        </Collapse>
+      </>
+    );
   };
 
   const NavbarLabel = ({ label }: { label: string }) => (
@@ -132,20 +184,30 @@ const NavbarVertical = () => {
           <Nav className="flex-column" as="ul">
             {isLoadingRoutes ? (
               <Nav.Item as="li" className="text-center p-3">
-                <div className="spinner-border spinner-border-sm me-2" role="status">
+                <div
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                >
                   <span className="visually-hidden">Loading...</span>
                 </div>
                 Loading navigation...
               </Nav.Item>
             ) : routes.length > 0 ? (
-              routes.map(route => (
-                <Fragment key={route.label}>
-                  {!route.labelDisable && (
-                    <NavbarLabel label={capitalize(route.label)} />
-                  )}
-                  <NavbarVerticalMenu routes={route.children} />
-                </Fragment>
-              ))
+              routes.map(route => {
+                // If the group has a label and it's not disabled, make it collapsible
+                if (!route.labelDisable && route.label) {
+                  return (
+                    <CollapsibleRouteGroup key={route.label} route={route} />
+                  );
+                }
+                // Otherwise, just render the children directly
+                return (
+                  <NavbarVerticalMenu
+                    key={route.label}
+                    routes={route.children}
+                  />
+                );
+              })
             ) : (
               <Nav.Item as="li" className="text-center p-3 text-muted">
                 <small>No navigation available</small>

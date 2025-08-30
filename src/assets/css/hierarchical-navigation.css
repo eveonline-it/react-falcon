@@ -101,9 +101,31 @@
   transform: rotate(-180deg);
 }
 
+.dropdown-indicator[aria-expanded='false']::before {
+  transform: rotate(-90deg);
+}
+
 .nav-folder-header.dropdown-indicator::before {
   color: var(--falcon-primary);
   opacity: 1;
+}
+
+/* Group toggle indicators */
+.navbar-vertical-group-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  margin-right: 0.5rem;
+  color: var(--falcon-500);
+  transition: transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.navbar-vertical-group-indicator svg {
+  font-size: 0.625rem;
+  opacity: 0.8;
+  transition: transform 0.15s ease;
 }
 
 /* Active state for nested items */
@@ -137,12 +159,12 @@
 }
 
 /* Empty folder styling */
-.nav-folder-item[title*="Empty folder"] {
+.nav-folder-item[title*='Empty folder'] {
   opacity: 0.6;
   font-style: italic;
 }
 
-.nav-folder-item[title*="Empty folder"] .nav-link-text::after {
+.nav-folder-item[title*='Empty folder'] .nav-link-text::after {
   content: ' (empty)';
   font-size: 0.7rem;
   opacity: 0.7;
@@ -155,32 +177,32 @@
     margin-left: 0.5rem;
     padding-left: 0.25rem;
   }
-  
+
   .navbar-vertical .nav .nav .nav {
     margin-left: 0.25rem;
   }
 }
 
 /* Dark mode support */
-[data-bs-theme="dark"] .nav-folder-header {
+[data-bs-theme='dark'] .nav-folder-header {
   background-color: rgba(255, 255, 255, 0.08);
   border-left-color: var(--falcon-primary);
 }
 
-[data-bs-theme="dark"] .nav-parent-item {
+[data-bs-theme='dark'] .nav-parent-item {
   background-color: rgba(255, 255, 255, 0.05);
   border-left-color: rgba(255, 255, 255, 0.2);
 }
 
-[data-bs-theme="dark"] .navbar-vertical .nav .nav {
+[data-bs-theme='dark'] .navbar-vertical .nav .nav {
   border-left-color: rgba(255, 255, 255, 0.15);
 }
 
-[data-bs-theme="dark"] .nav-folder-item:hover {
+[data-bs-theme='dark'] .nav-folder-item:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-bs-theme="dark"] .nav-parent-item:hover {
+[data-bs-theme='dark'] .nav-parent-item:hover {
   background-color: rgba(255, 255, 255, 0.08);
   border-left-color: rgba(255, 255, 255, 0.3);
 }
@@ -188,6 +210,92 @@
 /* Animation for expand/collapse */
 .collapsing {
   transition: height 0.25s ease;
+}
+
+/* Collapsible group headers (Navigation Groups with labels) */
+.navbar-vertical-group-wrapper {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.navbar-vertical-group-wrapper:first-child {
+  margin-top: 0.5rem;
+}
+
+.navbar-vertical-group-toggle {
+  display: flex;
+  align-items: center;
+  /* padding: 0.25rem 1rem; */
+  position: relative;
+  transition: background-color 0.15s ease;
+  border-radius: 0.25rem;
+}
+
+.navbar-vertical-group-toggle:hover {
+  background-color: rgba(var(--falcon-primary-rgb), 0.05);
+}
+
+.navbar-vertical-group-label {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.5px;
+  color: var(--falcon-600);
+  flex-shrink: 0;
+  margin-right: 0.75rem;
+}
+
+.navbar-vertical-group-divider {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--falcon-300), transparent);
+  margin-left: 0.25rem;
+}
+
+/* Dark mode support for group headers */
+[data-bs-theme='dark'] .navbar-vertical-group-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-bs-theme='dark'] .navbar-vertical-group-label {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+[data-bs-theme='dark'] .navbar-vertical-group-indicator {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+[data-bs-theme='dark'] .navbar-vertical-group-divider {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), transparent);
+}
+
+/* Collapsed navbar adjustments */
+.navbar-vertical-collapsed .navbar-vertical-group-toggle {
+  padding: 0.25rem 0.5rem;
+}
+
+.navbar-vertical-collapsed .navbar-vertical-group-label {
+  display: none;
+}
+
+.navbar-vertical-collapsed .navbar-vertical-group-divider {
+  display: none;
+}
+
+.navbar-vertical-collapsed .navbar-vertical-group-indicator {
+  margin-right: 0;
+}
+
+.navbar-vertical-collapsed-hover .navbar-vertical-group-label {
+  display: inline;
+}
+
+.navbar-vertical-collapsed-hover .navbar-vertical-group-divider {
+  display: block;
+}
+
+.navbar-vertical-collapsed-hover .navbar-vertical-group-indicator {
+  margin-right: 0.5rem;
 }
 
 /* Better visual hierarchy */
@@ -215,7 +323,11 @@
   bottom: -2px;
   border: 1px solid transparent;
   border-radius: 4px;
-  background: linear-gradient(135deg, rgba(var(--falcon-primary-rgb), 0.1), transparent);
+  background: linear-gradient(
+    135deg,
+    rgba(var(--falcon-primary-rgb), 0.1),
+    transparent
+  );
   z-index: -1;
 }
 

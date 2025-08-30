@@ -7,7 +7,9 @@ import { useAppContext } from 'providers/AppProvider';
 
 const CollapseItems = ({ route }) => {
   const { pathname } = useLocation();
-  const isFolder = route.is_folder || (!route.to && route.children && route.children.length > 0);
+  const isFolder =
+    route.is_folder ||
+    (!route.to && route.children && route.children.length > 0);
 
   const openCollapse = childrens => {
     const checkLink = children => {
@@ -62,9 +64,12 @@ const NavbarVerticalMenu = ({ routes }) => {
     }
   };
   return routes.map(route => {
-    const isFolder = route.is_folder || (!route.to && route.children && route.children.length > 0);
-    const isEmptyFolder = isFolder && (!route.children || route.children.length === 0);
-    
+    const isFolder =
+      route.is_folder ||
+      (!route.to && route.children && route.children.length > 0);
+    const isEmptyFolder =
+      isFolder && (!route.children || route.children.length === 0);
+
     // Handle folders without children (empty folders)
     if (isEmptyFolder) {
       return (
@@ -116,7 +121,7 @@ const NavbarVerticalMenu = ({ routes }) => {
         </Nav.Item>
       );
     }
-    
+
     // Handle items with children (collapsible items)
     return <CollapseItems route={route} key={route.name} />;
   });
