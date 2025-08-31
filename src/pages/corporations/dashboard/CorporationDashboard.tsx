@@ -495,9 +495,25 @@ const CorporationDashboard: React.FC<CorporationDashboardProps> = ({
                 {corp.description && (
                   <div className="col-12">
                     <h6 className="text-body-secondary mb-2">Description</h6>
-                    <p className="text-body-emphasis mb-0">
-                      {corp.description}
-                    </p>
+                    <div 
+                      className="text-body-secondary mb-0"
+                      style={{ 
+                        fontSize: '11px',
+                        lineHeight: '1.3',
+                        maxHeight: '200px',
+                        overflow: 'auto'
+                      }}
+                    >
+                      <style>
+                        {`.corp-description-override * { font-size: 11px !important; line-height: 1.3 !important; }`}
+                      </style>
+                      <div 
+                        className="corp-description-override"
+                        dangerouslySetInnerHTML={{ 
+                          __html: corp.description.replace(/style\s*=\s*"[^"]*"/gi, '')
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
