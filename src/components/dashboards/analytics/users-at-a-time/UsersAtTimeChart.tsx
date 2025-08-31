@@ -11,7 +11,7 @@ import * as echarts from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
 import { getPastDates, getRandomNumber, rgbaColor } from 'helpers/utils';
 import { useAppContext } from 'providers/AppProvider';
-import React from 'react';
+// React import not needed in React 19 with automatic JSX transform
 
 echarts.use([
   TitleComponent,
@@ -49,14 +49,14 @@ const hours = [
   '11 PM'
 ];
 
-const data = [];
+const data: [number, number, number][] = [];
 for (let i = 0; i < 24; i += 1) {
   for (let j = 0; j < 7; j += 1) {
     data.push([j, i, getRandomNumber(20, 300)]);
   }
 }
 
-const tooltipFormatter = params => {
+const tooltipFormatter = (params: any) => {
   return `<div>
         <p class='mb-0 text-600'>${dayjs(params.name).format(
           'MMM DD, YYYY'
@@ -73,7 +73,7 @@ const tooltipFormatter = params => {
       </div>`;
 };
 
-const getOptions = getThemeColor => ({
+const getOptions = (getThemeColor: (color: string) => string) => ({
   gradientColor: [getThemeColor('info'), getThemeColor('primary')],
   tooltip: {
     position: 'top',
@@ -93,7 +93,7 @@ const getOptions = getThemeColor => ({
     axisTick: { show: false },
     axisLabel: {
       color: getThemeColor('gray-600'),
-      formatter: value => dayjs(value).format('ddd')
+      formatter: (value: string) => dayjs(value).format('ddd')
     },
     axisLine: {
       lineStyle: {

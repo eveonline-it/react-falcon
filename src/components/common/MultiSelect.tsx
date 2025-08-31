@@ -11,7 +11,7 @@ interface MultiSelectProps extends Omit<SelectProps<OptionType, true, GroupBase<
   placeholder?: string;
 }
 
-const MultiSelect = forwardRef<Select<OptionType, true, GroupBase<OptionType>>, MultiSelectProps>(
+const MultiSelect = forwardRef<any, MultiSelectProps>(
   ({ options, placeholder, ...rest }, ref) => {
     return (
       <Select

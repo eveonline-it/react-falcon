@@ -1,14 +1,28 @@
-import React, { useState } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useState } from 'react';
 import { Button, Card, Col, Form, ProgressBar, Row } from 'react-bootstrap';
 import Flex from 'components/common/Flex';
-import { toDoList } from 'data/dashboard/crm';
+import { toDoList } from '../../../data/dashboard/crm.js';
 import CardDropdown from 'components/common/CardDropdown';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import IconItem from 'components/common/icon/IconItem';
 import classNames from 'classnames';
 import { Link } from 'react-router';
 
-const ToDoListItem = ({ item, index, handleChange }) => {
+// TypeScript interfaces
+interface TodoItem {
+  id: number;
+  task: string;
+  completed: boolean;
+}
+
+interface ToDoListItemProps {
+  item: TodoItem;
+  index: number;
+  handleChange: (id: number, completed: boolean) => void;
+}
+
+const ToDoListItem: React.FC<ToDoListItemProps> = ({ item, index, handleChange }) => {
   return (
     <Flex
       justifyContent="between"
@@ -57,9 +71,9 @@ const ToDoListItem = ({ item, index, handleChange }) => {
   );
 };
 
-const ToDoList = () => {
-  const [todoItems, setTodoItems] = useState(toDoList);
-  const handleChange = (id, completed) => {
+const ToDoList: React.FC = () => {
+  const [todoItems, setTodoItems] = useState<TodoItem[]>(toDoList as TodoItem[]);
+  const handleChange = (id: number, completed: boolean) => {
     const updatedTodos = todoItems.map(item =>
       item.id === id ? { ...item, completed } : item
     );
@@ -91,7 +105,6 @@ const ToDoList = () => {
             key={item.id}
             item={item}
             index={index}
-            setTodoItems={setTodoItems}
             handleChange={handleChange}
           />
         ))}

@@ -1,9 +1,9 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import * as echarts from 'echarts/core';
 import { useAppContext } from 'providers/AppProvider';
 import ReactEchart from 'components/common/ReactEchart';
 
-const getOptions = getThemeColor => ({
+const getOptions = (getThemeColor: (color: string) => string) => ({
   yAxis: [
     {
       data: [

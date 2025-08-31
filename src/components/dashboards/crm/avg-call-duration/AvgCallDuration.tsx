@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Card, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Flex from 'components/common/Flex';

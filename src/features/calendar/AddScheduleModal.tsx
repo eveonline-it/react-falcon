@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useState, useEffect } from 'react';
 import { Button, Form, Modal } from 'react-bootstrap';
 import { v4 as uuid } from 'uuid';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';

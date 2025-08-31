@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useState } from 'react';
 import { Card, Col, Offcanvas, Row } from 'react-bootstrap';
 import AllTicketsHeader from './AllTicketsHeader';
 import TicketFilteringForm from './TicketFilteringForm';

@@ -1,4 +1,4 @@
-import React from 'react';
+// React import not needed in React 19 with automatic JSX transform
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import WidgetSectionTitle from './WidgetSectionTitle';
 // import BillingHeader from 'features/e-commerce/billing/BillingHeader';
@@ -8,14 +8,14 @@ import BirthdayNotice from 'features/social/feed/BirthdatNotice';
 import DangerZone from 'pages/user/settings/DangerZone';
 // import GreetingCard from 'components/dashboards/e-commerce/greetings/GreetingCard';
 import { Card, Col, Row } from 'react-bootstrap';
-import { notifications } from 'data/dashboard/ecom';
+// import { notifications } from 'data/dashboard/ecom'; // Unused import
 import {
   greetingItems,
   markers,
   managementEvents,
   discussionMembers
 } from 'data/dashboard/projectManagement';
-import { weather } from 'data/dashboard/default';
+import { weather } from '../data/dashboard/default.js';
 import Greetings from 'components/dashboards/project-management/Greetings';
 import Weather from 'components/dashboards/default/Weather';
 import SpaceWarning from 'components/dashboards/default/SpaceWarning';
@@ -44,7 +44,7 @@ const OthersWidgets = () => {
           {/* <BillingHeader /> */}
           <DepositeStatus />
           <EventFooter />
-          <BirthdayNotice name="Emma Watson" profileLink="/user/profile" />
+          <BirthdayNotice name="Emma Watson" profileLink="/user/profile" className="" />
         </Col>
         <Col xxl={4}>
           <DangerZone />
@@ -72,7 +72,7 @@ const OthersWidgets = () => {
               <Weather data={weather} />
             </Col>
             <Col xl={12}>
-              <SpaceWarning />
+              <SpaceWarning className="" />
             </Col>
 
             <Col xl={12}>

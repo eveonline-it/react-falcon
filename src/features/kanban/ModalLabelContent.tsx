@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { labels } from 'data/kanban';
 import Flex from 'components/common/Flex';
 import SubtleBadge from 'components/common/SubtleBadge';

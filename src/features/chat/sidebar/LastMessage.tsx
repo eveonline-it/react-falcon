@@ -1,5 +1,5 @@
-import React from 'react';
-import { users } from 'data/dashboard/default';
+// React 19 JSX Transform - no explicit React import needed
+import { users } from '../../../data/dashboard/default.js';
 
 const LastMessage = ({ lastMessage, thread }) => {
   const user = users.find(({ id }) => id === lastMessage?.senderUserId);

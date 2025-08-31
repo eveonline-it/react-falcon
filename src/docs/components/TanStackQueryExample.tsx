@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useState } from 'react';
 import { Card, Row, Col, Button, Spinner, Alert, Form } from 'react-bootstrap';
 import { useUserProfile, useUpdateUserProfile } from 'hooks/auth/useUserProfile';
 import { useAnalyticsOverview, useRevenueData } from 'hooks/analytics/useAnalytics';

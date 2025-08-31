@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Card, ProgressBar } from 'react-bootstrap';
 import Flex from 'components/common/Flex';
 import Avatar, { AvatarGroup } from 'components/common/Avatar';

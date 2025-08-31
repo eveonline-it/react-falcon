@@ -1263,7 +1263,7 @@ export const routeComponents: Record<string, () => Promise<any>> = {
   'PermissionsAdmin': () => import('../pages/admin/PermissionsAdmin'),
   'CorporationsAdmin': () => import('../pages/admin/CorporationsAdmin'),
   'AllianceAdmin': () => import('../pages/admin/AllianceAdmin'),
-  'SchedulerAdmin': () => import('../pages/admin/SchedulerAdmin'),
+  'SchedulerAdmin': () => import('../pages/admin/SchedulerAdmin.jsx'),
   'TaskAnalyticsAdmin': () => import('../pages/admin/TaskAnalyticsAdmin'),
   'SettingsAdmin': () => import('../pages/admin/SettingsAdmin'),
   'SdeAdmin': () => import('../pages/admin/SdeAdmin'),

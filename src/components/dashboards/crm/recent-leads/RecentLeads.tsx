@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Card } from 'react-bootstrap';
 import { Link } from 'react-router';
 import AdvanceTable from 'components/common/advance-table/AdvanceTable';
@@ -9,9 +9,18 @@ import FalconCardHeader from 'components/common/FalconCardHeader';
 import Flex from 'components/common/Flex';
 import IconItem from 'components/common/icon/IconItem';
 import SubtleBadge from 'components/common/SubtleBadge';
-import { recentLeadsTableData } from 'data/dashboard/crm';
+import { recentLeadsTableData } from '../../../../data/dashboard/crm.js';
 import useAdvanceTable from 'hooks/ui/useAdvanceTable';
 import AdvanceTableProvider from 'providers/AdvanceTableProvider';
+
+// TypeScript interfaces
+interface RecentLeadData {
+  name: string;
+  img: string;
+  email: string;
+  status: string;
+  variant: string;
+}
 
 const columns = [
   {
@@ -25,7 +34,7 @@ const columns = [
         className: 'ps-0'
       }
     },
-    cell: ({ row: { original } }) => {
+    cell: ({ row: { original } }: { row: { original: RecentLeadData } }) => {
       const { name, img } = original;
       return (
         <Link to="#!" className="text-800">
@@ -43,7 +52,7 @@ const columns = [
     meta: {
       headerProps: { className: 'text-900' }
     },
-    cell: ({ row: { original } }) => {
+    cell: ({ row: { original } }: { row: { original: RecentLeadData } }) => {
       const { email } = original;
       return (
         <a href={`mailto:${email}`} className="mb-0">
@@ -58,7 +67,7 @@ const columns = [
     meta: {
       headerProps: { className: 'text-900' }
     },
-    cell: ({ row: { original } }) => {
+    cell: ({ row: { original } }: { row: { original: RecentLeadData } }) => {
       const { status, variant } = original;
       return (
         <SubtleBadge pill bg={variant} className="me-2">

@@ -1,14 +1,33 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import SimpleBar from 'simplebar-react';
 import { Table } from 'react-bootstrap';
 import { Link } from 'react-router';
 import classNames from 'classnames';
 import paths from 'routes/paths';
 
-const getTotal = (data, key) =>
-  data.reduce((acc, val) => acc + Number(val[key]), 0);
+// TypeScript interfaces
+interface DealForecastItem {
+  id: string;
+  owner: string;
+  qualifiedItem: number;
+  appointment: number;
+  contactSent: number;
+  closedWon: number;
+}
 
-const DealForeCastTableRow = ({ item, isLast }) => {
+interface DealForeCastTableProps {
+  data: DealForecastItem[];
+}
+
+interface DealForeCastTableRowProps {
+  item: DealForecastItem;
+  isLast: boolean;
+}
+
+const getTotal = (data: DealForecastItem[], key: keyof Omit<DealForecastItem, 'id' | 'owner'>) =>
+  data.reduce((acc: number, val: DealForecastItem) => acc + Number(val[key]), 0);
+
+const DealForeCastTableRow: React.FC<DealForeCastTableRowProps> = ({ item, isLast }) => {
   return (
     <tr>
       <td
@@ -52,7 +71,7 @@ const DealForeCastTableRow = ({ item, isLast }) => {
     </tr>
   );
 };
-const DealForeCastTable = ({ data }) => {
+const DealForeCastTable: React.FC<DealForeCastTableProps> = ({ data }) => {
   return (
     <SimpleBar>
       <Table className="fs-10 mb-0">
@@ -68,7 +87,7 @@ const DealForeCastTable = ({ data }) => {
           </tr>
         </thead>
         <tbody>
-          {data.map((item, index) => (
+          {data.map((item: DealForecastItem, index: number) => (
             <DealForeCastTableRow
               key={item.id}
               item={item}

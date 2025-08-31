@@ -14,13 +14,13 @@ import {
   weeklySalesData,
   storageStatus,
   topProducts
-} from 'data/dashboard/default';
+} from '../data/dashboard/default.js';
 import {
   payment,
   activeUser,
   grossRevenue,
   candleChartData
-} from 'data/dashboard/saas';
+} from '../data/dashboard/saas.js';
 // import { saleItems, totalSale } from 'data/dashboard/ecom';
 
 import {

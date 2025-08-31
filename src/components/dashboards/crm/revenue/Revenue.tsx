@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useState } from 'react';
 import { Card, Col, Form, Nav, Row, Tab } from 'react-bootstrap';
 import Flex from 'components/common/Flex';
 import RevenueChart from './RevenueChart';
-import { revenueChartData } from 'data/dashboard/crm';
+import { revenueChartData } from '../../../../data/dashboard/crm.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import CardDropdown from 'components/common/CardDropdown';
 

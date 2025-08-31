@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import WidgetSectionTitle from './WidgetSectionTitle';
 import { Col, Row } from 'react-bootstrap';
 import Error404 from 'components/errors/Error404';

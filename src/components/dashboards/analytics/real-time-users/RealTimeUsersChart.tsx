@@ -11,6 +11,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { getRandomNumber, rgbaColor } from 'helpers/utils';
 import { useAppContext } from 'providers/AppProvider';
 import { useEffect, useRef } from 'react';
+import ReactEChartsCore from 'echarts-for-react/lib/core';
 
 echarts.use([
   TitleComponent,
@@ -27,7 +28,7 @@ const data = [
 ];
 const axisData = Array.from(Array(25).keys());
 
-const getOptions = getThemeColor => ({
+const getOptions = (getThemeColor: (color: string) => string) => ({
   tooltip: {
     trigger: 'axis',
     padding: [7, 10],
@@ -39,7 +40,7 @@ const getOptions = getThemeColor => ({
     textStyle: { color: getThemeColor('gray-1100') },
     borderWidth: 1,
     transitionDuration: 0,
-    formatter: params => {
+    formatter: (params: any) => {
       return `
         <div>
           <h6 class="fs-10 text-700 mb-0 d-flex align-items-center">
@@ -64,7 +65,7 @@ const getOptions = getThemeColor => ({
     axisLine: {
       show: false
     },
-    boundaryGap: [0.2, 0.2],
+    boundaryGap: false,
     data: axisData
   },
   yAxis: {
@@ -93,8 +94,12 @@ const getOptions = getThemeColor => ({
   grid: { right: '0px', left: '0px', bottom: 0, top: 0 }
 });
 
-const RealTimeUsersChart = ({ setUserCount }) => {
-  const chartRef = useRef(null);
+interface RealTimeUsersChartProps {
+  setUserCount: (count: number) => void;
+}
+
+const RealTimeUsersChart: React.FC<RealTimeUsersChartProps> = ({ setUserCount }) => {
+  const chartRef = useRef<ReactEChartsCore | null>(null);
   const { getThemeColor } = useAppContext();
 
   useEffect(() => {
@@ -107,7 +112,7 @@ const RealTimeUsersChart = ({ setUserCount }) => {
 
       setUserCount(rndData);
 
-      chartRef.current.getEchartsInstance().setOption({
+      chartRef.current?.getEchartsInstance().setOption({
         xAxis: {
           data: axisData
         },

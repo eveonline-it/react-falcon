@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Card, Row, Col } from 'react-bootstrap';
 import { Link } from 'react-router';
 import editing from 'assets/img/illustrations/4.png';

@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Button, Card, Form } from 'react-bootstrap';
 
 const PropertiesFilteringForm = () => {

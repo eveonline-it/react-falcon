@@ -3,7 +3,7 @@ import { Card, Col, Row, ButtonGroup, Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Stat from './Stat';
 import CandleChartBody from './CandleChartBody';
-import { candleChartStatsData } from 'data/dashboard/saas';
+import { candleChartStatsData } from '../../../../data/dashboard/saas.js';
 
 const CandleChart = ({ data }) => {
   const chartRef = useRef(null);

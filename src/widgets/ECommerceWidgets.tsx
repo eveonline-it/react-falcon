@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 // E-commerce components are not available
 // import BillingCard from 'features/e-commerce/billing/BillingCard';
 // import ShoppingCart from 'features/e-commerce/cart/ShoppingCart';
@@ -6,7 +6,7 @@ import React from 'react';
 // import BestSellingProducts from 'components/dashboards/e-commerce/BestSellingProducts';
 import { Card, Col, Row } from 'react-bootstrap';
 import WidgetSectionTitle from './WidgetSectionTitle';
-import { products } from 'data/dashboard/ecom';
+import { products } from '../data/dashboard/ecom.js';
 
 const ECommerceWidgets = () => {
   return (

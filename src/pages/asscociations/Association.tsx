@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import Flex from 'components/common/Flex';
 
 const Association = ({ image, title, description }) => (

@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import paths from 'routes/paths';
 import { Link } from 'react-router';
 import useAdvanceTable from './useAdvanceTable';

@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import FalconCardFooterLink from 'components/common/FalconCardFooterLink';
 import FalconCardHeader from 'components/common/FalconCardHeader';
 import CardDropdown from 'components/common/CardDropdown';
@@ -9,7 +9,35 @@ import Avatar from 'components/common/Avatar';
 import classNames from 'classnames';
 import paths from 'routes/paths';
 
-const ActiveUsers = ({ users, end = 5, ...rest }) => {
+// TypeScript interfaces
+interface AvatarProps {
+  src?: string;
+  name?: string;
+  size?: string;
+  status?: string;
+}
+
+interface User {
+  id: string;
+  name: string;
+  avatar: AvatarProps;
+  role: string;
+}
+
+interface ActiveUsersProps {
+  users: User[];
+  end?: number;
+  [key: string]: any;
+}
+
+interface ActiveUserProps {
+  name: string;
+  avatar: AvatarProps;
+  role: string;
+  isLast?: boolean;
+}
+
+const ActiveUsers: React.FC<ActiveUsersProps> = ({ users, end = 5, ...rest }) => {
   return (
     <Card {...rest}>
       <FalconCardHeader
@@ -20,7 +48,7 @@ const ActiveUsers = ({ users, end = 5, ...rest }) => {
         endEl={<CardDropdown />}
       />
       <Card.Body className="py-2">
-        {users.slice(0, end).map(({ id, ...rest }, index) => (
+        {users.slice(0, end).map(({ id, ...rest }: User, index: number) => (
           <ActiveUser {...rest} key={id} isLast={index === users.length - 1} />
         ))}
       </Card.Body>
@@ -33,7 +61,7 @@ const ActiveUsers = ({ users, end = 5, ...rest }) => {
   );
 };
 
-const ActiveUser = ({ name, avatar, role, isLast }) => (
+const ActiveUser: React.FC<ActiveUserProps> = ({ name, avatar, role, isLast }) => (
   <Flex
     className={classNames('align-items-center position-relative', {
       'mb-3': !isLast

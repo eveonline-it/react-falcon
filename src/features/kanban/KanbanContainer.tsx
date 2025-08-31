@@ -1,16 +1,35 @@
-import React, { useEffect, useRef, useState } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useEffect, useRef, useState } from 'react';
 import KanbanColumn from './KanbanColumn';
 import AddAnotherForm from './AddAnotherForm';
 import KanbanModal from './KanbanModal';
 import IconButton from 'components/common/IconButton';
 import Bowser from 'bowser';
 import { useKanbanContext } from 'providers/KanbanProvider';
-import { DndContext, closestCorners, DragOverlay } from '@dnd-kit/core';
+import { DndContext, closestCorners, DragOverlay, DragStartEvent, DragOverEvent, DragEndEvent } from '@dnd-kit/core';
 
 import { useGetDndSensor } from 'hooks/ui/useGetDndSensor';
 
 import { arrayMove } from '@dnd-kit/sortable';
 import TaskCard from './TaskCard';
+
+// TypeScript interfaces
+interface KanbanItem {
+  id: number;
+  name: string;
+  items: KanbanTask[];
+}
+
+interface KanbanTask {
+  id: number;
+  columnId?: number;
+  [key: string]: any;
+}
+
+interface ListData {
+  title: string;
+  [key: string]: any;
+}
 
 const KanbanContainer = () => {
   const kanbanItems = useKanbanContext(state => state.kanbanItems || []);
@@ -26,9 +45,9 @@ const KanbanContainer = () => {
 
   const sensor = useGetDndSensor();
 
-  const handleSubmit = listData => {
+  const handleSubmit = (listData: ListData) => {
     const listId = Math.max(...kanbanItems.map(item => item.id)) + 1;
-    const newList = {
+    const newList: KanbanItem = {
       id: listId,
       name: listData.title,
       items: []
@@ -45,11 +64,11 @@ const KanbanContainer = () => {
     const browser = Bowser.getParser(window.navigator.userAgent);
     const { platform, browser: browserInfo } = browser.parse().parsedResult;
 
-    if (platform.type === 'tablet') {
+    if (platform.type === 'tablet' && containerRef.current) {
       containerRef.current.classList.add('ipad');
     }
 
-    if (platform.type === 'mobile') {
+    if (platform.type === 'mobile' && containerRef.current) {
       containerRef.current.classList.add('mobile');
       if (browserInfo.name === 'Safari') {
         containerRef.current.classList.add('safari');
@@ -60,20 +79,20 @@ const KanbanContainer = () => {
     }
   }, []);
 
-  const findColumn = id => {
+  const findColumn = (id: number | string): KanbanItem | undefined => {
     return kanbanItems.find(
       col => col.items.some(item => item.id === id) || col.id === id
     );
   };
 
-  const getColumnIndex = (items, id) => {
-    return items.findIndex(item => item.id === Number(id));
+  const getColumnIndex = (items: KanbanTask[], id: number | string): number => {
+    return items.findIndex((item: KanbanTask) => item.id === Number(id));
   };
 
-  const handleDragStart = event => {
+  const handleDragStart = (event: DragStartEvent) => {
     setActiveTask(event.active.data.current);
   };
-  const handleDragOver = event => {
+  const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!active || !over) return;
 
@@ -108,7 +127,7 @@ const KanbanContainer = () => {
       );
     }
   };
-  const handleDragEnd = ({ active, over }) => {
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
     if (!active || !over) return;
 
     const activeColumnId = active.data.current?.columnId;
@@ -158,7 +177,7 @@ const KanbanContainer = () => {
       onDragEnd={handleDragEnd}
     >
       <div className="kanban-container me-n3 scrollbar" ref={containerRef}>
-        {kanbanItems.map(kanbanColumnItem => (
+        {kanbanItems.map((kanbanColumnItem: KanbanItem) => (
           <KanbanColumn
             key={kanbanColumnItem.id}
             kanbanColumnItem={kanbanColumnItem}

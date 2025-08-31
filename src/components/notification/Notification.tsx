@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import classNames from 'classnames';
 import { Link } from 'react-router';
 import createMarkup from 'helpers/createMarkup';

@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import orderBy from 'lodash/orderBy';
 import { toast } from 'react-toastify';
 

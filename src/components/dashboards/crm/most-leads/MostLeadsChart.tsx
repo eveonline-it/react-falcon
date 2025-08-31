@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useRef } from 'react';
 import { PieChart } from 'echarts/charts';
 import {
   GridComponent,

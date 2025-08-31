@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import dayjs from 'dayjs';
 import * as echarts from 'echarts/core';
 import { getPosition, tooltipFormatter } from 'helpers/echart-utils';
@@ -7,7 +7,17 @@ import { useBreakpoints } from 'hooks/ui/useBreakpoints';
 import { useAppContext } from 'providers/AppProvider';
 import ReactEchart from 'components/common/ReactEchart';
 
-const getOptions = (getThemeColor, data) => ({
+// TypeScript interfaces
+interface ChartData {
+  closedAmount: number[];
+  revenueGoal: number[];
+}
+
+interface DealVSGoalChartProps {
+  data: ChartData;
+}
+
+const getOptions = (getThemeColor: (color: string) => string, data: ChartData) => ({
   color: [getThemeColor('primary'), getThemeColor('warning')],
   tooltip: {
     trigger: 'axis',
@@ -18,7 +28,7 @@ const getOptions = (getThemeColor, data) => ({
     borderWidth: 1,
     formatter: tooltipFormatter,
     transitionDuration: 0,
-    position(pos, params, dom, rect, size) {
+    position(pos: any, params: any, dom: any, rect: any, size: any) {
       return getPosition(pos, params, dom, rect, size);
     }
   },
@@ -62,7 +72,7 @@ const getOptions = (getThemeColor, data) => ({
     axisLabel: {
       color: getThemeColor('gray-400'),
       align: 'right',
-      formatter: value => dayjs(value).format('DD MMM, YY'),
+      formatter: (value: string) => dayjs(value).format('DD MMM, YY'),
       margin: 20
     }
   },
@@ -85,7 +95,7 @@ const getOptions = (getThemeColor, data) => ({
     axisLabel: {
       show: true,
       color: getThemeColor('gray-400'),
-      formatter: function (value) {
+      formatter: function (value: number) {
         return `$${value}`;
       },
       margin: 15
@@ -135,7 +145,7 @@ const getOptions = (getThemeColor, data) => ({
   }
 });
 
-const DealVSGoalChart = ({ data }) => {
+const DealVSGoalChart: React.FC<DealVSGoalChartProps> = ({ data }) => {
   const { breakpoints } = useBreakpoints();
   const { getThemeColor } = useAppContext();
   return (

@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Button, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useAppContext } from 'providers/AppProvider';
 

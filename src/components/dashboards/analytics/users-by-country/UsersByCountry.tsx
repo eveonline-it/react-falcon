@@ -6,8 +6,15 @@ import { Button, Card, Col, Form, Row } from 'react-bootstrap';
 import UsersByCountryChart from './UsersByCountryChart';
 import WorldMap from './WorldMap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSync } from '@fortawesome/free-solid-svg-icons';
 import Flex from 'components/common/Flex';
 import { CountryData } from 'components/dashboards/types';
+
+// Import the interface from WorldMap
+interface MapDataItem {
+  name: string;
+  value: number;
+}
 
 // TypeScript interfaces
 interface UsersByCountryProps {
@@ -16,11 +23,20 @@ interface UsersByCountryProps {
 }
 
 const UsersByCountry: React.FC<UsersByCountryProps> = ({ chartData, mapData }) => {
-  const chartRef = useRef(null);
+  const chartRef = useRef<any>(null);
+  
+  // Transform mapData to the format expected by WorldMap
+  const worldMapData: MapDataItem[] = Object.entries(mapData).map(([name, value]) => ({
+    name,
+    value
+  }));
+
   const handleMapReset = () => {
-    chartRef.current.getEchartsInstance().dispatchAction({
-      type: 'restore'
-    });
+    if (chartRef.current) {
+      chartRef.current.getEchartsInstance().dispatchAction({
+        type: 'restore'
+      });
+    }
   };
   return (
     <Card className="h-100">
@@ -39,7 +55,7 @@ const UsersByCountry: React.FC<UsersByCountryProps> = ({ chartData, mapData }) =
                 type="button"
                 onClick={handleMapReset}
               >
-                <FontAwesomeIcon icon="sync-alt" />
+                <FontAwesomeIcon icon={faSync} />
               </Button>
             </div>
             <CardDropdown />
@@ -47,7 +63,7 @@ const UsersByCountry: React.FC<UsersByCountryProps> = ({ chartData, mapData }) =
         }
       />
       <Card.Body>
-        <WorldMap data={mapData} ref={chartRef} style={{ height: '12.5rem' }} />
+        <WorldMap data={worldMapData} ref={chartRef} style={{ height: '12.5rem' }} />
         <UsersByCountryChart data={chartData} />
       </Card.Body>
 

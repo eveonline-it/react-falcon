@@ -5,7 +5,26 @@ import CustomDateInput from 'components/common/CustomDateInput';
 import classNames from 'classnames';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-const CustomButton = ({ handleRemove, id }) => {
+// TypeScript interfaces
+interface CustomButtonProps {
+  handleRemove: (id: string) => void;
+  id: string;
+}
+
+type FieldType = 'number' | 'password' | 'email' | 'checkboxes' | 'radio' | 'select' | 'textarea' | 'file' | 'time' | 'date' | 'text';
+
+interface EventCustomFieldItemProps {
+  name: string;
+  type: FieldType;
+  options?: string[];
+  index: number;
+  register: any; // react-hook-form register function
+  setValue: any; // react-hook-form setValue function
+  id: string;
+  handleRemove: (id: string) => void;
+}
+
+const CustomButton: React.FC<CustomButtonProps> = ({ handleRemove, id }) => {
   return (
     <div id={id} className="position-absolute end-0 top-0 z-1 hover-actions">
       <Button
@@ -20,18 +39,18 @@ const CustomButton = ({ handleRemove, id }) => {
   );
 };
 
-const EventCustomFieldItem = ({
+const EventCustomFieldItem: React.FC<EventCustomFieldItemProps> = ({
   name,
   type,
-  options,
+  options = [],
   index,
   register,
   setValue,
   id,
   handleRemove
 }) => {
-  const [date, setDate] = useState(null);
-  const [time, setTime] = useState(null);
+  const [date, setDate] = useState<Date | null>(null);
+  const [time, setTime] = useState<Date | null>(null);
 
   {
     switch (type) {
@@ -98,7 +117,7 @@ const EventCustomFieldItem = ({
             <CustomButton handleRemove={handleRemove} id={id} />
             <Form.Label>{name}</Form.Label>
 
-            {options.map((option, key) => (
+            {options.map((option: string, key: number) => (
               <Form.Check id={`customCheckbox${key}`} key={key}>
                 <Form.Check.Input
                   value={option}
@@ -120,7 +139,7 @@ const EventCustomFieldItem = ({
             <CustomButton handleRemove={handleRemove} id={id} />
             <Form.Label>{name}</Form.Label>
 
-            {options.map((option, key) => (
+            {options.map((option: string, key: number) => (
               <Form.Check id={`customCheckbox${key}`} key={key}>
                 <Form.Check.Input
                   value={option}
@@ -146,7 +165,7 @@ const EventCustomFieldItem = ({
               aria-label="Default select example"
               {...register(`CustomField${index}`)}
             >
-              {options.map((option, key) => (
+              {options.map((option: string, key: number) => (
                 <option key={key} value={option}>
                   {option}
                 </option>
@@ -205,7 +224,7 @@ const EventCustomFieldItem = ({
               timeIntervals={15}
               timeCaption="Time"
               dateFormat="h:mm"
-              onChange={newDate => {
+              onChange={(newDate: Date | null) => {
                 setTime(newDate);
                 setValue(`customField${index}`, newDate);
               }}
@@ -232,7 +251,7 @@ const EventCustomFieldItem = ({
             <Form.Label>{name}</Form.Label>
             <DatePicker
               selected={date}
-              onChange={newDate => {
+              onChange={(newDate: Date | null) => {
                 setDate(newDate);
                 setValue(`customField${index}`, newDate);
               }}

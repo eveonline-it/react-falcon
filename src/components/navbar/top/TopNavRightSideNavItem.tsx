@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import NotificationDropdown from 'components/navbar/top/NotificationDropdown';
 import ProfileDropdown from 'components/navbar/top/ProfileDropdown';
 import { Nav } from 'react-bootstrap';

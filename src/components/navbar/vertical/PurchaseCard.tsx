@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useState } from 'react';
 import { Button, Card } from 'react-bootstrap';
 import { Link } from 'react-router';
 import image from 'assets/img/icons/spot-illustrations/navbar-vertical.png';

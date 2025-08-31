@@ -18,7 +18,7 @@ import ActivityLog from 'pages/user/profile/ActivityLog';
 import activities from 'data/activities';
 import AddToFeed from 'features/social/feed/AddToFeed';
 import ActiveUsers from 'components/dashboards/default/ActiveUsers';
-import { users } from 'data/dashboard/default';
+import { users } from '../data/dashboard/default.js';
 import paths from 'routes/paths';
 
 const UsersWidgets = () => {
@@ -46,7 +46,7 @@ const UsersWidgets = () => {
               <h5 className="mb-1 mb-md-0">Notifications</h5>
             </Card.Header>
             <Card.Body className="p-0">
-              {notifications.slice(0, 4).map(notification => (
+              {notifications.slice(0, 4).map((notification: any) => (
                 <Notification {...notification} key={notification.id} />
               ))}
             </Card.Body>
@@ -64,14 +64,14 @@ const UsersWidgets = () => {
           <Followers
             totalFollowers={people.length}
             followers={people.slice(0, 6)}
-            colBreakpoints={{ xs: 6, md: 4 }}
+            colBreakpoints={{ xs: 6, md: 4, lg: 4, xxl: 4 }}
           />
         </Col>
         <Col lg={6}>
           <Associations
             className="mb-3 h-100"
             associations={associations.slice(0, 8)}
-            colBreakpoints={{ sm: 6 }}
+            colBreakpoints={{ sm: 6, md: 6 }}
           />
         </Col>
       </Row>

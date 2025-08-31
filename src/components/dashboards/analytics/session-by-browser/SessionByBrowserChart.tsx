@@ -1,4 +1,4 @@
-import React from 'react';
+// React import not needed in React 19 with automatic JSX transform
 import { PieChart } from 'echarts/charts';
 import {
   GridComponent,
@@ -26,7 +26,7 @@ const data = [
   { value: 30.1, name: 'Mozilla' }
 ];
 
-const getOptions = getThemeColor => ({
+const getOptions = (getThemeColor: (color: string) => string) => ({
   color: [
     getThemeColor('primary'),
     getThemeColor('success'),
@@ -40,7 +40,7 @@ const getOptions = getThemeColor => ({
     textStyle: { color: getThemeColor('gray-1100') },
     borderWidth: 1,
     transitionDuration: 0,
-    formatter: params =>
+    formatter: (params: any) =>
       `<strong>${params.data.name}:</strong> ${params.data.value}%`
   },
 

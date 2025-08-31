@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Row, Col, Spinner, Alert } from 'react-bootstrap';
 import WeeklySales from 'components/dashboards/default/WeeklySales';
 import TotalOrder from 'components/dashboards/default/TotalOrder';

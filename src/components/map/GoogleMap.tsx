@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useEffect, useState } from 'react';
 import googleMapStyles from 'helpers/googleMapStyles';
 import {
   GoogleMap as ReactGoogleMap,

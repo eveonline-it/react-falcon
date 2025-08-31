@@ -4,41 +4,49 @@ import FalconCardHeader from 'components/common/FalconCardHeader';
 import Flex from 'components/common/Flex';
 import WorldMap from 'components/dashboards/analytics/users-by-country/WorldMap';
 import { countryData } from 'data/countryData';
-import { locationBySessionTableData } from 'data/dashboard/crm';
-import React, { useRef, useState } from 'react';
+import { locationBySessionTableData } from '../../../../data/dashboard/crm.js';
+// React 19 JSX Transform - no explicit React import needed
+import { useRef, useState } from 'react';
+import { EChartsOption, ECharts } from 'echarts';
 import { Button, Card } from 'react-bootstrap';
 import LocationBySessionTable from './LocationBySessionTable';
 
 const LocationBySession = () => {
-  const chartRef = useRef(null);
+  const chartRef = useRef<{ getEchartsInstance: () => ECharts } | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [maxZoomLevel] = useState(5);
   const [minZoomLevel] = useState(1);
 
   const handleMapReset = () => {
-    chartRef.current.getEchartsInstance().dispatchAction({
-      type: 'restore'
-    });
+    if (chartRef.current) {
+      chartRef.current.getEchartsInstance().dispatchAction({
+        type: 'restore'
+      });
+    }
   };
   const handleZoomIn = () => {
     if (zoomLevel < maxZoomLevel) {
       setZoomLevel(zoomLevel + 1);
     }
-    chartRef.current.getEchartsInstance().setOption({
-      series: {
-        zoom: zoomLevel + 1
-      }
-    });
+    if (chartRef.current) {
+      chartRef.current.getEchartsInstance().setOption({
+        series: {
+          zoom: zoomLevel + 1
+        }
+      });
+    }
   };
   const handleZoomOut = () => {
     if (zoomLevel > minZoomLevel) {
       setZoomLevel(zoomLevel - 1);
     }
-    chartRef.current.getEchartsInstance().setOption({
-      series: {
-        zoom: zoomLevel - 1
-      }
-    });
+    if (chartRef.current) {
+      chartRef.current.getEchartsInstance().setOption({
+        series: {
+          zoom: zoomLevel - 1
+        }
+      });
+    }
   };
 
   return (

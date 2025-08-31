@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import processList from 'data/feature/processList';
 import Section from 'components/common/Section';
 import Process from './Process';

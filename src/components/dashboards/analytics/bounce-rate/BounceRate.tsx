@@ -1,5 +1,5 @@
 import FalconLink from 'components/common/FalconLink';
-import { bounceRate } from 'data/dashboard/analytics';
+import { bounceRate } from '../../../../data/dashboard/analytics.js';
 import React from 'react';
 import { Card, Col, Form, Row } from 'react-bootstrap';
 import BounceRateChart from './BounceRateChart';

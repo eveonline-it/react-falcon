@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import FalconComponentCard from 'components/common/FalconComponentCard';
 
 import { BarChart, LineChart } from 'echarts/charts';

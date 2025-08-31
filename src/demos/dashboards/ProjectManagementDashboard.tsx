@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Col, Row } from 'react-bootstrap';
 import Greetings from 'components/dashboards/project-management/Greetings';
 import TeamProgress from 'components/dashboards/project-management/TeamProgress';
@@ -24,7 +24,7 @@ import {
   membersInfo,
   runningProjects,
   managementEvents
-} from 'data/dashboard/projectManagement';
+} from '../../data/dashboard/projectManagement.js';
 import RecentActivity from 'components/dashboards/project-management/RecentActivity';
 import MembersActivity from 'components/dashboards/project-management/MembersActivity';
 

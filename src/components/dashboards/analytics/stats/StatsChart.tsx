@@ -17,7 +17,7 @@ echarts.use([
   CanvasRenderer
 ]);
 
-const getOptions = (getThemeColor, data, grid) => ({
+const getOptions = (getThemeColor: (color: string) => string, data: number[], grid: any) => ({
   tooltip: {
     show: false
   },
@@ -35,7 +35,12 @@ const getOptions = (getThemeColor, data, grid) => ({
   grid
 });
 
-const StatsChart = ({ data, grid }) => {
+interface StatsChartProps {
+  data: number[];
+  grid: any;
+}
+
+const StatsChart: React.FC<StatsChartProps> = ({ data, grid }) => {
   const { getThemeColor } = useAppContext();
   return (
     <BasicECharts

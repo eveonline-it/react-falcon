@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Card, Button } from 'react-bootstrap';
 import corner1 from 'assets/img/illustrations/corner-1.png';
 import { Link } from 'react-router';

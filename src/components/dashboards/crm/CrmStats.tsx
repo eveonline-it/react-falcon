@@ -2,14 +2,27 @@ import React, { useState } from 'react';
 import { Card, Row, Col } from 'react-bootstrap';
 import Flex from 'components/common/Flex';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
+import { faPhone, faUser, faBolt, faCaretUp, faCaretDown } from '@fortawesome/free-solid-svg-icons';
 import CardDropdown from 'components/common/CardDropdown';
-import { statsData } from 'data/dashboard/crm';
+import { statsData } from '../../../data/dashboard/crm.js';
 import classNames from 'classnames';
 import IconItem from 'components/common/icon/IconItem';
 import StatsChart from './StatsChart';
 import { useAppContext } from 'providers/AppProvider';
 
+// Icon mapping
+const iconMap: { [key: string]: IconProp } = {
+  'phone': faPhone,
+  'user': faUser,
+  'bolt': faBolt,
+  'caret-up': faCaretUp,
+  'caret-down': faCaretDown
+};
+
 // TypeScript interfaces
+type BootstrapColor = 'primary' | 'success' | 'info' | 'warning' | 'danger' | 'secondary';
+
 interface CrmStatData {
   id: number;
   title: string;
@@ -17,8 +30,8 @@ interface CrmStatData {
   target: string;
   icon: string;
   caret: string;
-  color: 'primary' | 'success' | 'info' | 'warning' | 'danger' | 'secondary';
-  caretColor: 'primary' | 'success' | 'info' | 'warning' | 'danger' | 'secondary';
+  color: BootstrapColor;
+  caretColor: BootstrapColor;
   data: number[];
 }
 
@@ -38,7 +51,7 @@ const StatsItem: React.FC<StatsItemProps> = ({ stat }) => {
       >
         <IconItem
           tag="div"
-          icon={icon}
+          icon={iconMap[icon] || faPhone}
           bg={`${color}-subtle`}
           color={color}
           size="sm"
@@ -54,7 +67,7 @@ const StatsItem: React.FC<StatsItemProps> = ({ stat }) => {
         <p className="font-sans-serif lh-1 mb-1 fs-5 pe-2">{amount}%</p>
         <div className="d-flex flex-column">
           <FontAwesomeIcon
-            icon={caret}
+            icon={iconMap[caret] || faCaretUp}
             className={`me-1 mb-0 text-${caretColor}`}
           />
           <p className="fs-11 mb-0 mt-0 text-nowrap">{target}</p>
@@ -68,7 +81,8 @@ const StatsItem: React.FC<StatsItemProps> = ({ stat }) => {
 };
 
 const CrmStats: React.FC = () => {
-  const [stats] = useState<CrmStatData[]>(statsData);
+  // Type assertion to ensure compatibility with imported JS data
+  const [stats] = useState<CrmStatData[]>(statsData as CrmStatData[]);
   return (
     <Card>
       <Card.Body>

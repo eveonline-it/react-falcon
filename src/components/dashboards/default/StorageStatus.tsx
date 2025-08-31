@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import classNames from 'classnames';
 import Flex from 'components/common/Flex';
 import { Card, Col, ProgressBar, Row } from 'react-bootstrap';

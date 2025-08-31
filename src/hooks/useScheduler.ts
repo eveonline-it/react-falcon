@@ -290,35 +290,6 @@ const schedulerApi = {
     return res.json();
   },
 
-  getTaskHistory: async (taskId: string, params: ExecutionQueryParams = {}): Promise<ExecutionListResponse> => {
-    const queryParams = new URLSearchParams(
-      Object.entries(params).reduce((acc, [key, value]) => {
-        if (value !== undefined && value !== '') {
-          acc[key] = String(value);
-        }
-        return acc;
-      }, {} as Record<string, string>)
-    ).toString();
-    const url = queryParams 
-      ? `${API_BASE_URL}/scheduler/tasks/${taskId}/history?${queryParams}`
-      : `${API_BASE_URL}/scheduler/tasks/${taskId}/history`;
-    
-    const res = await fetch(url, {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw createApiError(
-        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
-        res.status,
-        errorData
-      );
-    }
-    
-    return res.json();
-  },
 
   // Bulk operations
   bulkOperation: async (operation: BulkOperationRequest): Promise<BulkOperationResponse> => {
@@ -327,37 +298,6 @@ const schedulerApi = {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(operation)
-    });
-    
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw createApiError(
-        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
-        res.status,
-        errorData
-      );
-    }
-    
-    return res.json();
-  },
-
-  // Executions
-  getExecutions: async (params: ExecutionQueryParams = {}): Promise<ExecutionListResponse> => {
-    const queryParams = new URLSearchParams(
-      Object.entries(params).reduce((acc, [key, value]) => {
-        if (value !== undefined && value !== '') {
-          acc[key] = String(value);
-        }
-        return acc;
-      }, {} as Record<string, string>)
-    ).toString();
-    const url = queryParams 
-      ? `${API_BASE_URL}/scheduler/executions?${queryParams}`
-      : `${API_BASE_URL}/scheduler/executions`;
-    
-    const res = await fetch(url, {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
     });
     
     if (!res.ok) {
@@ -440,22 +380,6 @@ export const useSchedulerTask = (taskId: string) => {
   });
 };
 
-export const useTaskHistory = (taskId: string, params: ExecutionQueryParams = {}) => {
-  return useQuery<ExecutionListResponse, Error>({
-    queryKey: ['scheduler', 'task', taskId, 'history', params],
-    queryFn: () => schedulerApi.getTaskHistory(taskId, params),
-    enabled: !!taskId,
-    staleTime: 30000 // 30 seconds
-  });
-};
-
-export const useSchedulerExecutions = (params: ExecutionQueryParams = {}) => {
-  return useQuery<ExecutionListResponse, Error>({
-    queryKey: ['scheduler', 'executions', params],
-    queryFn: () => schedulerApi.getExecutions(params),
-    staleTime: 30000 // 30 seconds
-  });
-};
 
 // Mutation hooks
 export const useCreateTask = () => {

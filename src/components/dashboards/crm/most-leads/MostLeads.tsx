@@ -1,14 +1,28 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import CardDropdown from 'components/common/CardDropdown';
 import Flex from 'components/common/Flex';
 import { Card, Col, Row } from 'react-bootstrap';
 import MostLeadsChart from './MostLeadsChart';
-import { leadsData } from 'data/dashboard/crm';
+import { leadsData } from '../../../../data/dashboard/crm.js';
 import FalconCardFooterLink from 'components/common/FalconCardFooterLink';
 import classNames from 'classnames';
 import FalconCardHeader from 'components/common/FalconCardHeader';
 
-const LeadItem = ({ item, isLast }) => {
+// TypeScript interfaces
+interface LeadItem {
+  id: string;
+  img: string;
+  title: string;
+  target: string;
+  amount: number;
+}
+
+interface LeadItemProps {
+  item: LeadItem;
+  isLast: boolean;
+}
+
+const LeadItem: React.FC<LeadItemProps> = ({ item, isLast }) => {
   return (
     <Flex
       justifyContent="between"

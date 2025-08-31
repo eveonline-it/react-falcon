@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useState } from 'react';
 import classNames from 'classnames';
 import { Collapse, Nav } from 'react-bootstrap';
 import { NavLink, useLocation } from 'react-router';

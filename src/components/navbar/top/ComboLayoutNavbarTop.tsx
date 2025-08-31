@@ -1,6 +1,7 @@
 import Logo from 'components/common/Logo';
 import { useAppContext } from 'providers/AppProvider';
-import React, { useEffect, useRef, useState } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useEffect, useRef, useState } from 'react';
 import { Nav, Navbar } from 'react-bootstrap';
 import TopNavRightSideNavItem from './TopNavRightSideNavItem';
 import classNames from 'classnames';

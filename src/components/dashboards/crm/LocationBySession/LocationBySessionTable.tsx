@@ -1,10 +1,23 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { ProgressBar } from 'react-bootstrap';
 import { Link } from 'react-router';
 import Flex from 'components/common/Flex';
 import AdvanceTable from 'components/common/advance-table/AdvanceTable';
 import useAdvanceTable from 'hooks/ui/useAdvanceTable';
 import AdvanceTableProvider from 'providers/AdvanceTableProvider';
+
+// TypeScript interfaces
+interface LocationData {
+  flag: string;
+  country: string;
+  sessions: number;
+  users: number;
+  percentage: number;
+}
+
+interface LocationBySessionTableProps {
+  data: LocationData[];
+}
 
 const columns = [
   {
@@ -16,7 +29,7 @@ const columns = [
         className: 'py-3'
       }
     },
-    cell: ({ row: { original } }) => {
+    cell: ({ row: { original } }: { row: { original: LocationData } }) => {
       const { flag, country } = original;
       return (
         <Link to="#!">
@@ -57,7 +70,7 @@ const columns = [
         }
       }
     },
-    cell: ({ row: { original } }) => {
+    cell: ({ row: { original } }: { row: { original: LocationData } }) => {
       const { percentage } = original;
       return (
         <Flex alignItems="center" justifyContent="end">
@@ -72,7 +85,7 @@ const columns = [
   }
 ];
 
-const LocationBySessionTable = ({ data }) => {
+const LocationBySessionTable: React.FC<LocationBySessionTableProps> = ({ data }) => {
   const table = useAdvanceTable({
     data,
     columns,

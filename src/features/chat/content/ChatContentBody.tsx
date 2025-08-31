@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useEffect, useRef } from 'react';
 import ChatContentBodyIntro from './ChatContentBodyIntro';
 import Message from './Message';
 import SimpleBar from 'simplebar-react';

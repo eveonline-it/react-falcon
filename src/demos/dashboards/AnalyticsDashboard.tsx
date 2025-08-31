@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Col, Row } from 'react-bootstrap';
 import RealTimeUsers from 'components/dashboards/analytics/real-time-users/RealTimeUsers';
 import Audience from 'components/dashboards/analytics/audience/Audience';

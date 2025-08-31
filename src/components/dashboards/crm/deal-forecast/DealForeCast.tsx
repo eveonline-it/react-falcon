@@ -1,8 +1,8 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Card } from 'react-bootstrap';
 import FalconCardHeader from 'components/common/FalconCardHeader';
 import DealForeCastTable from './DealForeCastTable';
-import { dealForecastByOwnerData } from 'data/dashboard/crm';
+import { dealForecastByOwnerData } from '../../../../data/dashboard/crm.js';
 
 const DealForeCast = () => {
   return (

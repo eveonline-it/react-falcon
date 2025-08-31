@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useState } from 'react';
 import { Form } from 'react-bootstrap';
 import DatePicker from 'react-datepicker';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-const GreetingsDateInput = ({ value, onClick, ref }) => (
+// TypeScript interfaces
+interface GreetingsDateInputProps {
+  value?: string;
+  onClick?: () => void;
+  ref?: React.RefObject<HTMLInputElement>;
+}
+
+const GreetingsDateInput: React.FC<GreetingsDateInputProps> = ({ value, onClick, ref }) => (
   <div className="position-relative">
     <Form.Control
       size="sm"
@@ -26,7 +34,7 @@ const GreetingsDate = () => {
   const date = new Date();
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(date.setDate(date.getDate() + 7));
-  const onChange = dates => {
+  const onChange = (dates: [Date | null, Date | null]) => {
     const [start, end] = dates;
     setStartDate(start);
     setEndDate(end);

@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Link } from 'react-router';
 import Avatar from 'components/common/Avatar';
 import Flex from 'components/common/Flex';

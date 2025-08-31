@@ -6,7 +6,20 @@ import FalconLink from 'components/common/FalconLink';
 import SessionByBrowserChart from './SessionByBrowserChart';
 import TableRow from './TableRow';
 
-const SessionByBrowser = ({ data }: { data: any }) => {
+interface BrowserData {
+  label: string;
+  value: number;
+  color: string;
+  progress: boolean;
+  progressValue: string;
+  icon: string;
+}
+
+interface SessionByBrowserProps {
+  data: BrowserData[];
+}
+
+const SessionByBrowser: React.FC<SessionByBrowserProps> = ({ data }) => {
   return (
     <Card className="h-100">
       <FalconCardHeader
@@ -23,12 +36,12 @@ const SessionByBrowser = ({ data }: { data: any }) => {
         className="py-0"
       >
         <div className="my-auto py-5 py-md-5">
-          <SessionByBrowserChart data={data} />
+          <SessionByBrowserChart />
         </div>
         <div className="border-top">
           <Table size="sm" className="mb-0">
             <tbody>
-              {data.map(item => (
+              {data.map((item: BrowserData) => (
                 <TableRow key={item.label} data={item} />
               ))}
             </tbody>

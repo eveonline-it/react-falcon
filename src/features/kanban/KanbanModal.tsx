@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { CloseButton, Col, Modal, Row, Dropdown } from 'react-bootstrap';
 import Background from 'components/common/Background';
 import { Link } from 'react-router';

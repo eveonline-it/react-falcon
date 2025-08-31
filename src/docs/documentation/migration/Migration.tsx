@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import MigrationSidebar from './MigrationSidebar';
 import { Row, Col } from 'react-bootstrap';
 import MigrationToVite from './MigrationToVite';

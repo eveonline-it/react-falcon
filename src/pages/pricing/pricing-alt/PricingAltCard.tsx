@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Button, Col } from 'react-bootstrap';
 import Flex from 'components/common/Flex';
 import classNames from 'classnames';

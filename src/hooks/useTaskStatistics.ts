@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useSchedulerExecutions, useTaskHistory } from './useScheduler';
-import type { ExecutionListResponse } from 'types/scheduler';
+import type { ExecutionListResponse, ExecutionQueryParams, ApiError } from 'types/scheduler';
 
 const API_BASE_URL = import.meta.env.VITE_EVE_BACKEND_URL || 'https://go.eveonline.it';
 
@@ -77,6 +76,95 @@ interface TaskStatisticsParams {
   limit?: number;
   [key: string]: any;
 }
+
+// API Error Helper
+const createApiError = (message: string, status?: number, details?: any): ApiError => ({
+  message,
+  status,
+  details,
+  timestamp: new Date().toISOString()
+});
+
+// API Functions
+const taskHistoryApi = {
+  getTaskHistory: async (taskId: string, params: ExecutionQueryParams = {}): Promise<ExecutionListResponse> => {
+    const queryParams = new URLSearchParams(
+      Object.entries(params).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== '') {
+          acc[key] = String(value);
+        }
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
+    const url = queryParams 
+      ? `${API_BASE_URL}/scheduler/tasks/${taskId}/history?${queryParams}`
+      : `${API_BASE_URL}/scheduler/tasks/${taskId}/history`;
+    
+    const res = await fetch(url, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
+    }
+    
+    return res.json();
+  },
+
+  getExecutions: async (params: ExecutionQueryParams = {}): Promise<ExecutionListResponse> => {
+    const queryParams = new URLSearchParams(
+      Object.entries(params).reduce((acc, [key, value]) => {
+        if (value !== undefined && value !== '') {
+          acc[key] = String(value);
+        }
+        return acc;
+      }, {} as Record<string, string>)
+    ).toString();
+    const url = queryParams 
+      ? `${API_BASE_URL}/scheduler/executions?${queryParams}`
+      : `${API_BASE_URL}/scheduler/executions`;
+    
+    const res = await fetch(url, {
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw createApiError(
+        errorData.detail || `HTTP ${res.status}: ${res.statusText}`,
+        res.status,
+        errorData
+      );
+    }
+    
+    return res.json();
+  }
+};
+
+// Hook exports
+export const useTaskHistory = (taskId: string, params: ExecutionQueryParams = {}) => {
+  return useQuery<ExecutionListResponse, Error>({
+    queryKey: ['scheduler', 'task', taskId, 'history', params],
+    queryFn: () => taskHistoryApi.getTaskHistory(taskId, params),
+    enabled: !!taskId,
+    staleTime: 30000 // 30 seconds
+  });
+};
+
+export const useSchedulerExecutions = (params: ExecutionQueryParams = {}) => {
+  return useQuery<ExecutionListResponse, Error>({
+    queryKey: ['scheduler', 'executions', params],
+    queryFn: () => taskHistoryApi.getExecutions(params),
+    staleTime: 30000 // 30 seconds
+  });
+};
 
 // Enhanced statistics calculator
 export const calculateTaskStatistics = (executions: Execution[] = []): TaskStatistics => {

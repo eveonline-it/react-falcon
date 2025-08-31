@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Range, getTrackBackground } from 'react-range';
 import { useAppContext } from 'providers/AppProvider';
 

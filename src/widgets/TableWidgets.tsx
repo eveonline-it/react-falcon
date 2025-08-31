@@ -6,15 +6,15 @@ import WidgetSectionTitle from './WidgetSectionTitle';
 // import Customers from 'features/e-commerce/customers/Customers';
 import SharedFiles from 'components/dashboards/default/SharedFiles';
 import TopPages from 'components/dashboards/analytics/top-pages/TopPages';
-import { topPagesTableData, intelligence } from 'data/dashboard/analytics';
-import { files } from 'data/dashboard/default';
+import { topPagesTableData, intelligence } from '../data/dashboard/analytics.js';
+import { files } from '../data/dashboard/default.js';
 import {
   membersActivities,
   recentActivities,
   membersInfo,
   runningProjects
 } from 'data/dashboard/projectManagement';
-import { transactionSummary } from 'data/dashboard/saas';
+import { transactionSummary } from '../data/dashboard/saas.js';
 import Experience from 'pages/user/Experience';
 import experiences from 'data/experiences';
 import ToDoList from 'components/dashboards/project-management/ToDoList';
@@ -32,7 +32,7 @@ const TableWidgets = () => {
       <WidgetSectionTitle
         icon="list"
         title="Tables, Files, and Lists"
-        r
+        // r prop removed - invalid prop
         subtitle="Falcon's styled components are dedicatedly made for displaying your contents and lists."
         transform="shrink-2"
         className="mb-4 mt-6"
@@ -40,7 +40,7 @@ const TableWidgets = () => {
 
       <Row className="g-3 mb-3">
         <Col lg={6}>
-          <SharedFiles files={files} />
+          <SharedFiles files={files} className="" />
         </Col>
         <Col lg={6}>
           <Card className="h-100">

@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Alert, Card } from 'react-bootstrap';
 import changeLogs from './changelogs';
 import createMarkup from 'helpers/createMarkup';

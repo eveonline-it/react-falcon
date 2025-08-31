@@ -15,7 +15,7 @@ const columns = [
         className: 'text-900'
       }
     },
-    cell: ({ row: { original } }) => {
+    cell: ({ row: { original } }: { row: { original: any } }) => {
       const { path } = original;
       return (
         <Link to="#!" className="text-primary fw-semibold">
@@ -62,12 +62,21 @@ const columns = [
   }
 ];
 
-const TopPages = ({ tableData, perPage = 8 }) => {
+interface TopPagesProps {
+  tableData: any[];
+  perPage?: number;
+}
+
+const TopPages: React.FC<TopPagesProps> = ({ tableData, perPage = 8 }) => {
   const table = useAdvanceTable({
     data: tableData,
     columns,
     sortable: true,
+    selection: false,
+    selectionColumnWidth: 52,
+    selectionHeaderClassname: '',
     pagination: true,
+    initialState: {},
     perPage
   });
 

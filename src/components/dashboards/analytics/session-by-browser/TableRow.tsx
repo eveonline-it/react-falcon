@@ -1,8 +1,21 @@
-import React from 'react';
+// React import not needed in React 19 with automatic JSX transform
 import Flex from 'components/common/Flex';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-const TableRow = ({ data }) => {
+interface TableRowData {
+  icon: string;
+  label: string;
+  value: number | string;
+  color: string;
+  progress: boolean;
+  progressValue: string;
+}
+
+interface TableRowProps {
+  data: TableRowData;
+}
+
+const TableRow: React.FC<TableRowProps> = ({ data }) => {
   const { icon, label, value, color, progress, progressValue } = data;
   return (
     <tr>

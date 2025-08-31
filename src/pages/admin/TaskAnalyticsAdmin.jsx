@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useState, useMemo } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Form, Nav, Tab } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -6,7 +7,7 @@ import {
   faExclamationTriangle, faCalendarAlt, faClock
 } from '@fortawesome/free-solid-svg-icons';
 
-import { useSchedulerTasks, useSchedulerExecutions } from 'hooks/useScheduler.ts';
+import { useSchedulerTasks, useSchedulerExecutions } from 'hooks/useScheduler';
 import { useGlobalExecutionStatistics, useSystemPerformanceTrends, calculateTaskStatistics } from 'hooks/useTaskStatistics';
 import { TaskPerformanceCard, TaskPerformanceDashboard } from 'components/scheduler';
 

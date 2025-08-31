@@ -1,7 +1,7 @@
 import React from 'react';
 import { Col, Row } from 'react-bootstrap';
 import StatisticsCard from './StatisticsCard';
-import { statsData } from 'data/dashboard/saas';
+import { statsData } from '../../../../data/dashboard/saas.js';
 
 const StatisticsCards = () => {
   return (

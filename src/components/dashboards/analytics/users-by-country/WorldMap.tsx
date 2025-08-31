@@ -26,11 +26,25 @@ echarts.use([
   VisualMapComponent
 ]);
 
-echarts.registerMap('world', { geoJSON: world });
+echarts.registerMap('world', world as any);
 
 const total = 6961500;
 
-const getOptions = (getThemeColor, data, maxZoomLevel, minZoomLevel) => ({
+interface MapDataItem {
+  name: string;
+  value: number;
+}
+
+interface TooltipParams {
+  data?: MapDataItem;
+}
+
+const getOptions = (
+  getThemeColor: (color: string) => string,
+  data: MapDataItem[],
+  maxZoomLevel: number,
+  minZoomLevel: number
+) => ({
   tooltip: {
     trigger: 'item',
     padding: [7, 10],
@@ -39,9 +53,9 @@ const getOptions = (getThemeColor, data, maxZoomLevel, minZoomLevel) => ({
     textStyle: { color: getThemeColor('gray-1100') },
     borderWidth: 1,
     transitionDuration: 0,
-    formatter: params =>
-      `<strong>${params.data?.name} :</strong> ${(
-        (params.data?.value / total) *
+    formatter: (params: TooltipParams) =>
+      `<strong>${params.data?.name || 'Unknown'} :</strong> ${(
+        ((params.data?.value || 0) / total) *
         100
       ).toFixed(2)}%`
   },
@@ -95,9 +109,21 @@ const getOptions = (getThemeColor, data, maxZoomLevel, minZoomLevel) => ({
   ]
 });
 
-const WorldMap = (
-  { data, style, minZoomLevel = 1, maxZoomLevel = 5, ref }
-) => {
+interface WorldMapProps {
+  data: MapDataItem[];
+  style?: React.CSSProperties;
+  minZoomLevel?: number;
+  maxZoomLevel?: number;
+  ref?: React.Ref<any>;
+}
+
+const WorldMap: React.FC<WorldMapProps> = ({
+  data,
+  style,
+  minZoomLevel = 1,
+  maxZoomLevel = 5,
+  ref
+}) => {
   const { getThemeColor } = useAppContext();
   return (
     <ReactEchart

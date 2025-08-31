@@ -168,7 +168,7 @@ import ComboNavLayout from 'layouts/ComboNavLayout';
 import DoubleTopNavLayout from 'layouts/DoubleTopNavLayout';
 import FalconLoader from 'components/common/FalconLoader';
 
-const SchedulerAdmin = lazy(() => import('pages/admin/SchedulerAdmin'));
+const SchedulerAdmin = lazy(() => import('pages/admin/SchedulerAdmin.jsx'));
 const TaskAnalyticsAdmin = lazy(() => import('pages/admin/TaskAnalyticsAdmin'));
 const SettingsAdmin = lazy(() => import('pages/admin/SettingsAdmin'));
 const CorporationsAdmin = lazy(() => import('pages/admin/CorporationsAdmin'));

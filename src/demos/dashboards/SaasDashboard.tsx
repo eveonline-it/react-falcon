@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Col, Row } from 'react-bootstrap';
 import LinePayment from 'components/dashboards/saas/line-payment/LinePayment';
 import {
@@ -7,13 +7,13 @@ import {
   transactionSummary,
   grossRevenue,
   candleChartData
-} from 'data/dashboard/saas';
+} from '../../data/dashboard/saas.js';
 import SaasActiveUser from 'components/dashboards/saas/SaasActiveUser';
 import SaasRevenue from 'components/dashboards/saas/SaasRevenue';
 import SaasConversion from 'components/dashboards/saas/SaasConversion';
 import DepositeStatus from 'components/dashboards/saas/DepositeStatus';
 import StatisticsCards from 'components/dashboards/saas/stats-cards/StatisticsCards';
-import { users, files } from 'data/dashboard/default';
+import { users, files } from '../../data/dashboard/default.js';
 import ActiveUsers from 'components/dashboards/default/ActiveUsers';
 import SharedFiles from 'components/dashboards/default/SharedFiles';
 import BandwidthSaved from 'components/dashboards/default/BandwidthSaved';

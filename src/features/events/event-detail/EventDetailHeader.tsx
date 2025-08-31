@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import eventBanner from 'assets/img/generic/13.jpg';
 import { Card, Row, Col, Button } from 'react-bootstrap';
 import Flex from 'components/common/Flex';

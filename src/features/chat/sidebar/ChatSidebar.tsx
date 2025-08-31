@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Nav } from 'react-bootstrap';
 import ChatThread from './ChatThread';
 import SimpleBar from 'simplebar-react';

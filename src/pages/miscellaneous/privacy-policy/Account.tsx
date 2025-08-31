@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Card } from 'react-bootstrap';
 
 const Account = ({ props, ref }) => {

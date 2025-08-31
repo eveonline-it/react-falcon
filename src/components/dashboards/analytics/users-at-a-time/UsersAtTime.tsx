@@ -1,6 +1,6 @@
 import FalconCardHeader from 'components/common/FalconCardHeader';
 import FalconLink from 'components/common/FalconLink';
-import React from 'react';
+// React import not needed in React 19 with automatic JSX transform
 import { Card, Col, Form, Row } from 'react-bootstrap';
 import UsersAtTimeChart from './UsersAtTimeChart';
 

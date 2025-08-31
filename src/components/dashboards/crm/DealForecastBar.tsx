@@ -1,8 +1,8 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Card, Col, ProgressBar, Row } from 'react-bootstrap';
 import FalconCardHeader from 'components/common/FalconCardHeader';
 import CardDropdown from 'components/common/CardDropdown';
-import { dealForecastData } from 'data/dashboard/crm';
+import { dealForecastData } from '../../../data/dashboard/crm.js';
 import classNames from 'classnames';
 import Flex from 'components/common/Flex';
 

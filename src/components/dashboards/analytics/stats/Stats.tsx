@@ -1,8 +1,8 @@
-import React from 'react';
+// React import not needed in React 19 with automatic JSX transform
 import { Card, Col, Row } from 'react-bootstrap';
 import StatsChart from './StatsChart';
 import classNames from 'classnames';
-import { stats } from 'data/dashboard/analytics';
+import { stats } from '../../../../data/dashboard/analytics.js';
 
 const Stats = () => {
   return (

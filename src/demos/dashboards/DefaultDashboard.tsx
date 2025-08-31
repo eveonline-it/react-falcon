@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import WeeklySales from 'components/dashboards/default/WeeklySales';
 import { Row, Col } from 'react-bootstrap';
 import {
@@ -13,7 +13,7 @@ import {
   users,
   topProducts,
   runningProjects
-} from 'data/dashboard/default';
+} from '../../data/dashboard/default.js';
 
 import TotalOrder from 'components/dashboards/default/TotalOrder';
 import MarketShare from 'components/dashboards/default/MarketShare';

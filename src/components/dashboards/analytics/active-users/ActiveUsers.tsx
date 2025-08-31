@@ -6,7 +6,7 @@ import CardDropdown from 'components/common/CardDropdown';
 import FalconLink from 'components/common/FalconLink';
 import ActiveUsersChart from './ActiveUsersChart';
 import classNames from 'classnames';
-import { activeUsersChart } from 'data/dashboard/analytics';
+import { activeUsersChart } from '../../../../data/dashboard/analytics.js';
 
 // TypeScript interfaces
 interface UserStat {

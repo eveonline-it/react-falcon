@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import PageHeader from 'components/common/PageHeader';
 import { Card } from 'react-bootstrap';
 import FalconEditor from 'components/common/FalconEditor';

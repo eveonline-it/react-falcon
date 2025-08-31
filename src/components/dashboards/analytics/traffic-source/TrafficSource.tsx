@@ -1,4 +1,4 @@
-import React from 'react';
+// React import not needed in React 19 with automatic JSX transform
 import { Card, Col, Form, Row } from 'react-bootstrap';
 import FalconCardHeader from 'components/common/FalconCardHeader';
 import CardDropdown from 'components/common/CardDropdown';

@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Col, Row } from 'react-bootstrap';
 import CrmStats from 'components/dashboards/crm/CrmStats';
 import DealForecastBar from 'components/dashboards/crm/DealForecastBar';

@@ -9,7 +9,7 @@ type FlexWrap = 'wrap' | 'nowrap' | 'wrap-reverse';
 type Breakpoint = 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 type FlexTag = keyof React.JSX.IntrinsicElements;
 
-interface FlexProps extends React.HTMLAttributes<HTMLElement> {
+interface FlexProps {
   justifyContent?: JustifyContent;
   alignItems?: AlignItems;
   alignContent?: AlignContent;
@@ -20,6 +20,7 @@ interface FlexProps extends React.HTMLAttributes<HTMLElement> {
   children?: React.ReactNode;
   breakpoint?: Breakpoint;
   direction?: FlexDirection;
+  [key: string]: any; // Allow any additional props for different tag types
 }
 
 const Flex: React.FC<FlexProps> = ({

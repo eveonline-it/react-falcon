@@ -1,4 +1,4 @@
-import React from 'react';
+// React 19 JSX Transform - no explicit React import needed
 import { Row, Col } from 'react-bootstrap';
 
 const SectionHeader = ({ title, subtitle, ...rest }) => {

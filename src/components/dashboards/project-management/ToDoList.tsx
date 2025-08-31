@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// React 19 JSX Transform - no explicit React import needed
+import { useState } from 'react';
 import { Button, Card, Form } from 'react-bootstrap';
 import Flex from 'components/common/Flex';
 import CardDropdown from 'components/common/CardDropdown';
@@ -6,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import IconItem from 'components/common/icon/IconItem';
 import classNames from 'classnames';
 import { Link } from 'react-router';
-import { todoList } from 'data/dashboard/projectManagement';
+import { todoList } from '../../../data/dashboard/projectManagement.js';
 import FalconCardHeader from 'components/common/FalconCardHeader';
 
 const ToDoListItem = ({ item, index, handleChange }) => {

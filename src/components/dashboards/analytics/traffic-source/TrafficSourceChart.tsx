@@ -1,4 +1,4 @@
-import React from 'react';
+// React import not needed in React 19 with automatic JSX transform
 import dayjs from 'dayjs';
 import { BarChart } from 'echarts/charts';
 import {
@@ -23,7 +23,7 @@ echarts.use([
   LegendComponent
 ]);
 
-const getOptions = getThemeColor => ({
+const getOptions = (getThemeColor: (color: string) => string) => ({
   color: [
     getThemeColor('primary'),
     rgbaColor(getThemeColor('primary'), 0.8),
@@ -58,7 +58,7 @@ const getOptions = getThemeColor => ({
     },
     axisLabel: {
       color: getThemeColor('gray-600'),
-      formatter: value => dayjs(value).format('ddd')
+      formatter: (value: string) => dayjs(value).format('ddd')
     }
   },
   yAxis: {
