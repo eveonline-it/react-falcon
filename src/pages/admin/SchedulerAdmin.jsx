@@ -1,11 +1,42 @@
 import React, { useState, useMemo } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Dropdown, Alert, Modal, Form, OverlayTrigger, Tooltip, Nav, Tab } from 'react-bootstrap';
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Button,
+  Badge,
+  Dropdown,
+  Alert,
+  Modal,
+  Form,
+  OverlayTrigger,
+  Tooltip,
+  Nav,
+  Tab
+} from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faPlay, faPause, faStop, faTrash, faEdit, faPlus, faDownload, 
-  faUpload, faCog, faHistory, faCheck, faTimes, faSpinner,
-  faServer, faChartLine, faTasks, faExclamationTriangle, faSquare,
-  faClock, faChartBar
+import {
+  faPlay,
+  faPause,
+  faStop,
+  faTrash,
+  faEdit,
+  faPlus,
+  faDownload,
+  faUpload,
+  faCog,
+  faHistory,
+  faCheck,
+  faTimes,
+  faSpinner,
+  faServer,
+  faChartLine,
+  faTasks,
+  faExclamationTriangle,
+  faSquare,
+  faClock,
+  faChartBar
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 
@@ -20,12 +51,19 @@ import {
   useBulkTaskOperation,
   useImportTasks
 } from 'hooks/useScheduler';
-import { TaskModal, TaskHistoryModal, TaskPerformanceDashboard } from 'components/scheduler';
+import {
+  TaskModal,
+  TaskHistoryModal,
+  TaskPerformanceDashboard
+} from 'components/scheduler';
 import { useGlobalExecutionStatistics } from 'hooks/useTaskStatistics';
 
 // Add the style tag for pulse animation
 const addPulseStyles = () => {
-  if (typeof document !== 'undefined' && !document.getElementById('scheduler-pulse-styles')) {
+  if (
+    typeof document !== 'undefined' &&
+    !document.getElementById('scheduler-pulse-styles')
+  ) {
     const style = document.createElement('style');
     style.id = 'scheduler-pulse-styles';
     style.textContent = `
@@ -52,22 +90,33 @@ const SchedulerAdmin = () => {
   });
   const [pendingTaskOperations, setPendingTaskOperations] = useState({});
   const [activeTab, setActiveTab] = useState('overview');
+  const [, forceUpdate] = useState(0);
 
   // Add pulse animation styles on component mount
   React.useEffect(() => {
     addPulseStyles();
   }, []);
-  
+
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedTaskForHistory, setSelectedTaskForHistory] = useState(null);
 
   // Query hooks
-  const { data: status, isLoading: statusLoading, error: statusError } = useSchedulerStatus();
+  const {
+    data: status,
+    isLoading: statusLoading,
+    error: statusError
+  } = useSchedulerStatus();
   const { data: stats, isLoading: statsLoading } = useSchedulerStats();
-  const { data: tasks, isLoading: tasksLoading, error: tasksError, refetch: refetchTasks } = useSchedulerTasks(taskFilters);
-  const { statistics: globalStats, isLoading: statsLoadingGlobal } = useGlobalExecutionStatistics();
+  const {
+    data: tasks,
+    isLoading: tasksLoading,
+    error: tasksError,
+    refetch: refetchTasks
+  } = useSchedulerTasks(taskFilters);
+  const { statistics: globalStats, isLoading: statsLoadingGlobal } =
+    useGlobalExecutionStatistics();
 
   // Mutation hooks
   const taskControlMutation = useTaskControl();
@@ -77,11 +126,34 @@ const SchedulerAdmin = () => {
   const bulkOperationMutation = useBulkTaskOperation();
   const importTasksMutation = useImportTasks();
 
+  // Auto-refresh countdown every 5 seconds
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      // Check if any tasks are overdue and need a backend refresh
+      const now = new Date();
+      const hasOverdueTasks = tasks?.tasks?.some(task => {
+        if (!task.next_run) return false;
+        const nextRun = new Date(task.next_run);
+        return nextRun < now; // Task is overdue
+      });
+
+      if (hasOverdueTasks) {
+        // Refetch from backend if any tasks are overdue
+        refetchTasks();
+      } else {
+        // Otherwise just force a re-render to update countdowns
+        forceUpdate(prev => prev + 1);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [tasks?.tasks, refetchTasks]);
+
   const handleTaskControl = async (action, taskId) => {
     try {
       // Add task to pending operations
       setPendingTaskOperations(prev => ({ ...prev, [taskId]: true }));
-      
+
       await taskControlMutation.mutateAsync({ action, taskId });
       toast.success(`Task ${action} successful`);
       // Refresh tasks immediately after the action
@@ -97,13 +169,13 @@ const SchedulerAdmin = () => {
     }
   };
 
-  const handleDeleteTask = async (taskId) => {
+  const handleDeleteTask = async taskId => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
-    
+
     try {
       // Add task to pending operations
       setPendingTaskOperations(prev => ({ ...prev, [taskId]: true }));
-      
+
       await deleteTaskMutation.mutateAsync(taskId);
       toast.success('Task deleted successfully');
     } catch (error) {
@@ -117,7 +189,7 @@ const SchedulerAdmin = () => {
     }
   };
 
-  const handleBulkOperation = async (operation) => {
+  const handleBulkOperation = async operation => {
     if (selectedTasks.length === 0) {
       toast.warning('Please select tasks first');
       return;
@@ -126,18 +198,26 @@ const SchedulerAdmin = () => {
     // Filter out system tasks for operations that shouldn't affect them
     const restrictedOperations = ['enable', 'disable', 'pause', 'delete'];
     let taskIdsToProcess = selectedTasks;
-    
+
     if (restrictedOperations.includes(operation)) {
-      const selectedTaskObjects = tasks?.tasks?.filter(task => selectedTasks.includes(task.id)) || [];
-      const systemTasks = selectedTaskObjects.filter(task => task.type === 'system');
-      taskIdsToProcess = selectedTasks.filter(taskId => 
-        !selectedTaskObjects.find(task => task.id === taskId && task.type === 'system')
+      const selectedTaskObjects =
+        tasks?.tasks?.filter(task => selectedTasks.includes(task.id)) || [];
+      const systemTasks = selectedTaskObjects.filter(
+        task => task.type === 'system'
       );
-      
+      taskIdsToProcess = selectedTasks.filter(
+        taskId =>
+          !selectedTaskObjects.find(
+            task => task.id === taskId && task.type === 'system'
+          )
+      );
+
       if (systemTasks.length > 0) {
-        toast.warning(`${systemTasks.length} system task(s) excluded from bulk ${operation} operation`);
+        toast.warning(
+          `${systemTasks.length} system task(s) excluded from bulk ${operation} operation`
+        );
       }
-      
+
       if (taskIdsToProcess.length === 0) {
         toast.warning('No eligible tasks selected for this operation');
         return;
@@ -156,9 +236,9 @@ const SchedulerAdmin = () => {
     }
   };
 
-  const toggleTaskSelection = (taskId) => {
-    setSelectedTasks(prev => 
-      prev.includes(taskId) 
+  const toggleTaskSelection = taskId => {
+    setSelectedTasks(prev =>
+      prev.includes(taskId)
         ? prev.filter(id => id !== taskId)
         : [...prev, taskId]
     );
@@ -173,28 +253,28 @@ const SchedulerAdmin = () => {
     }
   };
 
-  const handleSaveTask = async (taskData) => {
+  const handleSaveTask = async taskData => {
     if (editingTask) {
-      await updateTaskMutation.mutateAsync({ 
-        taskId: editingTask.id, 
-        taskData 
+      await updateTaskMutation.mutateAsync({
+        taskId: editingTask.id,
+        taskData
       });
     } else {
       await createTaskMutation.mutateAsync(taskData);
     }
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = status => {
     const variants = {
-      'running': 'success',
-      'paused': 'warning',
-      'disabled': 'secondary',
-      'failed': 'danger',
-      'completed': 'primary'
+      running: 'success',
+      paused: 'warning',
+      disabled: 'secondary',
+      failed: 'danger',
+      completed: 'primary'
     };
-    
+
     return (
-      <Badge 
+      <Badge
         bg={variants[status] || 'secondary'}
         className={status === 'running' ? 'status-pulse' : ''}
       >
@@ -203,14 +283,62 @@ const SchedulerAdmin = () => {
     );
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     return new Date(dateString).toLocaleString();
   };
 
+  const formatTimeRemaining = dateString => {
+    const now = new Date();
+    const nextRun = new Date(dateString);
+    const diffMs = nextRun - now;
+
+    // If the time has passed, show "overdue"
+    if (diffMs < 0) {
+      const overdueDiffMs = Math.abs(diffMs);
+      const hours = Math.floor(overdueDiffMs / (1000 * 60 * 60));
+      const minutes = Math.floor(
+        (overdueDiffMs % (1000 * 60 * 60)) / (1000 * 60)
+      );
+
+      if (hours > 0) {
+        return (
+          <span className="text-warning">
+            overdue {hours}h {minutes}m
+          </span>
+        );
+      } else if (minutes > 0) {
+        return <span className="text-warning">overdue {minutes}m</span>;
+      } else {
+        return <span className="text-warning">overdue</span>;
+      }
+    }
+
+    // Calculate time remaining
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(
+      (diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
+    const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+    if (days > 0) {
+      return `in ${days}d ${hours}h`;
+    } else if (hours > 0) {
+      return `in ${hours}h ${minutes}m`;
+    } else if (minutes > 0) {
+      return `in ${minutes}m ${seconds}s`;
+    } else {
+      return `in ${seconds}s`;
+    }
+  };
+
   // Check for permission errors
-  const hasPermissionError = statusError?.status === 403 || tasksError?.status === 403;
-  const hasOtherError = (statusError && statusError?.status !== 403) || (tasksError && tasksError?.status !== 403);
-  
+  const hasPermissionError =
+    statusError?.status === 403 || tasksError?.status === 403;
+  const hasOtherError =
+    (statusError && statusError?.status !== 403) ||
+    (tasksError && tasksError?.status !== 403);
+
   if (hasPermissionError) {
     return (
       <Container fluid>
@@ -223,16 +351,18 @@ const SchedulerAdmin = () => {
           <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
           <strong>Access Denied</strong>
           <div className="mt-2">
-            You need <code>admin</code> or <code>super_admin</code> role to access the scheduler administration panel.
+            You need <code>admin</code> or <code>super_admin</code> role to
+            access the scheduler administration panel.
           </div>
           <div className="mt-2 small text-muted">
-            Please contact your administrator to request the necessary permissions.
+            Please contact your administrator to request the necessary
+            permissions.
           </div>
         </Alert>
       </Container>
     );
   }
-  
+
   if (hasOtherError) {
     return (
       <Container fluid>
@@ -245,11 +375,12 @@ const SchedulerAdmin = () => {
           <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
           <strong>Connection Error</strong>
           <div className="mt-2">
-            Unable to connect to scheduler service: {statusError?.message || tasksError?.message}
+            Unable to connect to scheduler service:{' '}
+            {statusError?.message || tasksError?.message}
           </div>
-          <Button 
-            variant="outline-primary" 
-            size="sm" 
+          <Button
+            variant="outline-primary"
+            size="sm"
             className="mt-2"
             onClick={() => window.location.reload()}
           >
@@ -271,8 +402,8 @@ const SchedulerAdmin = () => {
                 placement="bottom"
                 overlay={<Tooltip>Create a new scheduled task</Tooltip>}
               >
-                <Button 
-                  variant="primary" 
+                <Button
+                  variant="primary"
                   className="me-2"
                   onClick={() => {
                     setEditingTask(null);
@@ -287,7 +418,10 @@ const SchedulerAdmin = () => {
                 placement="bottom"
                 overlay={<Tooltip>Refresh task list and status</Tooltip>}
               >
-                <Button variant="outline-secondary" onClick={() => refetchTasks()}>
+                <Button
+                  variant="outline-secondary"
+                  onClick={() => refetchTasks()}
+                >
                   <FontAwesomeIcon icon={faCog} className="me-2" />
                   Refresh
                 </Button>
@@ -303,18 +437,28 @@ const SchedulerAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faServer} size="2x" className="text-primary me-3" />
+                <FontAwesomeIcon
+                  icon={faServer}
+                  size="2x"
+                  className="text-primary me-3"
+                />
                 <div>
                   <h6 className="mb-0">Scheduler Status</h6>
                   {statusLoading ? (
                     <FontAwesomeIcon icon={faSpinner} spin />
                   ) : status ? (
                     <div>
-                      <span className={`text-${(status.engine || status.status === 'running') ? 'success' : 'danger'} fw-bold`}>
-                        {(status.engine || status.status === 'running') ? 'Running' : 'Stopped'}
+                      <span
+                        className={`text-${status.engine || status.status === 'running' ? 'success' : 'danger'} fw-bold`}
+                      >
+                        {status.engine || status.status === 'running'
+                          ? 'Running'
+                          : 'Stopped'}
                       </span>
                       {status.version && (
-                        <div className="text-muted small">v{status.version}</div>
+                        <div className="text-muted small">
+                          v{status.version}
+                        </div>
                       )}
                     </div>
                   ) : (
@@ -329,7 +473,11 @@ const SchedulerAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faTasks} size="2x" className="text-success me-3" />
+                <FontAwesomeIcon
+                  icon={faTasks}
+                  size="2x"
+                  className="text-success me-3"
+                />
                 <div>
                   <h6 className="mb-0">Running Tasks</h6>
                   {statsLoading ? (
@@ -346,7 +494,11 @@ const SchedulerAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faChartLine} size="2x" className="text-info me-3" />
+                <FontAwesomeIcon
+                  icon={faChartLine}
+                  size="2x"
+                  className="text-info me-3"
+                />
                 <div>
                   <h6 className="mb-0">Completed Today</h6>
                   {statsLoading ? (
@@ -363,7 +515,11 @@ const SchedulerAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faTimes} size="2x" className="text-danger me-3" />
+                <FontAwesomeIcon
+                  icon={faTimes}
+                  size="2x"
+                  className="text-danger me-3"
+                />
                 <div>
                   <h6 className="mb-0">Failed Today</h6>
                   {statsLoading ? (
@@ -384,7 +540,11 @@ const SchedulerAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faTasks} size="2x" className="text-primary me-3" />
+                <FontAwesomeIcon
+                  icon={faTasks}
+                  size="2x"
+                  className="text-primary me-3"
+                />
                 <div>
                   <h6 className="mb-0">Total Tasks</h6>
                   {statsLoading ? (
@@ -401,7 +561,11 @@ const SchedulerAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faCheck} size="2x" className="text-success me-3" />
+                <FontAwesomeIcon
+                  icon={faCheck}
+                  size="2x"
+                  className="text-success me-3"
+                />
                 <div>
                   <h6 className="mb-0">Enabled Tasks</h6>
                   {statsLoading ? (
@@ -418,7 +582,11 @@ const SchedulerAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faServer} size="2x" className="text-info me-3" />
+                <FontAwesomeIcon
+                  icon={faServer}
+                  size="2x"
+                  className="text-info me-3"
+                />
                 <div>
                   <h6 className="mb-0">Workers</h6>
                   {statsLoading ? (
@@ -435,7 +603,11 @@ const SchedulerAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faCog} size="2x" className="text-secondary me-3" />
+                <FontAwesomeIcon
+                  icon={faCog}
+                  size="2x"
+                  className="text-secondary me-3"
+                />
                 <div>
                   <h6 className="mb-0">Queue Size</h6>
                   {statsLoading ? (
@@ -456,7 +628,11 @@ const SchedulerAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faClock} size="2x" className="text-warning me-3" />
+                <FontAwesomeIcon
+                  icon={faClock}
+                  size="2x"
+                  className="text-warning me-3"
+                />
                 <div>
                   <h6 className="mb-0">Average Runtime</h6>
                   {statsLoading ? (
@@ -473,16 +649,23 @@ const SchedulerAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faChartLine} size="2x" className="text-info me-3" />
+                <FontAwesomeIcon
+                  icon={faChartLine}
+                  size="2x"
+                  className="text-info me-3"
+                />
                 <div>
                   <h6 className="mb-0">Success Rate</h6>
                   {statsLoadingGlobal ? (
                     <FontAwesomeIcon icon={faSpinner} spin />
                   ) : (
                     <div>
-                      <h4 className="mb-0">{globalStats?.successRate?.toFixed(1) || '0'}%</h4>
+                      <h4 className="mb-0">
+                        {globalStats?.successRate?.toFixed(1) || '0'}%
+                      </h4>
                       <small className="text-muted">
-                        {globalStats?.successCount || 0}/{globalStats?.totalExecutions || 0} executions
+                        {globalStats?.successCount || 0}/
+                        {globalStats?.totalExecutions || 0} executions
                       </small>
                     </div>
                   )}
@@ -495,17 +678,24 @@ const SchedulerAdmin = () => {
           <Card>
             <Card.Body>
               <div className="d-flex align-items-center">
-                <FontAwesomeIcon icon={faChartBar} size="2x" className="text-primary me-3" />
+                <FontAwesomeIcon
+                  icon={faChartBar}
+                  size="2x"
+                  className="text-primary me-3"
+                />
                 <div>
                   <h6 className="mb-0">Performance</h6>
                   {statsLoadingGlobal ? (
                     <FontAwesomeIcon icon={faSpinner} spin />
                   ) : (
                     <div>
-                      <Badge 
+                      <Badge
                         bg={
-                          globalStats?.performanceTrend === 'improving' ? 'success' :
-                          globalStats?.performanceTrend === 'degrading' ? 'danger' : 'secondary'
+                          globalStats?.performanceTrend === 'improving'
+                            ? 'success'
+                            : globalStats?.performanceTrend === 'degrading'
+                              ? 'danger'
+                              : 'secondary'
                         }
                       >
                         {globalStats?.performanceTrend || 'stable'}
@@ -531,318 +721,447 @@ const SchedulerAdmin = () => {
                 <Nav.Link eventKey="overview">Task Overview</Nav.Link>
               </Nav.Item>
               <Nav.Item>
-                <Nav.Link eventKey="performance">Performance Dashboard</Nav.Link>
+                <Nav.Link eventKey="performance">
+                  Performance Dashboard
+                </Nav.Link>
               </Nav.Item>
             </Nav>
 
             <Tab.Content>
               <Tab.Pane eventKey="overview">
                 <Card>
-            <Card.Header>
-              <div className="d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">Tasks</h5>
-                <div className="d-flex gap-2">
-                  {selectedTasks.length > 0 && (
-                    <OverlayTrigger
-                      placement="bottom"
-                      overlay={<Tooltip>Perform actions on {selectedTasks.length} selected task{selectedTasks.length !== 1 ? 's' : ''}</Tooltip>}
-                    >
-                      <Dropdown>
-                        <Dropdown.Toggle variant="outline-primary" size="sm">
-                          Bulk Actions ({selectedTasks.length})
-                        </Dropdown.Toggle>
-                      <Dropdown.Menu>
-                        <Dropdown.Item onClick={() => handleBulkOperation('enable')}>
-                          <FontAwesomeIcon icon={faPlay} className="me-2" />
-                          Enable Selected
-                        </Dropdown.Item>
-                        <Dropdown.Item onClick={() => handleBulkOperation('disable')}>
-                          <FontAwesomeIcon icon={faStop} className="me-2" />
-                          Disable Selected
-                        </Dropdown.Item>
-                        <Dropdown.Item onClick={() => handleBulkOperation('pause')}>
-                          <FontAwesomeIcon icon={faPause} className="me-2" />
-                          Pause Selected
-                        </Dropdown.Item>
-                        <Dropdown.Divider />
-                        <Dropdown.Item 
-                          onClick={() => handleBulkOperation('delete')}
-                          className="text-danger"
-                        >
-                          <FontAwesomeIcon icon={faTrash} className="me-2" />
-                          Delete Selected
-                        </Dropdown.Item>
-                      </Dropdown.Menu>
-                      </Dropdown>
-                    </OverlayTrigger>
-                  )}
-                  <OverlayTrigger
-                    placement="bottom"
-                    overlay={<Tooltip>Search tasks by name or description</Tooltip>}
-                  >
-                    <Form.Control
-                      type="text"
-                      placeholder="Search tasks..."
-                      value={taskFilters.search}
-                      onChange={(e) => setTaskFilters(prev => ({ ...prev, search: e.target.value }))}
-                      style={{ width: '200px' }}
-                    />
-                  </OverlayTrigger>
-                  <OverlayTrigger
-                    placement="bottom"
-                    overlay={<Tooltip>Filter tasks by status</Tooltip>}
-                  >
-                    <Form.Select
-                      value={taskFilters.status}
-                      onChange={(e) => setTaskFilters(prev => ({ ...prev, status: e.target.value }))}
-                      style={{ width: '150px' }}
-                    >
-                      <option value="">All Statuses</option>
-                      <option value="running">Running</option>
-                      <option value="paused">Paused</option>
-                      <option value="disabled">Disabled</option>
-                      <option value="failed">Failed</option>
-                    </Form.Select>
-                  </OverlayTrigger>
-                </div>
-              </div>
-            </Card.Header>
-            <Card.Body className="p-0">
-              {tasksLoading ? (
-                <div className="text-center py-4">
-                  <FontAwesomeIcon icon={faSpinner} spin size="2x" />
-                  <div className="mt-2">Loading tasks...</div>
-                </div>
-              ) : (
-                <div className="table-responsive">
-                  <table className="table table-hover mb-0">
-                    <thead>
-                      <tr>
-                        <th>
-                          <Form.Check
-                            type="checkbox"
-                            checked={selectedTasks.length === tasks?.tasks?.length && tasks?.tasks?.length > 0}
-                            onChange={selectAllTasks}
-                          />
-                        </th>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Schedule</th>
-                        <th>Last Run</th>
-                        <th>Next Run</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tasks?.tasks?.map(task => (
-                        <tr key={task.id}>
-                          <td>
-                            {task.type === 'system' ? (
-                              <OverlayTrigger
-                                placement="right"
-                                overlay={<Tooltip>System tasks are excluded from bulk operations</Tooltip>}
+                  <Card.Header>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <h5 className="mb-0">Tasks</h5>
+                      <div className="d-flex gap-2">
+                        {selectedTasks.length > 0 && (
+                          <OverlayTrigger
+                            placement="bottom"
+                            overlay={
+                              <Tooltip>
+                                Perform actions on {selectedTasks.length}{' '}
+                                selected task
+                                {selectedTasks.length !== 1 ? 's' : ''}
+                              </Tooltip>
+                            }
+                          >
+                            <Dropdown>
+                              <Dropdown.Toggle
+                                variant="outline-primary"
+                                size="sm"
                               >
+                                Bulk Actions ({selectedTasks.length})
+                              </Dropdown.Toggle>
+                              <Dropdown.Menu>
+                                <Dropdown.Item
+                                  onClick={() => handleBulkOperation('enable')}
+                                >
+                                  <FontAwesomeIcon
+                                    icon={faPlay}
+                                    className="me-2"
+                                  />
+                                  Enable Selected
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => handleBulkOperation('disable')}
+                                >
+                                  <FontAwesomeIcon
+                                    icon={faStop}
+                                    className="me-2"
+                                  />
+                                  Disable Selected
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => handleBulkOperation('pause')}
+                                >
+                                  <FontAwesomeIcon
+                                    icon={faPause}
+                                    className="me-2"
+                                  />
+                                  Pause Selected
+                                </Dropdown.Item>
+                                <Dropdown.Divider />
+                                <Dropdown.Item
+                                  onClick={() => handleBulkOperation('delete')}
+                                  className="text-danger"
+                                >
+                                  <FontAwesomeIcon
+                                    icon={faTrash}
+                                    className="me-2"
+                                  />
+                                  Delete Selected
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
+                          </OverlayTrigger>
+                        )}
+                        <OverlayTrigger
+                          placement="bottom"
+                          overlay={
+                            <Tooltip>
+                              Search tasks by name or description
+                            </Tooltip>
+                          }
+                        >
+                          <Form.Control
+                            type="text"
+                            placeholder="Search tasks..."
+                            value={taskFilters.search}
+                            onChange={e =>
+                              setTaskFilters(prev => ({
+                                ...prev,
+                                search: e.target.value
+                              }))
+                            }
+                            style={{ width: '200px' }}
+                          />
+                        </OverlayTrigger>
+                        <OverlayTrigger
+                          placement="bottom"
+                          overlay={<Tooltip>Filter tasks by status</Tooltip>}
+                        >
+                          <Form.Select
+                            value={taskFilters.status}
+                            onChange={e =>
+                              setTaskFilters(prev => ({
+                                ...prev,
+                                status: e.target.value
+                              }))
+                            }
+                            style={{ width: '150px' }}
+                          >
+                            <option value="">All Statuses</option>
+                            <option value="running">Running</option>
+                            <option value="paused">Paused</option>
+                            <option value="disabled">Disabled</option>
+                            <option value="failed">Failed</option>
+                          </Form.Select>
+                        </OverlayTrigger>
+                      </div>
+                    </div>
+                  </Card.Header>
+                  <Card.Body className="p-0">
+                    {tasksLoading ? (
+                      <div className="text-center py-4">
+                        <FontAwesomeIcon icon={faSpinner} spin size="2x" />
+                        <div className="mt-2">Loading tasks...</div>
+                      </div>
+                    ) : (
+                      <div className="table-responsive">
+                        <table className="table table-hover mb-0">
+                          <thead>
+                            <tr>
+                              <th>
                                 <Form.Check
                                   type="checkbox"
-                                  checked={selectedTasks.includes(task.id)}
-                                  onChange={() => toggleTaskSelection(task.id)}
-                                  className="text-muted"
+                                  checked={
+                                    selectedTasks.length ===
+                                      tasks?.tasks?.length &&
+                                    tasks?.tasks?.length > 0
+                                  }
+                                  onChange={selectAllTasks}
                                 />
-                              </OverlayTrigger>
-                            ) : (
-                              <Form.Check
-                                type="checkbox"
-                                checked={selectedTasks.includes(task.id)}
-                                onChange={() => toggleTaskSelection(task.id)}
-                              />
-                            )}
-                          </td>
-                          <td>
-                            <div>
-                              <strong>{task.name}</strong>
-                              {task.description && (
-                                <div className="text-muted small">{task.description}</div>
-                              )}
-                            </div>
-                          </td>
-                          <td>
-                            <Badge bg={task.type === 'system' ? 'warning' : 'info'}>
-                              {task.type}
-                            </Badge>
-                          </td>
-                          <td>{getStatusBadge(task.status)}</td>
-                          <td>
-                            <code className="small">{task.schedule}</code>
-                          </td>
-                          <td>
-                            {task.last_run ? (
-                              <div className="small">
-                                {formatDate(task.last_run)}
-                                {task.last_execution_status && (
-                                  <div className={`text-${task.last_execution_status === 'success' ? 'success' : 'danger'}`}>
-                                    <FontAwesomeIcon icon={task.last_execution_status === 'success' ? faCheck : faTimes} className="me-1" />
-                                    {task.last_execution_status}
+                              </th>
+                              <th>Name</th>
+                              <th>Type</th>
+                              <th>Status</th>
+                              <th>Schedule</th>
+                              <th>Last Run</th>
+                              <th>Next</th>
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {tasks?.tasks?.map(task => (
+                              <tr key={task.id}>
+                                <td>
+                                  {task.type === 'system' ? (
+                                    <OverlayTrigger
+                                      placement="right"
+                                      overlay={
+                                        <Tooltip>
+                                          System tasks are excluded from bulk
+                                          operations
+                                        </Tooltip>
+                                      }
+                                    >
+                                      <Form.Check
+                                        type="checkbox"
+                                        checked={selectedTasks.includes(
+                                          task.id
+                                        )}
+                                        onChange={() =>
+                                          toggleTaskSelection(task.id)
+                                        }
+                                        className="text-muted"
+                                      />
+                                    </OverlayTrigger>
+                                  ) : (
+                                    <Form.Check
+                                      type="checkbox"
+                                      checked={selectedTasks.includes(task.id)}
+                                      onChange={() =>
+                                        toggleTaskSelection(task.id)
+                                      }
+                                    />
+                                  )}
+                                </td>
+                                <td>
+                                  <div>
+                                    <strong>{task.name}</strong>
+                                    {task.description && (
+                                      <div className="text-muted small">
+                                        {task.description}
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-muted">Never</span>
-                            )}
-                          </td>
-                          <td>
-                            {task.next_run ? (
-                              <div className="small">{formatDate(task.next_run)}</div>
-                            ) : (
-                              <span className="text-muted">-</span>
-                            )}
-                          </td>
-                          <td>
-                            <div className="d-flex gap-1">
-                              {task.status === 'running' ? (
-                                <OverlayTrigger
-                                  placement="top"
-                                  overlay={
-                                    <Tooltip>
-                                      {task.type === 'system' 
-                                        ? 'System tasks cannot be manually paused' 
-                                        : 'Pause this task'
-                                      }
-                                    </Tooltip>
-                                  }
-                                >
-                                  <Button
-                                    size="sm"
-                                    variant={task.type === 'system' ? 'outline-secondary' : 'outline-warning'}
-                                    onClick={() => handleTaskControl('pause', task.id)}
-                                    disabled={pendingTaskOperations[task.id] || task.type === 'system'}
-                                  >
-                                    <FontAwesomeIcon icon={faPause} />
-                                  </Button>
-                                </OverlayTrigger>
-                              ) : (
-                                <OverlayTrigger
-                                  placement="top"
-                                  overlay={
-                                    <Tooltip>
-                                      {task.type === 'system' 
-                                        ? 'System tasks cannot be manually enabled' 
-                                        : task.status === 'paused' 
-                                          ? 'Resume this task' 
-                                          : 'Enable this task'
-                                      }
-                                    </Tooltip>
-                                  }
-                                >
-                                  <Button
-                                    size="sm"
-                                    variant={task.type === 'system' ? 'outline-secondary' : 'outline-success'}
-                                    onClick={() => handleTaskControl(task.status === 'paused' ? 'resume' : 'enable', task.id)}
-                                    disabled={pendingTaskOperations[task.id] || task.type === 'system'}
-                                  >
-                                    <FontAwesomeIcon icon={faPlay} />
-                                  </Button>
-                                </OverlayTrigger>
-                              )}
-                              {task.status === 'running' ? (
-                                <OverlayTrigger
-                                  placement="top"
-                                  overlay={<Tooltip>Stop running task execution</Tooltip>}
-                                >
-                                  <Button
-                                    size="sm"
-                                    variant="outline-danger"
-                                    onClick={() => handleTaskControl('stop', task.id)}
-                                    disabled={pendingTaskOperations[task.id]}
-                                  >
-                                    <FontAwesomeIcon icon={faStop} />
-                                  </Button>
-                                </OverlayTrigger>
-                              ) : (
-                                <OverlayTrigger
-                                  placement="top"
-                                  overlay={<Tooltip>Execute task manually now</Tooltip>}
-                                >
-                                  <Button
-                                    size="sm"
-                                    variant="outline-primary"
-                                    onClick={() => handleTaskControl('execute', task.id)}
-                                    disabled={pendingTaskOperations[task.id]}
-                                  >
-                                    <FontAwesomeIcon icon={faPlay} />
-                                  </Button>
-                                </OverlayTrigger>
-                              )}
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={<Tooltip>View task execution history</Tooltip>}
-                              >
-                                <Button
-                                  size="sm"
-                                  variant="outline-info"
-                                  onClick={() => {
-                                    setSelectedTaskForHistory(task.id);
-                                    setShowHistoryModal(true);
-                                  }}
-                                >
-                                  <FontAwesomeIcon icon={faHistory} />
-                                </Button>
-                              </OverlayTrigger>
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={
-                                  <Tooltip>
-                                    {task.type === 'system' 
-                                      ? 'System tasks cannot be edited' 
-                                      : 'Edit task settings'
+                                </td>
+                                <td>
+                                  <Badge
+                                    bg={
+                                      task.type === 'system'
+                                        ? 'warning'
+                                        : 'info'
                                     }
-                                  </Tooltip>
-                                }
-                              >
-                                <Button
-                                  size="sm"
-                                  variant="outline-secondary"
-                                  onClick={() => {
-                                    setEditingTask(task);
-                                    setShowTaskModal(true);
-                                  }}
-                                  disabled={task.type === 'system'}
-                                >
-                                  <FontAwesomeIcon icon={faEdit} />
-                                </Button>
-                              </OverlayTrigger>
-                              <OverlayTrigger
-                                placement="top"
-                                overlay={
-                                  <Tooltip>
-                                    {task.type === 'system' 
-                                      ? 'System tasks cannot be deleted' 
-                                      : 'Delete this task permanently'
-                                    }
-                                  </Tooltip>
-                                }
-                              >
-                                <Button
-                                  size="sm"
-                                  variant={task.type === 'system' ? 'outline-secondary' : 'outline-danger'}
-                                  onClick={() => handleDeleteTask(task.id)}
-                                  disabled={pendingTaskOperations[task.id] || task.type === 'system'}
-                                >
-                                  <FontAwesomeIcon icon={faTrash} />
-                                </Button>
-                              </OverlayTrigger>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </Card.Body>
+                                  >
+                                    {task.type}
+                                  </Badge>
+                                </td>
+                                <td>{getStatusBadge(task.status)}</td>
+                                <td>
+                                  <code className="small">{task.schedule}</code>
+                                </td>
+                                <td>
+                                  {task.last_run ? (
+                                    <div className="small">
+                                      {formatDate(task.last_run)}
+                                      {task.last_execution_status && (
+                                        <div
+                                          className={`text-${task.last_execution_status === 'success' ? 'success' : 'danger'}`}
+                                        >
+                                          <FontAwesomeIcon
+                                            icon={
+                                              task.last_execution_status ===
+                                              'success'
+                                                ? faCheck
+                                                : faTimes
+                                            }
+                                            className="me-1"
+                                          />
+                                          {task.last_execution_status}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted">Never</span>
+                                  )}
+                                </td>
+                                <td className="text-nowrap">
+                                  {task.next_run ? (
+                                    <div className="small">
+                                      {formatTimeRemaining(task.next_run)}
+                                    </div>
+                                  ) : (
+                                    <span className="text-muted">-</span>
+                                  )}
+                                </td>
+                                <td>
+                                  <div className="d-flex gap-1">
+                                    {task.status === 'running' ? (
+                                      <OverlayTrigger
+                                        placement="top"
+                                        overlay={
+                                          <Tooltip>
+                                            {task.type === 'system'
+                                              ? 'System tasks cannot be manually paused'
+                                              : 'Pause this task'}
+                                          </Tooltip>
+                                        }
+                                      >
+                                        <Button
+                                          size="sm"
+                                          variant={
+                                            task.type === 'system'
+                                              ? 'outline-secondary'
+                                              : 'outline-warning'
+                                          }
+                                          onClick={() =>
+                                            handleTaskControl('pause', task.id)
+                                          }
+                                          disabled={
+                                            pendingTaskOperations[task.id] ||
+                                            task.type === 'system'
+                                          }
+                                        >
+                                          <FontAwesomeIcon icon={faPause} />
+                                        </Button>
+                                      </OverlayTrigger>
+                                    ) : (
+                                      <OverlayTrigger
+                                        placement="top"
+                                        overlay={
+                                          <Tooltip>
+                                            {task.type === 'system'
+                                              ? 'System tasks cannot be manually enabled'
+                                              : task.status === 'paused'
+                                                ? 'Resume this task'
+                                                : 'Enable this task'}
+                                          </Tooltip>
+                                        }
+                                      >
+                                        <Button
+                                          size="sm"
+                                          variant={
+                                            task.type === 'system'
+                                              ? 'outline-secondary'
+                                              : 'outline-success'
+                                          }
+                                          onClick={() =>
+                                            handleTaskControl(
+                                              task.status === 'paused'
+                                                ? 'resume'
+                                                : 'enable',
+                                              task.id
+                                            )
+                                          }
+                                          disabled={
+                                            pendingTaskOperations[task.id] ||
+                                            task.type === 'system'
+                                          }
+                                        >
+                                          <FontAwesomeIcon icon={faPlay} />
+                                        </Button>
+                                      </OverlayTrigger>
+                                    )}
+                                    {task.status === 'running' ? (
+                                      <OverlayTrigger
+                                        placement="top"
+                                        overlay={
+                                          <Tooltip>
+                                            Stop running task execution
+                                          </Tooltip>
+                                        }
+                                      >
+                                        <Button
+                                          size="sm"
+                                          variant="outline-danger"
+                                          onClick={() =>
+                                            handleTaskControl('stop', task.id)
+                                          }
+                                          disabled={
+                                            pendingTaskOperations[task.id]
+                                          }
+                                        >
+                                          <FontAwesomeIcon icon={faStop} />
+                                        </Button>
+                                      </OverlayTrigger>
+                                    ) : (
+                                      <OverlayTrigger
+                                        placement="top"
+                                        overlay={
+                                          <Tooltip>
+                                            Execute task manually now
+                                          </Tooltip>
+                                        }
+                                      >
+                                        <Button
+                                          size="sm"
+                                          variant="outline-primary"
+                                          onClick={() =>
+                                            handleTaskControl(
+                                              'execute',
+                                              task.id
+                                            )
+                                          }
+                                          disabled={
+                                            pendingTaskOperations[task.id]
+                                          }
+                                        >
+                                          <FontAwesomeIcon icon={faPlay} />
+                                        </Button>
+                                      </OverlayTrigger>
+                                    )}
+                                    <OverlayTrigger
+                                      placement="top"
+                                      overlay={
+                                        <Tooltip>
+                                          View task execution history
+                                        </Tooltip>
+                                      }
+                                    >
+                                      <Button
+                                        size="sm"
+                                        variant="outline-info"
+                                        onClick={() => {
+                                          setSelectedTaskForHistory(task.id);
+                                          setShowHistoryModal(true);
+                                        }}
+                                      >
+                                        <FontAwesomeIcon icon={faHistory} />
+                                      </Button>
+                                    </OverlayTrigger>
+                                    <OverlayTrigger
+                                      placement="top"
+                                      overlay={
+                                        <Tooltip>
+                                          {task.type === 'system'
+                                            ? 'System tasks cannot be edited'
+                                            : 'Edit task settings'}
+                                        </Tooltip>
+                                      }
+                                    >
+                                      <Button
+                                        size="sm"
+                                        variant="outline-secondary"
+                                        onClick={() => {
+                                          setEditingTask(task);
+                                          setShowTaskModal(true);
+                                        }}
+                                        disabled={task.type === 'system'}
+                                      >
+                                        <FontAwesomeIcon icon={faEdit} />
+                                      </Button>
+                                    </OverlayTrigger>
+                                    <OverlayTrigger
+                                      placement="top"
+                                      overlay={
+                                        <Tooltip>
+                                          {task.type === 'system'
+                                            ? 'System tasks cannot be deleted'
+                                            : 'Delete this task permanently'}
+                                        </Tooltip>
+                                      }
+                                    >
+                                      <Button
+                                        size="sm"
+                                        variant={
+                                          task.type === 'system'
+                                            ? 'outline-secondary'
+                                            : 'outline-danger'
+                                        }
+                                        onClick={() =>
+                                          handleDeleteTask(task.id)
+                                        }
+                                        disabled={
+                                          pendingTaskOperations[task.id] ||
+                                          task.type === 'system'
+                                        }
+                                      >
+                                        <FontAwesomeIcon icon={faTrash} />
+                                      </Button>
+                                    </OverlayTrigger>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </Card.Body>
                 </Card>
               </Tab.Pane>
-              
+
               <Tab.Pane eventKey="performance">
                 <TaskPerformanceDashboard />
               </Tab.Pane>
@@ -864,7 +1183,9 @@ const SchedulerAdmin = () => {
         show={showHistoryModal}
         onHide={() => setShowHistoryModal(false)}
         taskId={selectedTaskForHistory}
-        taskName={tasks?.tasks?.find(t => t.id === selectedTaskForHistory)?.name || ''}
+        taskName={
+          tasks?.tasks?.find(t => t.id === selectedTaskForHistory)?.name || ''
+        }
       />
     </Container>
   );
