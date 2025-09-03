@@ -106,24 +106,119 @@ class SitemapService {
   private cache: BackendSitemap | null = null;
   private cacheTimestamp: number = 0;
   private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  private readonly EXTENDED_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes during outages
   private eventListeners: Set<() => void> = new Set();
+  private lastFetchError: Date | null = null;
+
+  // Static fallback sitemap structure for when backend is unavailable
+  private readonly FALLBACK_SITEMAP: BackendSitemap = {
+    routes: [
+      {
+        id: 'dashboard-default',
+        path: '/',
+        component: 'DefaultDashboard',
+        name: 'Dashboard',
+        title: 'Personal Dashboard',
+        icon: 'tachometer-alt',
+        meta: { title: 'Personal Dashboard', icon: 'tachometer-alt' },
+        lazyLoad: true,
+        accessible: true
+      },
+      {
+        id: 'error-404',
+        path: '/errors/404',
+        component: 'Error404',
+        name: '404 Not Found',
+        title: 'Page Not Found',
+        meta: { title: 'Page Not Found' },
+        lazyLoad: true,
+        accessible: true
+      }
+    ],
+    navigation: [
+      {
+        label: 'Navigation',
+        labelDisable: true,
+        children: [
+          {
+            routeId: 'dashboard-default',
+            name: 'Dashboard',
+            to: '/',
+            icon: 'tachometer-alt',
+            active: true
+          }
+        ]
+      },
+      {
+        label: 'System',
+        children: [
+          {
+            name: 'Backend Unavailable',
+            active: false,
+            icon: 'exclamation-triangle'
+          }
+        ]
+      }
+    ],
+    userPermissions: [],
+    userGroups: [],
+    features: {}
+  };
+
+  // Retry mechanism with exponential backoff
+  private async fetchWithRetry(url: string, maxRetries = 3): Promise<Response> {
+    let lastError: Error;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          // Add timeout for each request
+          signal: AbortSignal.timeout(10000) // 10 seconds timeout
+        });
+        
+        // Reset error tracking on successful response
+        if (response.ok) {
+          this.lastFetchError = null;
+        }
+        
+        return response;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        this.lastFetchError = new Date();
+        
+        // Don't retry on the last attempt
+        if (attempt === maxRetries) {
+          throw lastError;
+        }
+        
+        // Exponential backoff: wait 1s, 2s, 4s between retries
+        const delay = Math.pow(2, attempt - 1) * 1000;
+        console.warn(`Fetch attempt ${attempt} failed, retrying in ${delay}ms:`, error);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    throw lastError!;
+  }
 
   async fetchSitemap(): Promise<BackendSitemap> {
     const now = Date.now();
     
+    // Use extended cache duration if we're in an error state
+    const cacheDuration = this.lastFetchError ? this.EXTENDED_CACHE_DURATION : this.CACHE_DURATION;
+    
     // Return cached data if still valid
-    if (this.cache && (now - this.cacheTimestamp < this.CACHE_DURATION)) {
+    if (this.cache && (now - this.cacheTimestamp < cacheDuration)) {
       return this.cache;
     }
 
     try {
-      const response = await fetch(SITEMAP_URL, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await this.fetchWithRetry(SITEMAP_URL);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch sitemap: ${response.status}`);
@@ -142,11 +237,15 @@ class SitemapService {
     } catch (error) {
       console.error('Error fetching sitemap:', error);
       
-      // Return cached data if available, otherwise throw
+      // Strategy 1: Return cached data if available (even if expired)
       if (this.cache) {
+        console.warn('🔄 Backend unavailable, using cached sitemap data');
         return this.cache;
       }
-      throw error;
+      
+      // Strategy 2: Use fallback sitemap structure
+      console.warn('🔄 Backend unavailable and no cache, using fallback sitemap');
+      return this.FALLBACK_SITEMAP;
     }
   }
 

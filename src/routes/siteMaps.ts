@@ -1201,7 +1201,7 @@ export async function loadDynamicRouteGroups(forceRefresh = false): Promise<Rout
     while (isLoadingBackendRoutes) {
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    return backendRouteGroups || [];
+    return backendRouteGroups || staticRouteGroups;
   }
 
   isLoadingBackendRoutes = true;
@@ -1214,20 +1214,36 @@ export async function loadDynamicRouteGroups(forceRefresh = false): Promise<Rout
     }
     
     backendRouteGroups = await sitemapService.generateRouteGroups();
-    console.info('Successfully loaded backend route groups');
+    
+    // Check if we got the fallback sitemap (indicates backend is down)
+    const isUsingFallback = backendRouteGroups.some(group => 
+      group.label === 'System' && group.children.some(child => 
+        child.name === 'Backend Unavailable'
+      )
+    );
+    
+    if (isUsingFallback) {
+      console.warn('🔄 Backend unavailable - using minimal fallback navigation');
+      // Optionally enhance fallback with essential static routes
+      const enhancedFallback = [...backendRouteGroups];
+      return enhancedFallback;
+    }
+    
+    console.info('✅ Successfully loaded backend route groups');
     return backendRouteGroups;
   } catch (error) {
-    console.warn('Failed to load backend routes:', error);
-    backendRouteGroups = [];
-    return [];
+    // This should rarely happen now due to improved SitemapService error handling
+    console.error('❌ Critical error loading routes, falling back to static routes:', error);
+    backendRouteGroups = staticRouteGroups;
+    return staticRouteGroups;
   } finally {
     isLoadingBackendRoutes = false;
   }
 }
 
-// Get route groups (sync function that returns backend routes or empty if not loaded)
+// Get route groups (sync function that returns backend routes or static fallback)
 export function getRouteGroups(): RouteGroup[] {
-  return backendRouteGroups || [];
+  return backendRouteGroups || staticRouteGroups;
 }
 
 // Component registry for dynamic route loading
