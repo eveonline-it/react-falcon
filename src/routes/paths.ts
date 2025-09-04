@@ -74,6 +74,7 @@ export interface AppPaths {
   widgets: string;
   landing: string;
   testSitemap: string;
+  broadcastTest: string;
   error404: string;
   error500: string;
   login: string;
@@ -239,6 +240,7 @@ const paths: AppPaths = {
   widgets: '/widgets',
   landing: '/landing',
   testSitemap: `/${rootPaths.pagesRoot}/test-sitemap`,
+  broadcastTest: `/${rootPaths.pagesRoot}/broadcast-test`,
   error404: `/${rootPaths.errorsRoot}/404`,
   error500: `/${rootPaths.errorsRoot}/500`,
   login: `/${rootPaths.authRoot}/login`,

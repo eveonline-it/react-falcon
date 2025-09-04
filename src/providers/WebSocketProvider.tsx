@@ -97,16 +97,12 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     if (!wsManagerRef.current || isLoading) return;
 
     if (isAuthenticated && user && autoConnect) {
-      console.log('[WebSocketProvider] Authenticated, connecting WebSocket...', { user, characterName });
-      console.log('[WebSocketProvider] Using cookie-based authentication - browser will send falcon_auth_token automatically');
-      
       // Backend automatically assigns user to personal room (user:{user_id}) and group rooms
       // Authentication via secure HttpOnly cookie (falcon_auth_token)
       wsManagerRef.current.connect(user.toString()).catch(error => {
         console.error('[WebSocketProvider] Failed to connect:', error);
       });
     } else if (!isAuthenticated && connectionState !== ConnectionState.DISCONNECTED) {
-      console.log('[WebSocketProvider] Not authenticated, disconnecting WebSocket...');
       wsManagerRef.current.disconnect();
     }
   }, [isAuthenticated, user, characterName, isLoading, autoConnect, connectionState]);
@@ -171,7 +167,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
       case 'system_notification':
         // Handle system notifications
-        console.log('System notification:', message.data);
         break;
 
       case 'presence':
@@ -202,6 +197,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         if (message.room) {
           queryClient.invalidateQueries({ queryKey: ['chat', 'threads', message.room] });
         }
+        break;
+
+      case 'backend_status':
+      case 'critical_alert':  
+      case 'service_recovery':
+        // Broadcast messages are handled by the broadcast store via useBroadcast hook
+        // No query cache updates needed for these message types
         break;
     }
   }, [queryClient]);

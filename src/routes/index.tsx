@@ -80,6 +80,7 @@ const Plugins = lazy(() => import('docs/documentation/Plugins'));
 const Styling = lazy(() => import('docs/documentation/Styling'));
 const DesignFile = lazy(() => import('docs/documentation/DesignFile'));
 const TestSitemap = lazy(() => import('pages/Starter'));
+const BroadcastTestPage = lazy(() => import('pages/BroadcastTestPage'));
 const AnimatedIcons = lazy(() => import('docs/components/AnimatedIcons'));
 const DatePicker = lazy(() => import('docs/components/DatePicker'));
 const FontAwesome = lazy(() => import('docs/components/FontAwesome'));
@@ -445,6 +446,14 @@ const routes: RouteObject[] = [
               {
                 path: paths.testSitemap,
                 element: <TestSitemap />
+              },
+              {
+                path: paths.broadcastTest,
+                element: (
+                  <Suspense key="broadcast-test" fallback={<FalconLoader />}>
+                    <BroadcastTestPage />
+                  </Suspense>
+                )
               }
             ]
           },

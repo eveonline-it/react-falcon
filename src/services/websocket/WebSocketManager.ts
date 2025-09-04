@@ -3,7 +3,8 @@ import { EventEmitter } from 'events';
 export interface WSMessage {
   type: 'message' | 'presence' | 'notification' | 'system' | 'room_update' | 'error' | 
         'user_profile_update' | 'group_membership_change' | 'system_notification' | 
-        'custom_event' | 'heartbeat' | 'room_joined' | 'room_left';
+        'custom_event' | 'heartbeat' | 'room_joined' | 'room_left' |
+        'backend_status' | 'critical_alert' | 'service_recovery';  // Broadcast message types
   room?: string;
   from?: string;
   to?: string;
