@@ -1,216 +1,158 @@
-import React from 'react';
-import { Container, Row, Col, Card, Button, Form, Alert } from 'react-bootstrap';
-import { 
-  broadcastActions, 
-  useBroadcastOverallStatus,
-  useBroadcastSystemMetrics,
-  useBroadcastServices,
-  useBroadcastAlerts,
-  useBroadcastNotifications, 
-  useBroadcastError 
-} from '../stores/broadcastStore';
-import BroadcastStatusMonitor from '../components/broadcast/BroadcastStatusMonitor';
-import BroadcastTest from '../components/broadcast/BroadcastTest';
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Alert } from 'react-bootstrap';
 import { useWebSocketStatus } from '../hooks/websocket/useWebSocketStatus';
-import { useBroadcast } from '../hooks/websocket/useBroadcast';
+import { useWebSocketContext } from '../providers/WebSocketProvider';
 import { useAuth } from '../contexts/AuthContext';
 import { getWebSocketUrl } from '../utils/websocketConfig';
 
+interface BackendStatusData {
+  overall_status?: 'healthy' | 'degraded' | 'unhealthy';
+  system_metrics?: {
+    cpu_usage: number;
+    memory_usage: number;
+    active_connections: number;
+    uptime_seconds: number;
+    uptime_formatted: string;
+  };
+  services?: Record<
+    string,
+    {
+      module: string;
+      status: 'healthy' | 'degraded' | 'unhealthy';
+      response_time: string;
+      message?: string;
+      last_checked: string;
+      stats?: any;
+    }
+  >;
+  alerts?: string[];
+}
+
 const BroadcastTestPage: React.FC = () => {
-  const overallStatus = useBroadcastOverallStatus();
-  const systemMetrics = useBroadcastSystemMetrics();
-  const services = useBroadcastServices();
-  const alerts = useBroadcastAlerts();
-  const notifications = useBroadcastNotifications();
-  const error = useBroadcastError();
+  const [backendData, setBackendData] = useState<BackendStatusData | null>(
+    null
+  );
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Use existing WebSocket system
   const { isConnected, connectionState, isReconnecting } = useWebSocketStatus();
+  const { subscribeToType } = useWebSocketContext();
   const { isAuthenticated } = useAuth();
-  
-  // Initialize broadcast subscriptions
-  useBroadcast();
 
-  // Test data generators
-  const generateTestBackendStatus = () => {
-    const testData = {
-      type: 'backend_status' as const,
-      overall_status: ['healthy', 'degraded', 'unhealthy'][Math.floor(Math.random() * 3)] as 'healthy' | 'degraded' | 'unhealthy',
-      system_metrics: {
-        memory_usage: Math.random() * 2000 + 100,
-        cpu_usage: Math.floor(Math.random() * 100),
-        active_connections: Math.floor(Math.random() * 1000),
-        uptime_formatted: `${Math.floor(Math.random() * 24)}h ${Math.floor(Math.random() * 60)}m`
-      },
-      services: {
-        'database': {
-          module: 'PostgreSQL Database',
-          status: ['healthy', 'degraded', 'unhealthy'][Math.floor(Math.random() * 3)] as 'healthy' | 'degraded' | 'unhealthy',
-          response_time: `${Math.floor(Math.random() * 100 + 5)}ms`,
-          message: Math.random() > 0.7 ? 'Connection pool at capacity' : undefined,
-          last_checked: new Date().toISOString()
-        },
-        'redis': {
-          module: 'Redis Cache',
-          status: ['healthy', 'degraded'][Math.floor(Math.random() * 2)] as 'healthy' | 'degraded',
-          response_time: `${Math.floor(Math.random() * 20 + 1)}ms`,
-          last_checked: new Date().toISOString()
-        },
-        'api': {
-          module: 'REST API Server',
-          status: 'healthy' as const,
-          response_time: `${Math.floor(Math.random() * 50 + 10)}ms`,
-          last_checked: new Date().toISOString()
-        },
-        'websocket': {
-          module: 'WebSocket Server',
-          status: 'healthy' as const,
-          response_time: `${Math.floor(Math.random() * 30 + 5)}ms`,
-          last_checked: new Date().toISOString()
-        }
-      },
-      alerts: Math.random() > 0.6 ? [
-        'High memory usage detected',
-        'Slow database queries detected'
-      ].slice(0, Math.floor(Math.random() * 2) + 1) : []
-    };
-    
-    broadcastActions.handleBackendStatus(testData);
-  };
+  // Subscribe to system_notification messages directly
+  useEffect(() => {
+    const unsubscribe = subscribeToType('system_notification', message => {
+      try {
+        console.log('🔌 Received system_notification:', message);
 
-  const generateTestCriticalAlert = () => {
-    const alerts = [
-      'Database connection pool exhausted!',
-      'High CPU usage detected - server may be overloaded',
-      'Redis cache is down - falling back to database',
-      'Multiple service timeouts detected',
-      'Disk space critically low on server'
-    ];
-    
-    const testData = {
-      type: 'critical_alert' as const,
-      message: alerts[Math.floor(Math.random() * alerts.length)]
-    };
-    
-    broadcastActions.handleCriticalAlert(testData);
-  };
+        // Extract backend status data from nested structure
+        const nestedData = message.data?.data;
 
-  const generateTestServiceRecovery = () => {
-    const services = ['Database', 'Redis Cache', 'API Server', 'WebSocket Server', 'File Storage'];
-    
-    const testData = {
-      type: 'service_recovery' as const,
-      service: services[Math.floor(Math.random() * services.length)]
-    };
-    
-    broadcastActions.handleServiceRecovery(testData);
-  };
+        setBackendData({
+          overall_status: nestedData.overall_status,
+          system_metrics: nestedData.system_metrics,
+          services: nestedData.services,
+          alerts: nestedData.alerts
+        });
+        setLastUpdate(new Date());
+        setError(null);
+        console.log('✅ Backend data updated:', nestedData);
+      } catch (err) {
+        console.error('❌ Failed to process system_notification:', err);
+        setError('Failed to process WebSocket message');
+      }
+    });
 
-  const clearAllData = () => {
-    broadcastActions.resetBroadcastState();
-  };
+    return unsubscribe;
+  }, [subscribeToType]);
 
   return (
     <Container fluid className="py-4">
-      {/* Store Test */}
-      <Row className="mb-4">
-        <Col>
-          <BroadcastTest />
-        </Col>
-      </Row>
-
-      {/* Test Controls */}
+      {/* WebSocket Status */}
       <Row className="mb-4">
         <Col>
           <Card>
             <Card.Header>
               <Card.Title className="mb-0">
-                <i className="fas fa-vial me-2"></i>
-                Broadcast System Test Controls
+                <i className="fas fa-wifi me-2"></i>
+                WebSocket Status
               </Card.Title>
             </Card.Header>
             <Card.Body>
               <Row>
                 <Col md={6}>
-                  <h5 className="mb-3">WebSocket Status</h5>
                   <div className="mb-3">
                     <div className="mb-2">
-                      <strong>WebSocket URL:</strong> 
+                      <strong>WebSocket URL:</strong>
                       <code className="ms-2">{getWebSocketUrl()}</code>
                     </div>
-                    <div className="text-muted small">
-                      <i className="fas fa-info-circle me-1"></i>
-                      Configured via <code>VITE_WS_URL</code> environment variable
-                    </div>
-                  </div>
-                  
-                  <div className="mb-3">
                     <div className="mb-2">
                       <strong>Connection Status:</strong>
-                      <span className={`ms-2 badge ${
-                        isConnected ? 'bg-success' : 
-                        isReconnecting ? 'bg-warning' : 
-                        'bg-secondary'
-                      }`}>
+                      <span
+                        className={`ms-2 badge ${
+                          isConnected
+                            ? 'bg-success'
+                            : isReconnecting
+                              ? 'bg-warning'
+                              : 'bg-secondary'
+                        }`}
+                      >
                         {connectionState}
                       </span>
                     </div>
                     <div className="mb-2">
                       <strong>Authentication Status:</strong>
-                      <span className={`ms-2 badge ${isAuthenticated ? 'bg-success' : 'bg-danger'}`}>
-                        {isAuthenticated ? 'Authenticated' : 'Not Authenticated'}
+                      <span
+                        className={`ms-2 badge ${isAuthenticated ? 'bg-success' : 'bg-danger'}`}
+                      >
+                        {isAuthenticated
+                          ? 'Authenticated'
+                          : 'Not Authenticated'}
                       </span>
-                    </div>
-                    <div className="text-muted small">
-                      <i className="fas fa-shield-alt me-1"></i>
-                      Connection automatically managed by authentication status
                     </div>
                   </div>
                 </Col>
-                
                 <Col md={6}>
-                  <h5 className="mb-3">Test Data Generation</h5>
-                  <div className="d-flex flex-column gap-2">
-                    <Button 
-                      variant="info" 
-                      size="sm"
-                      onClick={generateTestBackendStatus}
-                    >
-                      <i className="fas fa-server me-1"></i>
-                      Generate Backend Status
-                    </Button>
-                    <Button 
-                      variant="warning" 
-                      size="sm"
-                      onClick={generateTestCriticalAlert}
-                    >
-                      <i className="fas fa-exclamation-triangle me-1"></i>
-                      Generate Critical Alert
-                    </Button>
-                    <Button 
-                      variant="success" 
-                      size="sm"
-                      onClick={generateTestServiceRecovery}
-                    >
-                      <i className="fas fa-check-circle me-1"></i>
-                      Generate Service Recovery
-                    </Button>
-                    <Button 
-                      variant="outline-secondary" 
-                      size="sm"
-                      onClick={clearAllData}
-                    >
-                      <i className="fas fa-trash me-1"></i>
-                      Clear All Data
-                    </Button>
+                  <div className="mb-3">
+                    <div className="mb-2">
+                      <strong>Overall Backend Status:</strong>
+                      <span
+                        className={`ms-2 badge bg-${
+                          backendData?.overall_status === 'healthy'
+                            ? 'success'
+                            : backendData?.overall_status === 'degraded'
+                              ? 'warning'
+                              : backendData?.overall_status === 'unhealthy'
+                                ? 'danger'
+                                : 'secondary'
+                        }`}
+                      >
+                        {backendData?.overall_status || 'Unknown'}
+                      </span>
+                    </div>
+                    <div className="mb-2">
+                      <strong>Services:</strong>{' '}
+                      {backendData?.services
+                        ? Object.keys(backendData.services).length
+                        : 0}
+                    </div>
+                    <div className="mb-2">
+                      <strong>Active Alerts:</strong>{' '}
+                      {backendData?.alerts?.length || 0}
+                    </div>
+                    <div className="mb-2">
+                      <strong>Last Update:</strong>{' '}
+                      {lastUpdate ? lastUpdate.toLocaleTimeString() : 'Never'}
+                    </div>
                   </div>
                 </Col>
               </Row>
-              
+
               {error && (
                 <Alert variant="danger" className="mt-3">
                   <i className="fas fa-exclamation-circle me-2"></i>
-                  <strong>Error:</strong> {error}
+                  <strong>WebSocket Error:</strong> {error}
                 </Alert>
               )}
             </Card.Body>
@@ -218,71 +160,205 @@ const BroadcastTestPage: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Current State Display */}
+      {/* System Metrics */}
+      {backendData?.system_metrics && (
+        <Row className="mb-4">
+          <Col>
+            <Card>
+              <Card.Header>
+                <Card.Title className="mb-0">
+                  <i className="fas fa-chart-line me-2"></i>
+                  System Metrics
+                </Card.Title>
+              </Card.Header>
+              <Card.Body>
+                <Row>
+                  <Col md={3}>
+                    <Card className="text-center">
+                      <Card.Body>
+                        <h5 className="card-title">CPU Usage</h5>
+                        <h3 className="text-primary">
+                          {backendData.system_metrics.cpu_usage}%
+                        </h3>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col md={3}>
+                    <Card className="text-center">
+                      <Card.Body>
+                        <h5 className="card-title">Memory Usage</h5>
+                        <h3 className="text-warning">
+                          {backendData.system_metrics.memory_usage.toFixed(1)}MB
+                        </h3>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col md={3}>
+                    <Card className="text-center">
+                      <Card.Body>
+                        <h5 className="card-title">Active Connections</h5>
+                        <h3 className="text-info">
+                          {backendData.system_metrics.active_connections}
+                        </h3>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                  <Col md={3}>
+                    <Card className="text-center">
+                      <Card.Body>
+                        <h5 className="card-title">Uptime</h5>
+                        <h3 className="text-success">
+                          {backendData.system_metrics.uptime_formatted}
+                        </h3>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      )}
+
+      {/* Services Status */}
+      {backendData?.services && (
+        <Row className="mb-4">
+          <Col>
+            <Card>
+              <Card.Header>
+                <Card.Title className="mb-0">
+                  <i className="fas fa-cogs me-2"></i>
+                  Services Status
+                </Card.Title>
+              </Card.Header>
+              <Card.Body>
+                <Row>
+                  {Object.entries(backendData.services).map(
+                    ([serviceName, service]) => (
+                      <Col md={4} key={serviceName} className="mb-3">
+                        <Card className="h-100">
+                          <Card.Header className="d-flex justify-content-between align-items-center">
+                            <span className="fw-bold">{service.module}</span>
+                            <span
+                              className={`badge bg-${
+                                service.status === 'healthy'
+                                  ? 'success'
+                                  : service.status === 'degraded'
+                                    ? 'warning'
+                                    : 'danger'
+                              }`}
+                            >
+                              {service.status}
+                            </span>
+                          </Card.Header>
+                          <Card.Body>
+                            <div className="small">
+                              <div className="mb-1">
+                                <strong>Response Time:</strong>{' '}
+                                {service.response_time}
+                              </div>
+                              {service.message && (
+                                <div className="mb-1">
+                                  <strong>Message:</strong> {service.message}
+                                </div>
+                              )}
+                              {service.stats && (
+                                <div className="mb-1">
+                                  <strong>Stats:</strong>
+                                  <pre className="mt-1 p-1 bg-light small">
+                                    {JSON.stringify(service.stats, null, 2)}
+                                  </pre>
+                                </div>
+                              )}
+                              <div className="text-muted">
+                                Last checked:{' '}
+                                {new Date(
+                                  service.last_checked
+                                ).toLocaleTimeString()}
+                              </div>
+                            </div>
+                          </Card.Body>
+                        </Card>
+                      </Col>
+                    )
+                  )}
+                </Row>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      )}
+
+      {/* Alerts */}
+      {backendData?.alerts && backendData.alerts.length > 0 && (
+        <Row className="mb-4">
+          <Col>
+            <Card>
+              <Card.Header>
+                <Card.Title className="mb-0">
+                  <i className="fas fa-exclamation-triangle me-2"></i>
+                  Active Alerts ({backendData.alerts.length})
+                </Card.Title>
+              </Card.Header>
+              <Card.Body>
+                {backendData.alerts.map((alert, index) => (
+                  <Alert key={index} variant="warning" className="mb-2">
+                    <i className="fas fa-warning me-2"></i>
+                    {alert}
+                  </Alert>
+                ))}
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      )}
+
+      {/* Raw Data Debug */}
       <Row className="mb-4">
         <Col>
           <Card>
             <Card.Header>
               <Card.Title className="mb-0">
-                <i className="fas fa-info-circle me-2"></i>
-                Current Broadcast Store State
+                <i className="fas fa-bug me-2"></i>
+                Raw WebSocket Data
               </Card.Title>
             </Card.Header>
             <Card.Body>
-              <Row>
-                <Col md={6}>
-                  <h6>Connection State</h6>
-                  <ul className="list-unstyled">
-                    <li><strong>WebSocket:</strong> {connectionState}</li>
-                    <li><strong>Authenticated:</strong> {isAuthenticated ? 'Yes' : 'No'}</li>
-                    <li><strong>Overall Status:</strong> 
-                      <span className={`ms-1 badge bg-${overallStatus === 'healthy' ? 'success' : overallStatus === 'degraded' ? 'warning' : overallStatus === 'unhealthy' ? 'danger' : 'secondary'}`}>
-                        {overallStatus}
-                      </span>
-                    </li>
-                  </ul>
-                </Col>
-                <Col md={6}>
-                  <h6>Data State</h6>
-                  <ul className="list-unstyled">
-                    <li><strong>System Metrics:</strong> {systemMetrics ? 'Available' : 'None'}</li>
-                    <li><strong>Services Count:</strong> {Object.keys(services).length}</li>
-                    <li><strong>Active Alerts:</strong> {alerts.length}</li>
-                    <li><strong>Notifications:</strong> {notifications.length}</li>
-                  </ul>
-                </Col>
-              </Row>
+              <pre className="bg-light p-2 small">
+                {backendData
+                  ? JSON.stringify(backendData, null, 2)
+                  : 'No backend data received yet'}
+              </pre>
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
-      {/* Instructions */}
-      <Row className="mb-4">
-        <Col>
-          <Alert variant="info">
-            <Alert.Heading>
-              <i className="fas fa-lightbulb me-2"></i>
-              How to Test
-            </Alert.Heading>
-            <p className="mb-2">This page demonstrates the integrated broadcast system:</p>
-            <ol className="mb-0">
-              <li><strong>Authentication-Based Connection:</strong> WebSocket automatically connects when you're authenticated and disconnects when you log out</li>
-              <li><strong>Real-Time Messages:</strong> When connected, the system receives live broadcast messages from the backend</li>
-              <li><strong>Simulated Data:</strong> Use the "Generate" buttons to simulate incoming broadcast messages and see how the UI responds</li>
-              <li><strong>State Inspection:</strong> Monitor the "Current Broadcast Store State" section to see how Zustand state updates</li>
-              <li><strong>UI Testing:</strong> Scroll down to see the full broadcast status monitor interface in action</li>
-              <li><strong>Existing Integration:</strong> Uses the same WebSocketManager as the rest of the application - no duplicate connections</li>
-            </ol>
-          </Alert>
-        </Col>
-      </Row>
+      {/* Connection Debug */}
+      {!isConnected && isAuthenticated && (
+        <Row className="mb-4">
+          <Col>
+            <Alert variant="warning">
+              <i className="fas fa-exclamation-triangle me-2"></i>
+              <strong>Debug Info:</strong> You are authenticated but WebSocket
+              is not connected. Backend may not be running or WebSocket URL may
+              be incorrect.
+            </Alert>
+          </Col>
+        </Row>
+      )}
 
-      {/* Main Broadcast Monitor */}
-      <BroadcastStatusMonitor 
-        showConnectionStatus={true}
-        showNotifications={true}
-      />
+      {!isAuthenticated && (
+        <Row className="mb-4">
+          <Col>
+            <Alert variant="info">
+              <i className="fas fa-info-circle me-2"></i>
+              <strong>Note:</strong> WebSocket only connects when authenticated.
+              Please log in to receive backend data.
+            </Alert>
+          </Col>
+        </Row>
+      )}
     </Container>
   );
 };

@@ -1,5 +1,16 @@
-import React, { createContext, useCallback, useContext, useEffect, useState, useRef, ReactNode } from 'react';
-import WebSocketManager, { WSMessage, ConnectionState } from '../services/websocket/WebSocketManager';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  ReactNode
+} from 'react';
+import WebSocketManager, {
+  WSMessage,
+  ConnectionState
+} from '../services/websocket/WebSocketManager';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -9,8 +20,14 @@ interface WebSocketContextValue {
   sendMessage: (message: WSMessage) => Promise<any>;
   joinRoom: (room: string) => Promise<void>;
   leaveRoom: (room: string) => Promise<void>;
-  subscribe: (room: string, handler: (message: WSMessage) => void) => () => void;
-  subscribeToType: (type: WSMessage['type'], handler: (message: WSMessage) => void) => () => void;
+  subscribe: (
+    room: string,
+    handler: (message: WSMessage) => void
+  ) => () => void;
+  subscribeToType: (
+    type: WSMessage['type'],
+    handler: (message: WSMessage) => void
+  ) => () => void;
   rooms: string[];
   wsManager: WebSocketManager | null;
 }
@@ -21,20 +38,29 @@ interface WebSocketProviderProps {
   autoConnect?: boolean;
 }
 
-const WebSocketContext = createContext<WebSocketContextValue | undefined>(undefined);
+const WebSocketContext = createContext<WebSocketContextValue | undefined>(
+  undefined
+);
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   children,
-  url = import.meta.env.VITE_WS_URL || 'wss://go.eveonline.it/websocket/connect',
+  url = import.meta.env.VITE_WS_URL ||
+    'wss://go.eveonline.it/websocket/connect',
   autoConnect = true
 }) => {
-  const [connectionState, setConnectionState] = useState<ConnectionState>(ConnectionState.DISCONNECTED);
+  const [connectionState, setConnectionState] = useState<ConnectionState>(
+    ConnectionState.DISCONNECTED
+  );
   const [rooms, setRooms] = useState<string[]>([]);
   const wsManagerRef = useRef<WebSocketManager | null>(null);
   const queryClient = useQueryClient();
-  const handlersRef = useRef<Map<string, Set<(message: WSMessage) => void>>>(new Map());
-  const typeHandlersRef = useRef<Map<WSMessage['type'], Set<(message: WSMessage) => void>>>(new Map());
-  
+  const handlersRef = useRef<Map<string, Set<(message: WSMessage) => void>>>(
+    new Map()
+  );
+  const typeHandlersRef = useRef<
+    Map<WSMessage['type'], Set<(message: WSMessage) => void>>
+  >(new Map());
+
   // Get authentication state
   const { isAuthenticated, user, characterName, isLoading } = useAuth();
 
@@ -66,9 +92,19 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         });
 
         wsManager.on('message', (message: WSMessage) => {
+          // Log all incoming WebSocket messages
+          console.log('🌐 ALL WebSocket Messages:', {
+            type: message.type,
+            room: message.room,
+            timestamp: new Date().toISOString(),
+            fullMessage: message
+          });
+
           // Handle room-specific messages
           if (message.room) {
-            const roomHandlers = handlersRef.current.get(`room:${message.room}`);
+            const roomHandlers = handlersRef.current.get(
+              `room:${message.room}`
+            );
             roomHandlers?.forEach(handler => handler(message));
           }
 
@@ -79,9 +115,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           // Update TanStack Query cache based on message type and data
           handleQueryCacheUpdate(message);
         });
-
       } catch (error) {
-        console.error('[WebSocketProvider] Failed to initialize WebSocket manager:', error);
+        console.error(
+          '[WebSocketProvider] Failed to initialize WebSocket manager:',
+          error
+        );
       }
     }
 
@@ -102,111 +140,135 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       wsManagerRef.current.connect(user.toString()).catch(error => {
         console.error('[WebSocketProvider] Failed to connect:', error);
       });
-    } else if (!isAuthenticated && connectionState !== ConnectionState.DISCONNECTED) {
+    } else if (
+      !isAuthenticated &&
+      connectionState !== ConnectionState.DISCONNECTED
+    ) {
       wsManagerRef.current.disconnect();
     }
-  }, [isAuthenticated, user, characterName, isLoading, autoConnect, connectionState]);
+  }, [
+    isAuthenticated,
+    user,
+    characterName,
+    isLoading,
+    autoConnect,
+    connectionState
+  ]);
 
   // Handle query cache updates based on WebSocket messages
-  const handleQueryCacheUpdate = useCallback((message: WSMessage) => {
-    switch (message.type) {
-      case 'message':
-        // Update chat messages cache for thread rooms
-        if (message.room && message.room.startsWith('thread:')) {
-          const threadId = message.room.replace('thread:', '');
-          
-          // Update messages in the infinite query cache
-          queryClient.setQueryData(['chat', 'messages', threadId], (oldData: any) => {
-            if (!oldData) return oldData;
-            
-            return {
-              ...oldData,
-              pages: oldData.pages.map((page: any, index: number) => {
-                if (index === 0) {
-                  // Add new message to first page
-                  return {
-                    ...page,
-                    messages: [message.data, ...page.messages]
-                  };
-                }
-                return page;
-              })
-            };
-          });
+  const handleQueryCacheUpdate = useCallback(
+    (message: WSMessage) => {
+      switch (message.type) {
+        case 'message':
+          // Update chat messages cache for thread rooms
+          if (message.room && message.room.startsWith('thread:')) {
+            const threadId = message.room.replace('thread:', '');
 
-          // Update thread's last message
-          queryClient.setQueryData(['chat', 'threads'], (oldData: any) => {
-            if (!oldData) return oldData;
-            return {
-              ...oldData,
-              threads: oldData.threads.map((thread: any) => 
-                thread.id === threadId
-                  ? { ...thread, lastMessage: message.data, updatedAt: new Date().toISOString() }
-                  : thread
-              )
-            };
-          });
-        }
-        break;
+            // Update messages in the infinite query cache
+            queryClient.setQueryData(
+              ['chat', 'messages', threadId],
+              (oldData: any) => {
+                if (!oldData) return oldData;
 
-      case 'user_profile_update':
-        // Handle user profile updates
-        if (message.data?.user_id) {
-          queryClient.invalidateQueries({ queryKey: ['users'] });
-          queryClient.invalidateQueries({ queryKey: ['auth', 'current-user'] });
-        }
-        break;
-
-      case 'group_membership_change':
-        // Handle group membership changes
-        if (message.data?.user_id) {
-          queryClient.invalidateQueries({ queryKey: ['groups'] });
-          queryClient.invalidateQueries({ queryKey: ['users'] });
-        }
-        break;
-
-      case 'system_notification':
-        // Handle system notifications
-        break;
-
-      case 'presence':
-        // Update user presence in contacts
-        if (message.data?.userId) {
-          queryClient.setQueryData(['chat', 'contacts'], (oldData: any) => {
-            if (!oldData) return oldData;
-            return oldData.map((contact: any) => 
-              contact.id === message.data.userId
-                ? { ...contact, status: message.data.status }
-                : contact
+                return {
+                  ...oldData,
+                  pages: oldData.pages.map((page: any, index: number) => {
+                    if (index === 0) {
+                      // Add new message to first page
+                      return {
+                        ...page,
+                        messages: [message.data, ...page.messages]
+                      };
+                    }
+                    return page;
+                  })
+                };
+              }
             );
-          });
-        }
-        break;
 
-      case 'notification':
-        // Invalidate relevant queries based on notification type
-        if (message.data?.type === 'new_message') {
-          queryClient.invalidateQueries({ queryKey: ['chat', 'threads'] });
-        } else if (message.data?.type === 'task_update') {
-          queryClient.invalidateQueries({ queryKey: ['scheduler'] });
-        }
-        break;
+            // Update thread's last message
+            queryClient.setQueryData(['chat', 'threads'], (oldData: any) => {
+              if (!oldData) return oldData;
+              return {
+                ...oldData,
+                threads: oldData.threads.map((thread: any) =>
+                  thread.id === threadId
+                    ? {
+                        ...thread,
+                        lastMessage: message.data,
+                        updatedAt: new Date().toISOString()
+                      }
+                    : thread
+                )
+              };
+            });
+          }
+          break;
 
-      case 'room_update':
-        // Handle room updates (participants added/removed, etc.)
-        if (message.room) {
-          queryClient.invalidateQueries({ queryKey: ['chat', 'threads', message.room] });
-        }
-        break;
+        case 'user_profile_update':
+          // Handle user profile updates
+          if (message.data?.user_id) {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+            queryClient.invalidateQueries({
+              queryKey: ['auth', 'current-user']
+            });
+          }
+          break;
 
-      case 'backend_status':
-      case 'critical_alert':  
-      case 'service_recovery':
-        // Broadcast messages are handled by the broadcast store via useBroadcast hook
-        // No query cache updates needed for these message types
-        break;
-    }
-  }, [queryClient]);
+        case 'group_membership_change':
+          // Handle group membership changes
+          if (message.data?.user_id) {
+            queryClient.invalidateQueries({ queryKey: ['groups'] });
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+          }
+          break;
+
+        case 'system_notification':
+          // Handle system notifications
+          break;
+
+        case 'presence':
+          // Update user presence in contacts
+          if (message.data?.userId) {
+            queryClient.setQueryData(['chat', 'contacts'], (oldData: any) => {
+              if (!oldData) return oldData;
+              return oldData.map((contact: any) =>
+                contact.id === message.data.userId
+                  ? { ...contact, status: message.data.status }
+                  : contact
+              );
+            });
+          }
+          break;
+
+        case 'notification':
+          // Invalidate relevant queries based on notification type
+          if (message.data?.type === 'new_message') {
+            queryClient.invalidateQueries({ queryKey: ['chat', 'threads'] });
+          } else if (message.data?.type === 'task_update') {
+            queryClient.invalidateQueries({ queryKey: ['scheduler'] });
+          }
+          break;
+
+        case 'room_update':
+          // Handle room updates (participants added/removed, etc.)
+          if (message.room) {
+            queryClient.invalidateQueries({
+              queryKey: ['chat', 'threads', message.room]
+            });
+          }
+          break;
+
+        case 'backend_status':
+        case 'critical_alert':
+        case 'service_recovery':
+          // Broadcast/system notification messages are handled by individual components
+          // No query cache updates needed for these message types
+          break;
+      }
+    },
+    [queryClient]
+  );
 
   // Send message through WebSocket
   const sendMessage = useCallback(async (message: WSMessage): Promise<any> => {
@@ -233,55 +295,64 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   }, []);
 
   // Subscribe to room messages
-  const subscribe = useCallback((room: string, handler: (message: WSMessage) => void): (() => void) => {
-    const key = `room:${room}`;
-    
-    if (!handlersRef.current.has(key)) {
-      handlersRef.current.set(key, new Set());
-    }
-    
-    handlersRef.current.get(key)!.add(handler);
-    
-    // Also subscribe to room events on the WebSocket manager
-    if (wsManagerRef.current) {
-      wsManagerRef.current.on(key, handler);
-    }
+  const subscribe = useCallback(
+    (room: string, handler: (message: WSMessage) => void): (() => void) => {
+      const key = `room:${room}`;
 
-    // Return unsubscribe function
-    return () => {
-      const handlers = handlersRef.current.get(key);
-      if (handlers) {
-        handlers.delete(handler);
-        if (handlers.size === 0) {
-          handlersRef.current.delete(key);
-        }
+      if (!handlersRef.current.has(key)) {
+        handlersRef.current.set(key, new Set());
       }
-      
+
+      handlersRef.current.get(key)!.add(handler);
+
+      // Also subscribe to room events on the WebSocket manager
       if (wsManagerRef.current) {
-        wsManagerRef.current.off(key, handler);
+        wsManagerRef.current.on(key, handler);
       }
-    };
-  }, []);
+
+      // Return unsubscribe function
+      return () => {
+        const handlers = handlersRef.current.get(key);
+        if (handlers) {
+          handlers.delete(handler);
+          if (handlers.size === 0) {
+            handlersRef.current.delete(key);
+          }
+        }
+
+        if (wsManagerRef.current) {
+          wsManagerRef.current.off(key, handler);
+        }
+      };
+    },
+    []
+  );
 
   // Subscribe to specific message types
-  const subscribeToType = useCallback((type: WSMessage['type'], handler: (message: WSMessage) => void): (() => void) => {
-    if (!typeHandlersRef.current.has(type)) {
-      typeHandlersRef.current.set(type, new Set());
-    }
-    
-    typeHandlersRef.current.get(type)!.add(handler);
-
-    // Return unsubscribe function
-    return () => {
-      const handlers = typeHandlersRef.current.get(type);
-      if (handlers) {
-        handlers.delete(handler);
-        if (handlers.size === 0) {
-          typeHandlersRef.current.delete(type);
-        }
+  const subscribeToType = useCallback(
+    (
+      type: WSMessage['type'],
+      handler: (message: WSMessage) => void
+    ): (() => void) => {
+      if (!typeHandlersRef.current.has(type)) {
+        typeHandlersRef.current.set(type, new Set());
       }
-    };
-  }, []);
+
+      typeHandlersRef.current.get(type)!.add(handler);
+
+      // Return unsubscribe function
+      return () => {
+        const handlers = typeHandlersRef.current.get(type);
+        if (handlers) {
+          handlers.delete(handler);
+          if (handlers.size === 0) {
+            typeHandlersRef.current.delete(type);
+          }
+        }
+      };
+    },
+    []
+  );
 
   const value: WebSocketContextValue = {
     connectionState,
@@ -305,7 +376,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 export const useWebSocketContext = (): WebSocketContextValue => {
   const context = useContext(WebSocketContext);
   if (!context) {
-    throw new Error('useWebSocketContext must be used within WebSocketProvider');
+    throw new Error(
+      'useWebSocketContext must be used within WebSocketProvider'
+    );
   }
   return context;
 };
