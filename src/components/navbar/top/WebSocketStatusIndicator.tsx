@@ -7,31 +7,16 @@ import useWebSocketStatus from 'hooks/websocket/useWebSocketStatus';
 const WebSocketStatusIndicator = () => {
   const { isConnected, isConnecting, isReconnecting, hasError } = useWebSocketStatus();
 
-  // Determine icon color and indicator class based on connection state
-  const getStatusClasses = () => {
+  // Determine indicator class based on connection state
+  const getIndicatorClass = () => {
     if (isConnected) {
-      return {
-        indicatorClass: 'notification-indicator notification-indicator-success',
-        iconClass: 'text-success'
-      };
+      return 'notification-indicator notification-indicator-success';
     }
     if (isConnecting || isReconnecting) {
-      return {
-        indicatorClass: 'notification-indicator notification-indicator-warning',
-        iconClass: 'text-warning'
-      };
+      return 'notification-indicator notification-indicator-warning';
     }
-    if (hasError) {
-      return {
-        indicatorClass: 'notification-indicator notification-indicator-danger',
-        iconClass: 'text-danger'
-      };
-    }
-    // Disconnected
-    return {
-      indicatorClass: 'notification-indicator notification-indicator-danger',
-      iconClass: 'text-danger'
-    };
+    // Disconnected or Error
+    return 'notification-indicator notification-indicator-danger';
   };
 
   const getTooltipText = () => {
@@ -42,7 +27,7 @@ const WebSocketStatusIndicator = () => {
     return 'WebSocket Disconnected';
   };
 
-  const { indicatorClass, iconClass } = getStatusClasses();
+  const indicatorClass = getIndicatorClass();
 
   return (
     <OverlayTrigger
@@ -57,7 +42,7 @@ const WebSocketStatusIndicator = () => {
           <FontAwesomeIcon 
             icon="network-wired" 
             transform="shrink-6" 
-            className={classNames('fs-5', iconClass)} 
+            className="fs-5" 
           />
         </span>
       </li>

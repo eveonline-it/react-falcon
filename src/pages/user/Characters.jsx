@@ -9,10 +9,12 @@ import {
   faUser, faInfoCircle, faSave,
   faCheckCircle, faTimesCircle, faBan, faUserFriends
 } from '@fortawesome/free-solid-svg-icons';
+import { faDiscord } from '@fortawesome/free-brands-svg-icons';
 import { toast } from 'react-toastify';
 import { CharacterPortrait, CorporationLogo, AllianceLogo } from 'components/common';
 import { useCurrentUser } from 'hooks/auth';
 import { useUserCharacters, useUpdateCharacterPositions, useCharacterGroups } from 'hooks/useUserCharacters';
+import { useDiscordAuthStatus, useDiscordAuthUrl } from 'hooks/useDiscord';
 
 // Drag and Drop functionality using HTML5 API
 const DraggableRow = ({ character, index, onDragStart, onDragEnd, onDragOver, onDrop, isDragging, onViewDetails, onViewGroups }) => {
@@ -275,6 +277,10 @@ const Characters = () => {
   
   const updatePositionsMutation = useUpdateCharacterPositions();
   
+  // Discord auth hooks
+  const { data: discordAuthStatus } = useDiscordAuthStatus();
+  const { data: discordAuthUrl, isLoading: discordAuthUrlLoading } = useDiscordAuthUrl();
+  
   // Update local state when data changes
   React.useEffect(() => {
     if (charactersData) {
@@ -364,6 +370,14 @@ const Characters = () => {
     setShowGroupsModal(true);
   }, []);
 
+  const handleDiscordLogin = useCallback(() => {
+    if (discordAuthUrl?.auth_url) {
+      window.location.href = discordAuthUrl.auth_url;
+    } else {
+      toast.error('Discord login URL not available');
+    }
+  }, [discordAuthUrl]);
+
   const formatDateTime = (dateString) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleString();
@@ -435,6 +449,19 @@ const Characters = () => {
                       Save Order
                     </>
                   )}
+                </Button>
+              )}
+              {!discordAuthStatus?.is_linked && isAuthenticated && (
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  className="me-2"
+                  onClick={handleDiscordLogin}
+                  disabled={discordAuthUrlLoading || !discordAuthUrl?.auth_url}
+                  title={!isAuthenticated ? 'Login with EVE Online first' : 'Link your Discord account'}
+                >
+                  <FontAwesomeIcon icon={faDiscord} className="me-1" />
+                  {discordAuthUrlLoading ? 'Loading...' : 'Link Discord'}
                 </Button>
               )}
               <Button

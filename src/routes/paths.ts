@@ -232,6 +232,7 @@ export interface AppPaths {
   permissionsAdmin: string;
   sdeAdmin: string;
   sitemapAdmin: string;
+  discordAdmin: string;
 }
 
 const paths: AppPaths = {
@@ -397,7 +398,8 @@ const paths: AppPaths = {
   usersAdmin: `/${rootPaths.adminRoot}/users`,
   permissionsAdmin: `/${rootPaths.adminRoot}/permissions`,
   sdeAdmin: `/${rootPaths.adminRoot}/sde`,
-  sitemapAdmin: `/${rootPaths.adminRoot}/sitemap`
+  sitemapAdmin: `/${rootPaths.adminRoot}/sitemap`,
+  discordAdmin: `/${rootPaths.adminRoot}/discord`
 };
 
 export default paths;

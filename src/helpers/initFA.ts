@@ -1,5 +1,6 @@
 import { library } from '@fortawesome/fontawesome-svg-core';
 import {
+  faDiscord,
   faFacebook,
   faFacebookF,
   faFacebookSquare,
@@ -435,6 +436,7 @@ library.add(
   faTint,
 
   // Brand
+  faDiscord,
   faFacebook,
   faFacebookF,
   faFacebookSquare,

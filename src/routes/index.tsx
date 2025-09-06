@@ -178,6 +178,7 @@ const GroupsAdmin = lazy(() => import('pages/admin/GroupsAdmin'));
 const UsersAdmin = lazy(() => import('pages/admin/UsersAdmin'));
 const PermissionsAdmin = lazy(() => import('pages/admin/PermissionsAdmin'));
 const HierarchicalSitemapAdmin = lazy(() => import('pages/admin/HierarchicalSitemapAdmin'));
+const DiscordAdmin = lazy(() => import('pages/admin/DiscordAdmin'));
 const Characters = lazy(() => import('pages/user/Characters'));
 
 // Dynamic Route Component - must be defined before routes array
@@ -1184,6 +1185,14 @@ const routes: RouteObject[] = [
                 element: (
                   <Suspense key="hierarchical-sitemap-admin" fallback={<FalconLoader />}>
                     <HierarchicalSitemapAdmin />
+                  </Suspense>
+                )
+              },
+              {
+                path: paths.discordAdmin,
+                element: (
+                  <Suspense key="discord-admin" fallback={<FalconLoader />}>
+                    <DiscordAdmin />
                   </Suspense>
                 )
               }
