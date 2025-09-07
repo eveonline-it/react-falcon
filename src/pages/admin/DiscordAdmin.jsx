@@ -856,9 +856,7 @@ const DiscordAdmin = () => {
                       <th>Discord Role</th>
                       <th>Go Falcon Group</th>
                       <th>Guild</th>
-                      <th>Priority</th>
                       <th>Status</th>
-                      <th>Sync Count</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -878,19 +876,18 @@ const DiscordAdmin = () => {
                           </div>
                         </td>
                         <td className="align-middle">
-                          <small>{mapping.guild_id}</small>
-                        </td>
-                        <td className="align-middle">
-                          <Badge bg="secondary">{mapping.priority}</Badge>
+                          <div>
+                            <div className="fw-bold">
+                              {guilds.find(g => g.guild_id === mapping.guild_id)?.guild_name || 'Unknown Guild'}
+                            </div>
+                            <small className="text-muted">{mapping.guild_id}</small>
+                          </div>
                         </td>
                         <td className="align-middle">
                           <Badge bg={(mapping.is_active || mapping.enabled) ? 'success' : 'secondary'}>
                             <FontAwesomeIcon icon={(mapping.is_active || mapping.enabled) ? faCheckCircle : faTimesCircle} className="me-1" />
                             {(mapping.is_active || mapping.enabled) ? 'Enabled' : 'Disabled'}
                           </Badge>
-                        </td>
-                        <td className="align-middle">
-                          {mapping.sync_count || 0}
                         </td>
                         <td className="align-middle">
                           <ButtonGroup size="sm">
