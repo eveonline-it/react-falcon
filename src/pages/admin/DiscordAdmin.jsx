@@ -22,6 +22,7 @@ import {
   useDiscordStatus,
   useDiscordGuilds,
   useDiscordGuild,
+  useDiscordGuildRoles,
   useCreateDiscordGuild,
   useUpdateDiscordGuild,
   useDeleteDiscordGuild,
@@ -75,13 +76,7 @@ const DiscordAdmin = () => {
     discord_role_id: '',
     discord_role_name: '',
     group_id: '',
-    conditions: {
-      require_all: false,
-      character_count_min: 1,
-      character_count_max: null
-    },
-    is_active: true,
-    priority: 1
+    is_active: true
   });
 
   // Data hooks
@@ -92,6 +87,7 @@ const DiscordAdmin = () => {
   const { data: discordUsers, isLoading: usersLoading, refetch: refetchUsers } = useDiscordUsers(filters);
   const { data: discordStats, isLoading: statsLoading } = useDiscordGuildStats();
   const { data: groupsData } = useGroups({ limit: 100 }); // Get all groups for role mapping
+  const { data: guildRolesData, isLoading: rolesLoading } = useDiscordGuildRoles(roleMappingFormData.guild_id);
   
   // Debug Discord auth status
   const { data: authStatus, isLoading: authLoading, error: authError } = useDiscordAuthStatus();
@@ -111,9 +107,10 @@ const DiscordAdmin = () => {
   const syncUserMutation = useSyncDiscordUser();
 
   const guilds = guildsData?.guilds || [];
-  const roleMappings = roleMappingsData?.role_mappings || [];
+  const roleMappings = roleMappingsData?.role_mappings || roleMappingsData?.mappings || [];
   const users = discordUsers?.users || [];
   const groups = groupsData?.groups || [];
+  const guildRoles = guildRolesData?.roles || [];
 
   // Auto-refresh sync status every 30 seconds
   useEffect(() => {
@@ -145,7 +142,10 @@ const DiscordAdmin = () => {
     if (!searchTerm) return users;
     return users.filter(user => 
       user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.go_falcon_user_id?.includes(searchTerm)
+      user.global_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.go_falcon_user_id?.includes(searchTerm) ||
+      user.discord_id?.includes(searchTerm) ||
+      user.user_id?.includes(searchTerm)
     );
   }, [users, searchTerm]);
 
@@ -177,13 +177,7 @@ const DiscordAdmin = () => {
         discord_role_id: mapping.discord_role_id,
         discord_role_name: mapping.discord_role_name,
         group_id: mapping.group_id,
-        conditions: mapping.conditions || {
-          require_all: false,
-          character_count_min: 1,
-          character_count_max: null
-        },
-        is_active: mapping.is_active || mapping.enabled, // Handle both field names
-        priority: mapping.priority || 1
+        is_active: mapping.is_active !== undefined ? mapping.is_active : mapping.enabled !== undefined ? mapping.enabled : true
       });
     } else {
       setEditingRoleMapping(null);
@@ -192,13 +186,7 @@ const DiscordAdmin = () => {
         discord_role_id: '',
         discord_role_name: '',
         group_id: '',
-        conditions: {
-          require_all: false,
-          character_count_min: 1,
-          character_count_max: null
-        },
-        is_active: true,
-        priority: 1
+        is_active: true
       });
     }
     setShowRoleMappingModal(true);
@@ -237,24 +225,13 @@ const DiscordAdmin = () => {
     e.preventDefault();
     
     try {
-      const mappingData = {
-        ...roleMappingFormData,
-        conditions: {
-          ...roleMappingFormData.conditions,
-          character_count_min: parseInt(roleMappingFormData.conditions.character_count_min, 10),
-          character_count_max: roleMappingFormData.conditions.character_count_max ? 
-            parseInt(roleMappingFormData.conditions.character_count_max, 10) : null
-        },
-        priority: parseInt(roleMappingFormData.priority, 10)
-      };
-
       if (editingRoleMapping) {
         await updateRoleMappingMutation.mutateAsync({ 
           mappingId: editingRoleMapping.id, 
-          data: mappingData 
+          data: roleMappingFormData 
         });
       } else {
-        await createRoleMappingMutation.mutateAsync(mappingData);
+        await createRoleMappingMutation.mutateAsync(roleMappingFormData);
       }
       
       setShowRoleMappingModal(false);
@@ -839,7 +816,7 @@ const DiscordAdmin = () => {
                 value={filters.guild_id}
                 onChange={(e) => setFilters({...filters, guild_id: e.target.value})}
               >
-                <option value="">All Guilds</option>
+                <option value="">Select a guild</option>
                 {guilds.map(guild => (
                   <option key={guild.guild_id} value={guild.guild_id}>
                     {guild.guild_name}
@@ -1161,26 +1138,30 @@ const DiscordAdmin = () => {
                   </thead>
                   <tbody>
                     {filteredUsers.map((user) => (
-                      <tr key={user.discord_user_id}>
+                      <tr key={user.discord_id || user.discord_user_id}>
                         <td className="align-middle">
                           <div className="d-flex align-items-center">
-                            {user.avatar && (
-                              <img 
-                                src={`https://cdn.discordapp.com/avatars/${user.discord_user_id}/${user.avatar}.png`}
-                                alt={user.username}
-                                className="rounded-circle me-2"
-                                width="24"
-                                height="24"
-                              />
-                            )}
+                            <img 
+                              src={user.avatar 
+                                ? `https://cdn.discordapp.com/avatars/${user.discord_id || user.discord_user_id}/${user.avatar}.webp?size=32`
+                                : `https://cdn.discordapp.com/embed/avatars/${(parseInt(user.discord_id || user.discord_user_id) >> 22) % 6}.png`
+                              }
+                              alt={user.global_name || user.username}
+                              className="rounded-circle me-2"
+                              width="24"
+                              height="24"
+                              onError={(e) => {
+                                e.target.src = `https://cdn.discordapp.com/embed/avatars/0.png`;
+                              }}
+                            />
                             <div>
-                              <div className="fw-bold">{user.username}</div>
-                              <small className="text-muted">ID: {user.discord_user_id}</small>
+                              <div className="fw-bold">{user.global_name || user.username}</div>
+                              <small className="text-muted">@{user.username}</small>
                             </div>
                           </div>
                         </td>
                         <td className="align-middle">
-                          <span>{user.go_falcon_user_id}</span>
+                          <span>{user.user_id || user.go_falcon_user_id}</span>
                         </td>
                         <td className="align-middle">
                           <Badge bg={user.is_active ? 'success' : 'secondary'}>
@@ -1189,7 +1170,7 @@ const DiscordAdmin = () => {
                           </Badge>
                         </td>
                         <td className="align-middle">
-                          <small>{formatDateTime(user.last_sync)}</small>
+                          <small>{formatDateTime(user.updated_at || user.last_sync)}</small>
                         </td>
                         <td className="align-middle">
                           <Badge bg="info">{user.guilds?.length || 0}</Badge>
@@ -1199,7 +1180,7 @@ const DiscordAdmin = () => {
                             <Button
                               variant="outline-success"
                               size="sm"
-                              onClick={() => syncUserMutation.mutate(user.go_falcon_user_id)}
+                              onClick={() => syncUserMutation.mutate(user.user_id || user.go_falcon_user_id)}
                               disabled={syncUserMutation.isPending}
                             >
                               <FontAwesomeIcon icon={faSync} size="xs" />
@@ -1315,38 +1296,54 @@ const DiscordAdmin = () => {
                   <Form.Label>Discord Guild <span className="text-danger">*</span></Form.Label>
                   <Form.Select
                     value={roleMappingFormData.guild_id}
-                    onChange={(e) => setRoleMappingFormData({...roleMappingFormData, guild_id: e.target.value})}
+                    onChange={(e) => setRoleMappingFormData({
+                      ...roleMappingFormData, 
+                      guild_id: e.target.value,
+                      discord_role_id: '',
+                      discord_role_name: ''
+                    })}
                     required
                   >
                     <option value="">Select a guild...</option>
-                    {guilds.filter(g => g.enabled).map(guild => (
+                    {guilds.map(guild => (
                       <option key={guild.guild_id} value={guild.guild_id}>
-                        {guild.guild_name}
+                        {guild.guild_name} {!guild.is_enabled && '(Disabled)'}
                       </option>
                     ))}
                   </Form.Select>
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Discord Role ID <span className="text-danger">*</span></Form.Label>
-                  <Form.Control
-                    type="text"
+                  <Form.Label>Discord Role <span className="text-danger">*</span></Form.Label>
+                  <Form.Select
                     value={roleMappingFormData.discord_role_id}
-                    onChange={(e) => setRoleMappingFormData({...roleMappingFormData, discord_role_id: e.target.value})}
+                    onChange={(e) => {
+                      const selectedRole = guildRoles.find(role => role.id === e.target.value);
+                      setRoleMappingFormData({
+                        ...roleMappingFormData,
+                        discord_role_id: e.target.value,
+                        discord_role_name: selectedRole?.name || ''
+                      });
+                    }}
                     required
-                    placeholder="Discord role ID"
-                  />
-                </Form.Group>
-
-                <Form.Group className="mb-3">
-                  <Form.Label>Discord Role Name <span className="text-danger">*</span></Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={roleMappingFormData.discord_role_name}
-                    onChange={(e) => setRoleMappingFormData({...roleMappingFormData, discord_role_name: e.target.value})}
-                    required
-                    placeholder="Discord role name"
-                  />
+                    disabled={!roleMappingFormData.guild_id || rolesLoading}
+                  >
+                    <option value="">
+                      {!roleMappingFormData.guild_id ? 'Select a guild first...' : 
+                       rolesLoading ? 'Loading roles...' : 
+                       'Select a role...'}
+                    </option>
+                    {guildRoles.map(role => (
+                      <option key={role.id} value={role.id}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </Form.Select>
+                  {roleMappingFormData.discord_role_id && (
+                    <Form.Text className="text-muted">
+                      Role ID: {roleMappingFormData.discord_role_id}
+                    </Form.Text>
+                  )}
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -1372,86 +1369,24 @@ const DiscordAdmin = () => {
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Priority</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={roleMappingFormData.priority}
-                    onChange={(e) => setRoleMappingFormData({...roleMappingFormData, priority: e.target.value})}
-                  />
-                  <Form.Text className="text-muted">
-                    Higher numbers = higher priority (1-100)
-                  </Form.Text>
-                </Form.Group>
-
-                <Form.Group className="mb-3">
                   <Form.Check
-                    type="switch"
-                    id="mapping-enabled-switch"
-                    label="Enable Mapping"
+                    type="checkbox"
+                    id="is_active"
+                    label="Active Mapping"
                     checked={roleMappingFormData.is_active}
-                    onChange={(e) => setRoleMappingFormData({...roleMappingFormData, is_active: e.target.checked})}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <hr />
-            <h6>Conditions</h6>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Minimum Characters</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min="0"
-                    value={roleMappingFormData.conditions.character_count_min}
-                    onChange={(e) => setRoleMappingFormData({
-                      ...roleMappingFormData,
-                      conditions: {...roleMappingFormData.conditions, character_count_min: e.target.value}
-                    })}
+                    onChange={(e) => {
+                      setRoleMappingFormData({
+                        ...roleMappingFormData, 
+                        is_active: e.target.checked
+                      });
+                    }}
                   />
                   <Form.Text className="text-muted">
-                    Minimum number of characters user must have
-                  </Form.Text>
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Maximum Characters</Form.Label>
-                  <Form.Control
-                    type="number"
-                    min="0"
-                    value={roleMappingFormData.conditions.character_count_max || ''}
-                    onChange={(e) => setRoleMappingFormData({
-                      ...roleMappingFormData,
-                      conditions: {...roleMappingFormData.conditions, character_count_max: e.target.value || null}
-                    })}
-                    placeholder="No limit"
-                  />
-                  <Form.Text className="text-muted">
-                    Maximum number of characters (optional)
+                    When enabled, this mapping will actively sync Discord roles with Go Falcon groups
                   </Form.Text>
                 </Form.Group>
               </Col>
             </Row>
-
-            <Form.Group className="mb-3">
-              <Form.Check
-                type="switch"
-                id="require-all-switch"
-                label="Require All Conditions"
-                checked={roleMappingFormData.conditions.require_all}
-                onChange={(e) => setRoleMappingFormData({
-                  ...roleMappingFormData,
-                  conditions: {...roleMappingFormData.conditions, require_all: e.target.checked}
-                })}
-              />
-              <Form.Text className="text-muted">
-                Whether user must meet ALL conditions or just ANY condition
-              </Form.Text>
-            </Form.Group>
           </Modal.Body>
           <Modal.Footer>
             <Button variant="secondary" onClick={() => setShowRoleMappingModal(false)}>

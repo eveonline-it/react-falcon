@@ -80,8 +80,18 @@ export const useDiscordGuild = (guildId) => {
   });
 };
 
-// Note: Discord guild roles are typically fetched through the Discord API directly by the bot
-// This endpoint may not be available - check server implementation
+export const useDiscordGuildRoles = (guildId) => {
+  return useQuery({
+    queryKey: ['discord', 'guilds', guildId, 'roles'],
+    queryFn: () => fetcher(`/discord/guilds/${guildId}/roles`),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: !!guildId,
+    retry: (failureCount, error) => {
+      if (error.status === 401 || error.status === 403) return false;
+      return failureCount < 3;
+    },
+  });
+};
 
 export const useCreateDiscordGuild = () => {
   const queryClient = useQueryClient();
@@ -225,7 +235,12 @@ export const useCreateDiscordRoleMapping = () => {
   return useMutation({
     mutationFn: (data) => {
       // Role mappings are created for specific guilds
-      const { guild_id, ...mappingData } = data;
+      const { guild_id, group_id, discord_role_id, discord_role_name } = data;
+      const mappingData = {
+        group_id,
+        discord_role_id,
+        discord_role_name
+      };
       return fetcher(`/discord/guilds/${guild_id}/role-mappings`, {
         method: 'POST',
         body: JSON.stringify(mappingData),
@@ -250,9 +265,15 @@ export const useUpdateDiscordRoleMapping = () => {
 
   return useMutation({
     mutationFn: ({ mappingId, data }) => {
+      const { discord_role_id, discord_role_name, is_active } = data;
+      const mappingData = {
+        discord_role_id,
+        discord_role_name,
+        is_active
+      };
       return fetcher(`/discord/role-mappings/${mappingId}`, {
         method: 'PUT',
-        body: JSON.stringify(data),
+        body: JSON.stringify(mappingData),
       });
     },
     onSuccess: (data, { mappingId }) => {
@@ -486,7 +507,7 @@ export const useDiscordGuildStats = () => {
         active_role_mappings: roleMappings?.role_mappings?.filter(rm => rm.enabled)?.length || 0,
         inactive_role_mappings: roleMappings?.role_mappings?.filter(rm => !rm.enabled)?.length || 0,
         total_discord_users: users?.users?.length || 0,
-        linked_users: users?.users?.filter(u => u.discord_user_id)?.length || 0,
+        linked_users: users?.users?.filter(u => u.discord_id || u.discord_user_id)?.length || 0,
       };
       return stats;
     },

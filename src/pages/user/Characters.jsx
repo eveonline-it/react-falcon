@@ -451,17 +451,17 @@ const Characters = () => {
                   )}
                 </Button>
               )}
-              {!discordAuthStatus?.is_linked && isAuthenticated && (
+              {isAuthenticated && (
                 <Button
                   variant="outline-primary"
                   size="sm"
                   className="me-2"
                   onClick={handleDiscordLogin}
                   disabled={discordAuthUrlLoading || !discordAuthUrl?.auth_url}
-                  title={!isAuthenticated ? 'Login with EVE Online first' : 'Link your Discord account'}
+                  title={!isAuthenticated ? 'Login with EVE Online first' : discordAuthStatus?.is_linked ? 'Re-link your Discord account' : 'Link your Discord account'}
                 >
                   <FontAwesomeIcon icon={faDiscord} className="me-1" />
-                  {discordAuthUrlLoading ? 'Loading...' : 'Link Discord'}
+                  {discordAuthUrlLoading ? 'Loading...' : discordAuthStatus?.is_linked ? 'Re-link Discord' : 'Link Discord'}
                 </Button>
               )}
               <Button
