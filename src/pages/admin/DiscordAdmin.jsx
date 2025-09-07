@@ -43,6 +43,78 @@ import {
 import { useGroups } from 'hooks/useGroups';
 import { useCurrentUser } from 'hooks/auth/useAuth';
 
+// Component to check guild health by testing bot's ability to fetch roles
+const GuildHealthCheck = ({ guildId, enabled }) => {
+  const { data: rolesData, isLoading, error } = useDiscordGuildRoles(enabled ? guildId : null);
+  
+  if (!enabled) {
+    return (
+      <Badge bg="secondary">
+        <FontAwesomeIcon icon={faTimesCircle} className="me-1" />
+        Disabled
+      </Badge>
+    );
+  }
+  
+  if (isLoading) {
+    return (
+      <Badge bg="info">
+        <Spinner animation="border" size="sm" className="me-1" style={{ width: '12px', height: '12px' }} />
+        Checking...
+      </Badge>
+    );
+  }
+  
+  if (error) {
+    const statusCode = error.status;
+    let status = 'Unhealthy';
+    let variant = 'danger';
+    
+    if (statusCode === 403) {
+      status = 'No Permissions';
+    } else if (statusCode === 401) {
+      status = 'Unauthorized';
+    } else if (statusCode >= 500) {
+      status = 'Server Error';
+    } else {
+      status = 'Bot Offline';
+    }
+    
+    return (
+      <OverlayTrigger
+        placement="top"
+        overlay={<Tooltip>Error {statusCode}: {error.message}</Tooltip>}
+      >
+        <Badge bg={variant}>
+          <FontAwesomeIcon icon={faTimesCircle} className="me-1" />
+          {status}
+        </Badge>
+      </OverlayTrigger>
+    );
+  }
+  
+  if (rolesData && rolesData.roles) {
+    return (
+      <OverlayTrigger
+        placement="top"
+        overlay={<Tooltip>Bot can access {rolesData.roles.length} roles</Tooltip>}
+      >
+        <Badge bg="success">
+          <FontAwesomeIcon icon={faCheckCircle} className="me-1" />
+          Healthy
+        </Badge>
+      </OverlayTrigger>
+    );
+  }
+  
+  return (
+    <Badge bg="warning">
+      <FontAwesomeIcon icon={faExclamationTriangle} className="me-1" />
+      Unknown
+    </Badge>
+  );
+};
+
 const DiscordAdmin = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [filters, setFilters] = useState({
@@ -734,9 +806,10 @@ const DiscordAdmin = () => {
                           </div>
                         </td>
                         <td className="align-middle">
-                          <Badge bg={getStatusColor(guild.health_status)}>
-                            {guild.health_status || 'Unknown'}
-                          </Badge>
+                          <GuildHealthCheck 
+                            guildId={guild.guild_id} 
+                            enabled={guild.enabled !== false}
+                          />
                         </td>
                         <td className="align-middle">
                           {formatDateTime(guild.created_at)}
