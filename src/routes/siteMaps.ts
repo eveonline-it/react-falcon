@@ -248,6 +248,11 @@ export const pagesRoutes: RouteGroup = {
           active: true
         },
         {
+          name: 'Assets',
+          to: paths.userAssets,
+          active: true
+        },
+        {
           name: 'Settings',
           to: paths.userSettings,
           active: true
@@ -1272,6 +1277,7 @@ export const routeComponents: Record<string, () => Promise<any>> = {
   'UserProfile': () => import('../pages/user/profile/Profile'),
   'UserSettings': () => import('../pages/user/settings/Settings'),
   'Characters': () => import('../pages/user/Characters'),
+  'Assets': () => import('../pages/user/Assets'),
   
   // Admin components
   'UsersAdmin': () => import('../pages/admin/UsersAdmin'),

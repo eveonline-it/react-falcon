@@ -180,6 +180,7 @@ const PermissionsAdmin = lazy(() => import('pages/admin/PermissionsAdmin'));
 const HierarchicalSitemapAdmin = lazy(() => import('pages/admin/HierarchicalSitemapAdmin'));
 const DiscordAdmin = lazy(() => import('pages/admin/DiscordAdmin'));
 const Characters = lazy(() => import('pages/user/Characters'));
+const Assets = lazy(() => import('pages/user/Assets'));
 
 // Dynamic Route Component - must be defined before routes array
 const DynamicRoute: React.FC = () => {
@@ -470,6 +471,14 @@ const routes: RouteObject[] = [
                 element: (
                   <Suspense key="user-characters" fallback={<FalconLoader />}>
                     <Characters />
+                  </Suspense>
+                )
+              },
+              {
+                path: paths.userAssets,
+                element: (
+                  <Suspense key="user-assets" fallback={<FalconLoader />}>
+                    <Assets />
                   </Suspense>
                 )
               },
