@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faBox, faSync, faSearch, faMapMarkerAlt, faArrowLeft,
   faSort, faSortUp, faSortDown, faWarehouse, faChevronRight,
-  faGlobe, faBuilding, faCubes, faExclamationTriangle,
+  faBuilding, faCubes, faExclamationTriangle,
   faChevronDown, faRocket, faCog, faLayerGroup,
   IconDefinition
 } from '@fortawesome/free-solid-svg-icons';
@@ -55,6 +55,9 @@ interface Location {
   assets: Asset[];
   totalItems: number;
   uniqueTypesCount: number;
+  fittedShipsCount: number;
+  spareItemsCount: number;
+  containersCount: number;
 }
 
 
@@ -74,7 +77,8 @@ const Assets: React.FC = () => {
   const [sortField, setSortField] = useState<SortField>('type_name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [showContainers, setShowContainers] = useState<boolean>(true);
-  const [showFittings, setShowFittings] = useState<boolean>(true);
+  const [showShips, setShowShips] = useState<boolean>(true);
+  const [showItems, setShowItems] = useState<boolean>(true);
   const [expandedShips, setExpandedShips] = useState<Set<number>>(new Set());
   
   // Pagination
@@ -140,6 +144,9 @@ const Assets: React.FC = () => {
       assets: Asset[];
       totalItems: number;
       uniqueTypes: Set<string>;
+      fittedShips: Set<number>;
+      spareItems: number;
+      containers: number;
     }>, asset: Asset) => {
       const locationKey = asset.location_name || 'Unknown Location';
       if (!acc[locationKey]) {
@@ -151,7 +158,10 @@ const Assets: React.FC = () => {
           regionId: asset.region_id,
           assets: [],
           totalItems: 0,
-          uniqueTypes: new Set()
+          uniqueTypes: new Set(),
+          fittedShips: new Set(),
+          spareItems: 0,
+          containers: 0
         };
       }
       
@@ -159,6 +169,20 @@ const Assets: React.FC = () => {
       // Only count root-level assets (not fitted items)
       if (!asset.parent_item_id) {
         acc[locationKey].totalItems += asset.quantity || 0;
+        
+        // Count containers
+        if (asset.is_container) {
+          acc[locationKey].containers += 1;
+        }
+        // Count spare items (not ships, not containers)
+        else if (!isLikelyShip(asset)) {
+          acc[locationKey].spareItems += asset.quantity || 0;
+        }
+      } else {
+        // This is a fitted item, so mark its parent as a fitted ship
+        if (asset.parent_item_id) {
+          acc[locationKey].fittedShips.add(asset.parent_item_id);
+        }
       }
       acc[locationKey].uniqueTypes.add(asset.type_name);
       return acc;
@@ -174,10 +198,19 @@ const Assets: React.FC = () => {
       assets: Asset[];
       totalItems: number;
       uniqueTypes: Set<string>;
+      fittedShips: Set<number>;
+      spareItems: number;
+      containers: number;
     }[]).map(location => ({
       ...location,
       uniqueTypesCount: location.uniqueTypes.size,
-      uniqueTypes: undefined // Remove Set object
+      fittedShipsCount: location.fittedShips.size,
+      spareItemsCount: location.spareItems,
+      containersCount: location.containers,
+      uniqueTypes: undefined, // Remove Set object
+      fittedShips: undefined, // Remove Set object
+      spareItems: undefined, // Remove temporary field
+      containers: undefined // Remove temporary field
     } as Location)).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [assetsData]);
   
@@ -209,7 +242,7 @@ const Assets: React.FC = () => {
         // Root level asset (no parent or parent not in this location)
         rootAssets.push({
           ...asset,
-          isShip: isLikelyShip(asset),
+          isShip: false, // Will be determined after we know which have children
           children: [],
           fittings: new Map() // slot category -> items[]
         });
@@ -222,11 +255,17 @@ const Assets: React.FC = () => {
       }
     });
     
-    // Attach children to their parents
+    // Attach children to their parents and determine ship status
     rootAssets.forEach(parent => {
       if (childAssets.has(parent.item_id)) {
         const children = childAssets.get(parent.item_id)!;
         parent.children = children;
+        
+        // If this asset has fitted items (children with ship slots/bays), it's a ship
+        const hasFittedItems = children.some(child => 
+          isShipSlot(child.location_flag) || isShipBay(child.location_flag)
+        );
+        parent.isShip = hasFittedItems;
         
         // Group fittings by slot category if this is a ship
         if (parent.isShip) {
@@ -259,13 +298,28 @@ const Assets: React.FC = () => {
       });
     }
     
-    // Apply container filter
-    if (!showContainers) {
-      filteredAssets = filteredAssets.filter(asset => !asset.is_container);
-    }
+    // Apply filtering based on asset type
+    filteredAssets = filteredAssets.filter(asset => {
+      // Determine asset type based on our new logic
+      const isContainer = asset.is_container;
+      const isShip = asset.isShip; // Now properly identifies ships with fitted items
+      const isSpareItem = !isShip && !isContainer;
+      
+      // Apply filters
+      if (isContainer && !showContainers) return false;
+      if (isShip && !showShips) return false;
+      if (isSpareItem && !showItems) return false;
+      
+      return true;
+    });
     
     // Apply sorting
     filteredAssets.sort((a, b) => {
+      // Primary sort: Ships first
+      if (a.isShip && !b.isShip) return -1;
+      if (!a.isShip && b.isShip) return 1;
+      
+      // Secondary sort: By selected field
       let aValue: string | number = a[sortField];
       let bValue: string | number = b[sortField];
       
@@ -294,7 +348,7 @@ const Assets: React.FC = () => {
       paginatedAssets,
       totalPages 
     };
-  }, [selectedLocation, assetsData, searchTerm, showContainers, sortField, sortDirection, currentPage, itemsPerPage]);
+  }, [selectedLocation, assetsData, searchTerm, showContainers, showShips, showItems, sortField, sortDirection, currentPage, itemsPerPage]);
   
   const handleSort = (field: SortField): void => {
     if (sortField === field) {
@@ -318,12 +372,11 @@ const Assets: React.FC = () => {
     }
   };
   
-  const getLocationIcon = (locationType: string): IconDefinition => {
-    switch(locationType) {
-      case 'station': return faBuilding;
-      case 'structure': return faWarehouse;
-      case 'solar_system': return faGlobe;
-      default: return faMapMarkerAlt;
+  const getLocationIcon = (locationId: number): IconDefinition => {
+    if (locationId < 100000000) {
+      return faBuilding; // station
+    } else {
+      return faWarehouse; // structure
     }
   };
   
@@ -367,7 +420,7 @@ const Assets: React.FC = () => {
   // Reset pagination when search changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, showContainers]);
+  }, [searchTerm, showContainers, showShips, showItems]);
   
   const selectedCharacter = charactersData?.find((c: Character) => c.character_id === selectedCharacterId);
   
@@ -515,21 +568,30 @@ const Assets: React.FC = () => {
                       >
                         <div className="d-flex align-items-center">
                           <FontAwesomeIcon 
-                            icon={getLocationIcon(location.type)}
+                            icon={getLocationIcon(location.id)}
                             className="me-3 text-muted"
                             size="lg"
                           />
                           <div>
                             <div className="fw-semibold">{location.name}</div>
-                            <small className="text-muted">
-                              {location.type} • ID: {location.id}
-                            </small>
                           </div>
                         </div>
                         <div className="d-flex align-items-center">
                           <div className="text-end me-3">
-                            <div className="fw-semibold">{formatQuantity(location.totalItems)}</div>
-                            <small className="text-muted">{location.uniqueTypesCount} types</small>
+                            <div className="d-flex flex-column">
+                              <div className="d-flex justify-content-between">
+                                <small className="text-muted me-2">Ships:</small>
+                                <small className="fw-semibold">{location.fittedShipsCount}</small>
+                              </div>
+                              <div className="d-flex justify-content-between">
+                                <small className="text-muted me-2">Items:</small>
+                                <small className="fw-semibold">{formatQuantity(location.spareItemsCount)}</small>
+                              </div>
+                              <div className="d-flex justify-content-between">
+                                <small className="text-muted me-2">Containers:</small>
+                                <small className="fw-semibold">{location.containersCount}</small>
+                              </div>
+                            </div>
                           </div>
                           <FontAwesomeIcon icon={faChevronRight} className="text-muted" />
                         </div>
@@ -563,20 +625,28 @@ const Assets: React.FC = () => {
                         />
                       </InputGroup>
                     </Col>
-                    <Col lg={3}>
+                    <Col lg={2}>
+                      <Form.Check
+                        type="switch"
+                        label="Show Ships"
+                        checked={showShips}
+                        onChange={(e) => setShowShips(e.target.checked)}
+                      />
+                    </Col>
+                    <Col lg={2}>
+                      <Form.Check
+                        type="switch"
+                        label="Show Items"
+                        checked={showItems}
+                        onChange={(e) => setShowItems(e.target.checked)}
+                      />
+                    </Col>
+                    <Col lg={2}>
                       <Form.Check
                         type="switch"
                         label="Show Containers"
                         checked={showContainers}
                         onChange={(e) => setShowContainers(e.target.checked)}
-                      />
-                    </Col>
-                    <Col lg={3}>
-                      <Form.Check
-                        type="switch"
-                        label="Show Fittings"
-                        checked={showFittings}
-                        onChange={(e) => setShowFittings(e.target.checked)}
                       />
                     </Col>
                   </Row>
@@ -700,7 +770,7 @@ const Assets: React.FC = () => {
                               </tr>
                               
                               {/* Ship Fittings Rows */}
-                              {showFittings && asset.isShip && expandedShips.has(asset.item_id) && (
+                              {showShips && asset.isShip && expandedShips.has(asset.item_id) && (
                                 Array.from(asset.fittings.entries()).map(([category, items]) => (
                                   <React.Fragment key={`${asset.item_id}-${category}`}>
                                     {/* Category Header */}
