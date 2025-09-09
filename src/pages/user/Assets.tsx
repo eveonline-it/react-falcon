@@ -156,7 +156,10 @@ const Assets: React.FC = () => {
       }
       
       acc[locationKey].assets.push(asset);
-      acc[locationKey].totalItems += asset.quantity || 0;
+      // Only count root-level assets (not fitted items)
+      if (!asset.parent_item_id) {
+        acc[locationKey].totalItems += asset.quantity || 0;
+      }
       acc[locationKey].uniqueTypes.add(asset.type_name);
       return acc;
     }, {});
