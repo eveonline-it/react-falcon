@@ -8,33 +8,77 @@ import {
   faBox, faSync, faSearch, faMapMarkerAlt, faArrowLeft,
   faSort, faSortUp, faSortDown, faWarehouse, faChevronRight,
   faGlobe, faBuilding, faCubes, faExclamationTriangle,
-  faChevronDown, faChevronUp, faRocket, faCog, faLayerGroup
+  faChevronDown, faRocket, faCog, faLayerGroup,
+  IconDefinition
 } from '@fortawesome/free-solid-svg-icons';
 import { toast } from 'react-toastify';
 import { CharacterPortrait } from 'components/common';
 import { useCurrentUser } from 'hooks/auth';
 import { useUserCharacters } from 'hooks/useUserCharacters';
-import { useCharacterAssets, useInvalidateAssets } from 'hooks/useAssets';
+import { useCharacterAssets } from 'hooks/useAssets';
 
-const Assets = () => {
+// Type definitions
+interface Character {
+  character_id: string;
+  character_name: string;
+  corporation_name?: string;
+}
+
+interface Asset {
+  item_id: number;
+  type_id: number;
+  type_name: string;
+  location_id: number;
+  location_name: string;
+  location_type: string;
+  location_flag: string;
+  quantity: number;
+  parent_item_id?: number;
+  solar_system_id?: number;
+  region_id?: number;
+  is_singleton?: boolean;
+  is_container?: boolean;
+}
+
+interface ProcessedAsset extends Asset {
+  isShip: boolean;
+  children: Asset[];
+  fittings: Map<string, Asset[]>;
+}
+
+interface Location {
+  id: number;
+  name: string;
+  type: string;
+  systemId?: number;
+  regionId?: number;
+  assets: Asset[];
+  totalItems: number;
+  uniqueTypesCount: number;
+}
+
+
+type SortField = 'type_name' | 'quantity' | 'item_id' | 'type_id';
+type SortDirection = 'asc' | 'desc';
+
+const Assets: React.FC = () => {
   const { user } = useCurrentUser();
   const userId = user?.user_id;
   const { data: charactersData, isLoading: isLoadingCharacters } = useUserCharacters(userId);
-  const [selectedCharacterId, setSelectedCharacterId] = useState(null);
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const { data: assetsData, isLoading: isLoadingAssets, error: assetsError, refetch: refetchAssets } = useCharacterAssets(selectedCharacterId);
-  const invalidateAssets = useInvalidateAssets();
   
   // View states
-  const [selectedLocation, setSelectedLocation] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState('type_name');
-  const [sortDirection, setSortDirection] = useState('asc');
-  const [showContainers, setShowContainers] = useState(true);
-  const [showFittings, setShowFittings] = useState(true);
-  const [expandedShips, setExpandedShips] = useState(new Set());
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [sortField, setSortField] = useState<SortField>('type_name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [showContainers, setShowContainers] = useState<boolean>(true);
+  const [showFittings, setShowFittings] = useState<boolean>(true);
+  const [expandedShips, setExpandedShips] = useState<Set<number>>(new Set());
   
   // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 25;
   
   // Set default character on load and reset location selection
@@ -53,17 +97,17 @@ const Assets = () => {
   }, [selectedCharacterId]);
   
   // Utility functions for ship fitting detection
-  const isShipSlot = (locationFlag) => {
+  const isShipSlot = (locationFlag: string | undefined): boolean => {
     if (!locationFlag) return false;
     return /^(HiSlot|MedSlot|LoSlot|RigSlot|SubSystemSlot|ServiceSlot)\d+$/.test(locationFlag);
   };
   
-  const isShipBay = (locationFlag) => {
+  const isShipBay = (locationFlag: string | undefined): boolean => {
     if (!locationFlag) return false;
     return ['CargoBay', 'DroneBay', 'ShipHangar', 'FleetHangar', 'FuelBay', 'OreHold', 'GasHold', 'MineralHold', 'SalvageHold', 'SpecializedFuelBay', 'SpecializedOreHold', 'SpecializedGasHold', 'SpecializedMineralHold', 'SpecializedSalvageHold', 'SpecializedShipHold', 'SpecializedSmallShipHold', 'SpecializedMediumShipHold', 'SpecializedLargeShipHold', 'SpecializedIndustrialShipHold', 'SpecializedAmmoHold', 'ImplantBay', 'QuafeBay'].includes(locationFlag);
   };
   
-  const getSlotCategory = (locationFlag) => {
+  const getSlotCategory = (locationFlag: string | undefined): string => {
     if (!locationFlag) return 'Unknown';
     if (locationFlag.startsWith('HiSlot')) return 'High Slots';
     if (locationFlag.startsWith('MedSlot')) return 'Medium Slots';
@@ -75,7 +119,7 @@ const Assets = () => {
     return locationFlag;
   };
   
-  const isLikelyShip = (asset) => {
+  const isLikelyShip = (asset: Asset): boolean => {
     // Ships typically don't have parent_item_id and are in hangar or being piloted
     return !asset.parent_item_id && 
            (asset.location_flag === 'Hangar' || 
@@ -84,15 +128,24 @@ const Assets = () => {
   };
   
   // Process locations with asset counts and details
-  const locations = useMemo(() => {
+  const locations = useMemo<Location[]>(() => {
     if (!assetsData?.assets) return [];
     
-    const locationGroups = assetsData.assets.reduce((acc, asset) => {
-      const locationKey = asset.location_name;
+    const locationGroups = assetsData.assets.reduce((acc: Record<string, {
+      id: number;
+      name: string;
+      type: string;
+      systemId?: number;
+      regionId?: number;
+      assets: Asset[];
+      totalItems: number;
+      uniqueTypes: Set<string>;
+    }>, asset: Asset) => {
+      const locationKey = asset.location_name || 'Unknown Location';
       if (!acc[locationKey]) {
         acc[locationKey] = {
           id: asset.location_id,
-          name: asset.location_name,
+          name: asset.location_name || 'Unknown Location',
           type: asset.location_type,
           systemId: asset.solar_system_id,
           regionId: asset.region_id,
@@ -109,33 +162,46 @@ const Assets = () => {
     }, {});
     
     // Convert to array and add calculated fields
-    return Object.values(locationGroups).map(location => ({
+    return (Object.values(locationGroups) as {
+      id: number;
+      name: string;
+      type: string;
+      systemId?: number;
+      regionId?: number;
+      assets: Asset[];
+      totalItems: number;
+      uniqueTypes: Set<string>;
+    }[]).map(location => ({
       ...location,
       uniqueTypesCount: location.uniqueTypes.size,
       uniqueTypes: undefined // Remove Set object
-    })).sort((a, b) => a.name.localeCompare(b.name));
+    } as Location)).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }, [assetsData]);
   
   // Process assets into hierarchical structure with ships and fittings
-  const { processedAssets, paginatedAssets, totalPages } = useMemo(() => {
+  const { processedAssets, paginatedAssets, totalPages } = useMemo<{
+    processedAssets: ProcessedAsset[];
+    paginatedAssets: ProcessedAsset[];
+    totalPages: number;
+  }>(() => {
     if (!selectedLocation || !assetsData?.assets) {
       return { processedAssets: [], paginatedAssets: [], totalPages: 0 };
     }
     
     // Get all assets for the selected location
-    const locationAssets = assetsData.assets.filter(asset => asset.location_name === selectedLocation.name);
+    const locationAssets = assetsData.assets.filter((asset: Asset) => asset.location_name === selectedLocation.name);
     
     // Create a map for quick parent lookup
-    const assetMap = new Map();
-    locationAssets.forEach(asset => {
+    const assetMap = new Map<number, Asset>();
+    locationAssets.forEach((asset: Asset) => {
       assetMap.set(asset.item_id, asset);
     });
     
     // Group assets by parent relationship
-    const rootAssets = [];
-    const childAssets = new Map(); // parent_id -> children[]
+    const rootAssets: ProcessedAsset[] = [];
+    const childAssets = new Map<number, Asset[]>(); // parent_id -> children[]
     
-    locationAssets.forEach(asset => {
+    locationAssets.forEach((asset: Asset) => {
       if (!asset.parent_item_id || !assetMap.has(asset.parent_item_id)) {
         // Root level asset (no parent or parent not in this location)
         rootAssets.push({
@@ -149,14 +215,14 @@ const Assets = () => {
         if (!childAssets.has(asset.parent_item_id)) {
           childAssets.set(asset.parent_item_id, []);
         }
-        childAssets.get(asset.parent_item_id).push(asset);
+        childAssets.get(asset.parent_item_id)!.push(asset);
       }
     });
     
     // Attach children to their parents
     rootAssets.forEach(parent => {
       if (childAssets.has(parent.item_id)) {
-        const children = childAssets.get(parent.item_id);
+        const children = childAssets.get(parent.item_id)!;
         parent.children = children;
         
         // Group fittings by slot category if this is a ship
@@ -167,7 +233,7 @@ const Assets = () => {
               if (!parent.fittings.has(category)) {
                 parent.fittings.set(category, []);
               }
-              parent.fittings.get(category).push(child);
+              parent.fittings.get(category)!.push(child);
             }
           });
         }
@@ -197,8 +263,8 @@ const Assets = () => {
     
     // Apply sorting
     filteredAssets.sort((a, b) => {
-      let aValue = a[sortField];
-      let bValue = b[sortField];
+      let aValue: string | number = a[sortField];
+      let bValue: string | number = b[sortField];
       
       // Handle numeric fields
       if (sortField === 'quantity' || sortField === 'item_id' || sortField === 'type_id') {
@@ -227,7 +293,7 @@ const Assets = () => {
     };
   }, [selectedLocation, assetsData, searchTerm, showContainers, sortField, sortDirection, currentPage, itemsPerPage]);
   
-  const handleSort = (field) => {
+  const handleSort = (field: SortField): void => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -237,19 +303,19 @@ const Assets = () => {
     setCurrentPage(1); // Reset to first page when sorting
   };
   
-  const getSortIcon = (field) => {
+  const getSortIcon = (field: SortField): IconDefinition => {
     if (sortField !== field) return faSort;
     return sortDirection === 'asc' ? faSortUp : faSortDown;
   };
   
-  const handleRefresh = async () => {
+  const handleRefresh = async (): Promise<void> => {
     if (selectedCharacterId) {
       await refetchAssets();
       toast.success('Assets refreshed successfully');
     }
   };
   
-  const getLocationIcon = (locationType) => {
+  const getLocationIcon = (locationType: string): IconDefinition => {
     switch(locationType) {
       case 'station': return faBuilding;
       case 'structure': return faWarehouse;
@@ -258,23 +324,23 @@ const Assets = () => {
     }
   };
   
-  const formatQuantity = (quantity) => {
+  const formatQuantity = (quantity: number): string => {
     return quantity.toLocaleString();
   };
   
-  const handleLocationSelect = (location) => {
+  const handleLocationSelect = (location: Location): void => {
     setSelectedLocation(location);
     setCurrentPage(1);
     setSearchTerm('');
   };
   
-  const handleBackToLocations = () => {
+  const handleBackToLocations = (): void => {
     setSelectedLocation(null);
     setSearchTerm('');
     setCurrentPage(1);
   };
   
-  const toggleShipExpanded = (shipId) => {
+  const toggleShipExpanded = (shipId: number): void => {
     const newExpanded = new Set(expandedShips);
     if (newExpanded.has(shipId)) {
       newExpanded.delete(shipId);
@@ -284,11 +350,11 @@ const Assets = () => {
     setExpandedShips(newExpanded);
   };
   
-  const getItemIconUrl = (typeId, size = 32) => {
+  const getItemIconUrl = (typeId: number, size: number = 32): string => {
     return `https://images.evetech.net/types/${typeId}/icon?size=${size}`;
   };
   
-  const getItemIcon = (asset) => {
+  const getItemIcon = (asset: ProcessedAsset): IconDefinition => {
     if (asset.isShip) return faRocket;
     if (asset.is_container) return faCubes;
     if (isShipSlot(asset.location_flag)) return faCog;
@@ -300,7 +366,7 @@ const Assets = () => {
     setCurrentPage(1);
   }, [searchTerm, showContainers]);
   
-  const selectedCharacter = charactersData?.find(c => c.character_id === selectedCharacterId);
+  const selectedCharacter = charactersData?.find((c: Character) => c.character_id === selectedCharacterId);
   
   return (
     <Container fluid className="p-3">
@@ -357,7 +423,7 @@ const Assets = () => {
                       disabled={isLoadingCharacters}
                     >
                       <option value="">Select a character...</option>
-                      {charactersData?.map(character => (
+                      {charactersData?.map((character: Character) => (
                         <option key={character.character_id} value={character.character_id}>
                           {character.character_name} 
                           {character.corporation_name && ` - ${character.corporation_name}`}
@@ -407,7 +473,7 @@ const Assets = () => {
           <Col>
             <Alert variant="danger">
               <FontAwesomeIcon icon={faExclamationTriangle} className="me-2" />
-              Error loading assets: {assetsError.message}
+              Error loading assets: {(assetsError as Error).message}
             </Alert>
           </Col>
         </Row>
@@ -575,8 +641,12 @@ const Assets = () => {
                                       style={{ width: '32px', height: '32px' }}
                                       className="rounded"
                                       onError={(e) => {
-                                        e.target.style.display = 'none';
-                                        e.target.nextElementSibling.style.display = 'inline-block';
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        const nextSibling = target.nextElementSibling as HTMLElement;
+                                        if (nextSibling) {
+                                          nextSibling.style.display = 'inline-block';
+                                        }
                                       }}
                                     />
                                     <FontAwesomeIcon 
@@ -633,7 +703,7 @@ const Assets = () => {
                                     {/* Category Header */}
                                     <tr className="table-light">
                                       <td></td>
-                                      <td colSpan="4">
+                                      <td colSpan={4}>
                                         <small className="fw-bold text-muted text-uppercase">
                                           {category} ({items.length})
                                         </small>
@@ -650,8 +720,12 @@ const Assets = () => {
                                               style={{ width: '24px', height: '24px' }}
                                               className="rounded"
                                               onError={(e) => {
-                                                e.target.style.display = 'none';
-                                                e.target.nextElementSibling.style.display = 'inline-block';
+                                                const target = e.target as HTMLImageElement;
+                                                target.style.display = 'none';
+                                                const nextSibling = target.nextElementSibling as HTMLElement;
+                                                if (nextSibling) {
+                                                  nextSibling.style.display = 'inline-block';
+                                                }
                                               }}
                                             />
                                             <FontAwesomeIcon 
@@ -704,7 +778,7 @@ const Assets = () => {
                         
                         {/* Show page numbers */}
                         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          let pageNumber;
+                          let pageNumber: number;
                           if (totalPages <= 5) {
                             pageNumber = i + 1;
                           } else if (currentPage <= 3) {

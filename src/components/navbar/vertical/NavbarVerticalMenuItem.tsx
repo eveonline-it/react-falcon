@@ -1,7 +1,15 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDiscord } from '@fortawesome/free-brands-svg-icons';
 import Flex from 'components/common/Flex';
 import SubtleBadge from 'components/common/SubtleBadge';
+
+// Map string icon names to their icon objects for brand icons
+const brandIconMap: { [key: string]: any } = {
+  'discord': faDiscord,
+  'fab fa-discord': faDiscord,
+  'fa-brands fa-discord': faDiscord
+};
 
 interface NavbarVerticalMenuItemProps {
   route: {
@@ -18,7 +26,12 @@ interface NavbarVerticalMenuItemProps {
 
 const NavbarVerticalMenuItem: React.FC<NavbarVerticalMenuItemProps> = ({ route }) => {
   const isFolder = route.is_folder || (route.children && route.children.length > 0);
-  const folderIcon = isFolder ? (route.icon || 'folder') : route.icon;
+  const routeIcon = isFolder ? (route.icon || 'folder') : route.icon;
+  
+  // Map brand icons to their proper icon objects
+  const folderIcon = routeIcon && typeof routeIcon === 'string' && brandIconMap[routeIcon] 
+    ? brandIconMap[routeIcon] 
+    : routeIcon;
   
   return (
     <Flex alignItems="center" className={isFolder ? 'nav-folder-item' : 'nav-route-item'}>
