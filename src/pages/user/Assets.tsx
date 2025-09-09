@@ -43,8 +43,10 @@ interface Asset {
 
 interface ProcessedAsset extends Asset {
   isShip: boolean;
+  isContainer: boolean;
   children: Asset[];
   fittings: Map<string, Asset[]>;
+  contents: Asset[];
 }
 
 interface Location {
@@ -80,7 +82,7 @@ const Assets: React.FC = () => {
   const [showContainers, setShowContainers] = useState<boolean>(true);
   const [showShips, setShowShips] = useState<boolean>(true);
   const [showItems, setShowItems] = useState<boolean>(true);
-  const [expandedShips, setExpandedShips] = useState<Set<number>>(new Set());
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
   
   // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -98,7 +100,7 @@ const Assets: React.FC = () => {
     setSelectedLocation(null);
     setCurrentPage(1);
     setSearchTerm('');
-    setExpandedShips(new Set());
+    setExpandedItems(new Set());
   }, [selectedCharacterId]);
   
   // Utility functions for ship fitting detection
@@ -142,17 +144,17 @@ const Assets: React.FC = () => {
   };
   
   const isLikelyShip = (asset: Asset): boolean => {
-    // Ships typically don't have parent_item_id and are in hangar or being piloted
-    return !asset.parent_item_id && 
-           (asset.location_flag === 'Hangar' || 
-            asset.location_flag === 'Pilot' || 
-            asset.location_flag === 'AutoFit');
+    // Only consider something a ship if it's being actively piloted
+    // Items in hangars could be anything (modules, ammo, etc.), not just ships
+    // The most reliable way to detect a ship is if it has fitted items
+    return !asset.parent_item_id && asset.location_flag === 'Pilot';
   };
   
   // Process locations with asset counts and details
   const locations = useMemo<Location[]>(() => {
     if (!assetsData?.assets) return [];
     
+    // First pass: group assets by location and build parent-child relationships
     const locationGroups = assetsData.assets.reduce((acc: Record<string, {
       id: number;
       name: string;
@@ -162,7 +164,7 @@ const Assets: React.FC = () => {
       assets: Asset[];
       totalItems: number;
       uniqueTypes: Set<string>;
-      fittedShips: Set<number>;
+      allShips: Set<number>;
       spareItems: number;
       containers: number;
     }>, asset: Asset) => {
@@ -177,34 +179,81 @@ const Assets: React.FC = () => {
           assets: [],
           totalItems: 0,
           uniqueTypes: new Set(),
-          fittedShips: new Set(),
+          allShips: new Set(),
           spareItems: 0,
           containers: 0
         };
       }
       
       acc[locationKey].assets.push(asset);
-      // Only count root-level assets (not fitted items)
-      if (!asset.parent_item_id) {
-        acc[locationKey].totalItems += asset.quantity || 0;
-        
-        // Count containers
-        if (asset.is_container) {
-          acc[locationKey].containers += 1;
-        }
-        // Count spare items (not ships, not containers)
-        else if (!isLikelyShip(asset)) {
-          acc[locationKey].spareItems += asset.quantity || 0;
-        }
-      } else {
-        // This is a fitted item, so mark its parent as a fitted ship
-        if (asset.parent_item_id) {
-          acc[locationKey].fittedShips.add(asset.parent_item_id);
-        }
-      }
       acc[locationKey].uniqueTypes.add(asset.type_name);
       return acc;
     }, {});
+    
+    // Second pass: analyze each location's assets using the same logic as detailed view
+    (Object.values(locationGroups) as {
+      id: number;
+      name: string;
+      type: string;
+      systemId?: number;
+      regionId?: number;
+      assets: Asset[];
+      totalItems: number;
+      uniqueTypes: Set<string>;
+      allShips: Set<number>;
+      spareItems: number;
+      containers: number;
+    }[]).forEach(location => {
+      // Group assets by parent relationship (same as detailed view)
+      const rootAssets: Asset[] = [];
+      const childAssets = new Map<number, Asset[]>();
+      
+      location.assets.forEach((asset: Asset) => {
+        if (!asset.parent_item_id) {
+          // Root level asset
+          rootAssets.push(asset);
+        } else {
+          // Child asset (fitted or contained)
+          if (!childAssets.has(asset.parent_item_id)) {
+            childAssets.set(asset.parent_item_id, []);
+          }
+          childAssets.get(asset.parent_item_id)!.push(asset);
+        }
+      });
+      
+      // Analyze root assets using same logic as detailed view
+      rootAssets.forEach((asset: Asset) => {
+        let isShip = false;
+        
+        if (childAssets.has(asset.item_id)) {
+          const children = childAssets.get(asset.item_id)!;
+          // If this asset has fitted items (children with ship slots/bays), it's a ship
+          const hasFittedItems = children.some(child => 
+            isShipSlot(child.location_flag) || isShipBay(child.location_flag)
+          );
+          isShip = hasFittedItems;
+        }
+        
+        // Also check if it looks like a ship even without fittings
+        if (!isShip) {
+          isShip = isLikelyShip(asset);
+        }
+        
+        // Categorize the asset
+        if (asset.is_container) {
+          location.containers += 1;
+          location.totalItems += 1; // Container counts as 1 item type
+        } else if (isShip) {
+          // This is a ship (hull + all fittings = 1 ship)
+          location.allShips.add(asset.item_id);
+          location.totalItems += 1; // Ship (hull + fittings) counts as 1 item type
+        } else {
+          // This is a spare item (not fitted to anything)
+          location.spareItems += 1; // Count distinct item types, not quantities
+          location.totalItems += 1; // Count distinct item types, not quantities
+        }
+      });
+    });
     
     // Convert to array and add calculated fields
     return (Object.values(locationGroups) as {
@@ -216,20 +265,27 @@ const Assets: React.FC = () => {
       assets: Asset[];
       totalItems: number;
       uniqueTypes: Set<string>;
-      fittedShips: Set<number>;
+      allShips: Set<number>;
       spareItems: number;
       containers: number;
     }[]).map(location => ({
       ...location,
       uniqueTypesCount: location.uniqueTypes.size,
-      fittedShipsCount: location.fittedShips.size,
+      fittedShipsCount: location.allShips.size,
       spareItemsCount: location.spareItems,
       containersCount: location.containers,
       uniqueTypes: undefined, // Remove Set object
-      fittedShips: undefined, // Remove Set object
+      allShips: undefined, // Remove Set object
       spareItems: undefined, // Remove temporary field
       containers: undefined // Remove temporary field
-    } as Location)).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } as Location)).sort((a, b) => {
+      // Primary sort: by total items (descending - most items first)
+      if (b.totalItems !== a.totalItems) {
+        return b.totalItems - a.totalItems;
+      }
+      // Secondary sort: by name (ascending)
+      return (a.name || '').localeCompare(b.name || '');
+    });
   }, [assetsData]);
   
   // Process assets into hierarchical structure with ships and fittings
@@ -243,7 +299,13 @@ const Assets: React.FC = () => {
     }
     
     // Get all assets for the selected location
-    const locationAssets = assetsData.assets.filter((asset: Asset) => asset.location_name === selectedLocation.name);
+    const locationAssets = assetsData.assets.filter((asset: Asset) => {
+      // Handle "Unknown Location" case - match assets with no location_name
+      if (selectedLocation.name === 'Unknown Location') {
+        return !asset.location_name;
+      }
+      return asset.location_name === selectedLocation.name;
+    });
     
     // Create a map for quick parent lookup
     const assetMap = new Map<number, Asset>();
@@ -261,8 +323,10 @@ const Assets: React.FC = () => {
         rootAssets.push({
           ...asset,
           isShip: false, // Will be determined after we know which have children
+          isContainer: asset.is_container || false,
           children: [],
-          fittings: new Map() // slot category -> items[]
+          fittings: new Map(), // slot category -> items[]
+          contents: [] // container contents
         });
       } else {
         // Child asset (fitted or contained)
@@ -273,7 +337,7 @@ const Assets: React.FC = () => {
       }
     });
     
-    // Attach children to their parents and determine ship status
+    // Attach children to their parents and determine ship/container status
     rootAssets.forEach(parent => {
       if (childAssets.has(parent.item_id)) {
         const children = childAssets.get(parent.item_id)!;
@@ -297,6 +361,11 @@ const Assets: React.FC = () => {
             }
           });
         }
+        
+        // Store contents if this is a container
+        if (parent.isContainer) {
+          parent.contents = children;
+        }
       }
     });
     
@@ -319,7 +388,7 @@ const Assets: React.FC = () => {
     // Apply filtering based on asset type
     filteredAssets = filteredAssets.filter(asset => {
       // Determine asset type based on our new logic
-      const isContainer = asset.is_container;
+      const isContainer = asset.isContainer;
       const isShip = asset.isShip; // Now properly identifies ships with fitted items
       const isSpareItem = !isShip && !isContainer;
       
@@ -437,14 +506,14 @@ const Assets: React.FC = () => {
     setCurrentPage(1);
   };
   
-  const toggleShipExpanded = (shipId: number): void => {
-    const newExpanded = new Set(expandedShips);
-    if (newExpanded.has(shipId)) {
-      newExpanded.delete(shipId);
+  const toggleItemExpanded = (itemId: number): void => {
+    const newExpanded = new Set(expandedItems);
+    if (newExpanded.has(itemId)) {
+      newExpanded.delete(itemId);
     } else {
-      newExpanded.add(shipId);
+      newExpanded.add(itemId);
     }
-    setExpandedShips(newExpanded);
+    setExpandedItems(newExpanded);
   };
   
   const getItemIconUrl = (typeId: number, size: number = 32): string => {
@@ -458,7 +527,7 @@ const Assets: React.FC = () => {
   
   const getItemIcon = (asset: ProcessedAsset): IconDefinition => {
     if (asset.isShip) return faRocket;
-    if (asset.is_container) return faCubes;
+    if (asset.isContainer) return faCubes;
     if (isShipSlot(asset.location_flag)) return faCog;
     return faLayerGroup;
   };
@@ -748,8 +817,8 @@ const Assets: React.FC = () => {
                             <React.Fragment key={asset.item_id}>
                               {/* Main Asset Row */}
                               <tr 
-                                style={{ cursor: asset.isShip && asset.children.length > 0 ? 'pointer' : 'default' }}
-                                onClick={() => asset.isShip && asset.children.length > 0 && toggleShipExpanded(asset.item_id)}
+                                style={{ cursor: (asset.isShip && asset.children.length > 0) || (asset.isContainer && asset.contents.length > 0) ? 'pointer' : 'default' }}
+                                onClick={() => ((asset.isShip && asset.children.length > 0) || (asset.isContainer && asset.contents.length > 0)) && toggleItemExpanded(asset.item_id)}
                               >
                                 <td>
                                   <div className="d-flex align-items-center">
@@ -777,23 +846,28 @@ const Assets: React.FC = () => {
                                       />
                                       <FontAwesomeIcon 
                                         icon={getItemIcon(asset)} 
-                                        className={`${asset.isShip ? 'text-primary' : 'text-muted'}`}
+                                        className={`${asset.isShip ? 'text-primary' : asset.isContainer ? 'text-warning' : 'text-muted'}`}
                                         style={{ display: 'none', width: '32px', height: '32px' }}
                                       />
-                                      {asset.isShip && asset.children.length > 0 && (
+                                      {((asset.isShip && asset.children.length > 0) || (asset.isContainer && asset.contents.length > 0)) && (
                                         <FontAwesomeIcon 
-                                          icon={expandedShips.has(asset.item_id) ? faChevronDown : faChevronRight} 
+                                          icon={expandedItems.has(asset.item_id) ? faChevronDown : faChevronRight} 
                                           className="text-muted position-absolute"
                                           style={{ top: '2px', right: '2px', fontSize: '10px', backgroundColor: 'white', borderRadius: '50%', padding: '1px' }}
                                         />
                                       )}
                                     </div>
                                     <div>
-                                      <div className={`fw-semibold ${asset.isShip ? 'text-primary' : ''}`}>
+                                      <div className={`fw-semibold ${asset.isShip ? 'text-primary' : asset.isContainer ? 'text-warning' : ''}`}>
                                         {asset.type_name}
                                         {asset.isShip && asset.children.length > 0 && (
                                           <span className="text-muted ms-2 small">
                                             ({asset.children.length} fitted)
+                                          </span>
+                                        )}
+                                        {asset.isContainer && asset.contents.length > 0 && (
+                                          <span className="text-muted ms-2 small">
+                                            ({asset.contents.length} items)
                                           </span>
                                         )}
                                       </div>
@@ -809,7 +883,7 @@ const Assets: React.FC = () => {
                                     {asset.is_singleton && (
                                       <Badge bg="info" className="small" title="Singleton">Single</Badge>
                                     )}
-                                    {asset.is_container && (
+                                    {asset.isContainer && (
                                       <Badge bg="warning" className="small" title="Container">
                                         <FontAwesomeIcon icon={faCubes} />
                                       </Badge>
@@ -822,7 +896,7 @@ const Assets: React.FC = () => {
                               </tr>
                               
                               {/* Ship Fittings Rows */}
-                              {showShips && asset.isShip && expandedShips.has(asset.item_id) && (
+                              {showShips && asset.isShip && expandedItems.has(asset.item_id) && (
                                 Array.from(asset.fittings.entries())
                                   .sort(([categoryA], [categoryB]) => getSlotCategoryOrder(categoryA) - getSlotCategoryOrder(categoryB))
                                   .map(([category, items]) => (
@@ -901,6 +975,82 @@ const Assets: React.FC = () => {
                                     ))}
                                   </React.Fragment>
                                 ))
+                              )}
+                              
+                              {/* Container Contents Rows */}
+                              {showContainers && asset.isContainer && expandedItems.has(asset.item_id) && asset.contents.length > 0 && (
+                                <>
+                                  <tr className="table-light">
+                                    <td colSpan={4}>
+                                      <small className="fw-bold text-muted text-uppercase">
+                                        Container Contents ({asset.contents.length})
+                                      </small>
+                                    </td>
+                                  </tr>
+                                  {asset.contents.map(item => (
+                                    <tr key={item.item_id} className="table-light">
+                                      <td>
+                                        <div className="ps-3 d-flex align-items-center">
+                                          <div className="me-2">
+                                            <img 
+                                              src={getItemIconUrl(item.type_id, 32)}
+                                              alt={item.type_name}
+                                              style={{ width: '24px', height: '24px' }}
+                                              className="rounded"
+                                              onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                // Try fallback render endpoint first
+                                                if (!target.dataset.triedFallback) {
+                                                  target.dataset.triedFallback = 'true';
+                                                  target.src = getItemIconUrlFallback(item.type_id);
+                                                  return;
+                                                }
+                                                console.log(`Both icon endpoints failed for type_id: ${item.type_id}, type_name: ${item.type_name}`);
+                                                target.style.display = 'none';
+                                                const nextSibling = target.nextElementSibling as HTMLElement;
+                                                if (nextSibling) {
+                                                  nextSibling.style.display = 'inline-flex';
+                                                }
+                                              }}
+                                            />
+                                            <div
+                                              style={{ 
+                                                display: 'none', 
+                                                width: '24px', 
+                                                height: '24px',
+                                                backgroundColor: '#f8f9fa',
+                                                border: '1px solid #dee2e6',
+                                                borderRadius: '4px',
+                                                alignItems: 'center',
+                                                justifyContent: 'center'
+                                              }}
+                                            >
+                                              <FontAwesomeIcon 
+                                                icon={faLayerGroup} 
+                                                className="text-muted"
+                                                style={{ fontSize: '12px' }}
+                                              />
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <div className="fw-semibold small">{item.type_name}</div>
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="small">{formatQuantity(item.quantity)}</td>
+                                      <td>
+                                        <Badge bg="outline-secondary" className="small">{item.location_flag}</Badge>
+                                      </td>
+                                      <td>
+                                        <div className="d-flex gap-1">
+                                          {item.is_singleton && (
+                                            <Badge bg="info" className="small" title="Singleton">Single</Badge>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </>
                               )}
                             </React.Fragment>
                           ))}
