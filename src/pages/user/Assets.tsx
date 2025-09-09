@@ -16,6 +16,7 @@ import { CharacterPortrait } from 'components/common';
 import { useCurrentUser } from 'hooks/auth';
 import { useUserCharacters } from 'hooks/useUserCharacters';
 import { useCharacterAssets } from 'hooks/useAssets';
+import { useMutation } from '@tanstack/react-query';
 
 // Type definitions
 interface Character {
@@ -108,7 +109,7 @@ const Assets: React.FC = () => {
   
   const isShipBay = (locationFlag: string | undefined): boolean => {
     if (!locationFlag) return false;
-    return ['CargoBay', 'DroneBay', 'ShipHangar', 'FleetHangar', 'FuelBay', 'OreHold', 'GasHold', 'MineralHold', 'SalvageHold', 'SpecializedFuelBay', 'SpecializedOreHold', 'SpecializedGasHold', 'SpecializedMineralHold', 'SpecializedSalvageHold', 'SpecializedShipHold', 'SpecializedSmallShipHold', 'SpecializedMediumShipHold', 'SpecializedLargeShipHold', 'SpecializedIndustrialShipHold', 'SpecializedAmmoHold', 'ImplantBay', 'QuafeBay'].includes(locationFlag);
+    return ['Cargo', 'CargoBay', 'DroneBay', 'ShipHangar', 'FleetHangar', 'FuelBay', 'OreHold', 'GasHold', 'MineralHold', 'SalvageHold', 'SpecializedFuelBay', 'SpecializedOreHold', 'SpecializedGasHold', 'SpecializedMineralHold', 'SpecializedSalvageHold', 'SpecializedShipHold', 'SpecializedSmallShipHold', 'SpecializedMediumShipHold', 'SpecializedLargeShipHold', 'SpecializedIndustrialShipHold', 'SpecializedAmmoHold', 'ImplantBay', 'QuafeBay'].includes(locationFlag);
   };
   
   const getSlotCategory = (locationFlag: string | undefined): string => {
@@ -119,8 +120,25 @@ const Assets: React.FC = () => {
     if (locationFlag.startsWith('RigSlot')) return 'Rigs';
     if (locationFlag.startsWith('SubSystemSlot')) return 'Subsystems';
     if (locationFlag.startsWith('ServiceSlot')) return 'Service Modules';
+    if (locationFlag === 'Cargo') return 'Cargo Bay';
+    if (locationFlag === 'DroneBay') return 'Drone Bay';
     if (isShipBay(locationFlag)) return 'Ship Bays';
     return locationFlag;
+  };
+
+  const getSlotCategoryOrder = (category: string): number => {
+    const order: Record<string, number> = {
+      'High Slots': 1,
+      'Medium Slots': 2,
+      'Low Slots': 3,
+      'Rigs': 4,
+      'Cargo Bay': 5,
+      'Drone Bay': 6,
+      'Ship Bays': 7,
+      'Subsystems': 8,
+      'Service Modules': 9,
+    };
+    return order[category] || 999;
   };
   
   const isLikelyShip = (asset: Asset): boolean => {
@@ -364,11 +382,34 @@ const Assets: React.FC = () => {
     if (sortField !== field) return faSort;
     return sortDirection === 'asc' ? faSortUp : faSortDown;
   };
+
+  // Mutation to refresh character assets from EVE API
+  const refreshAssetsMutation = useMutation({
+    mutationFn: async (characterId: string) => {
+      const response = await fetch(`${import.meta.env.VITE_EVE_BACKEND_URL}/assets/character/${characterId}/refresh`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to refresh assets: ${response.statusText}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: async () => {
+      // Refetch the assets data after successful refresh
+      await refetchAssets();
+      toast.success('Assets refreshed successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to refresh assets: ${error.message}`);
+    }
+  });
   
   const handleRefresh = async (): Promise<void> => {
     if (selectedCharacterId) {
-      await refetchAssets();
-      toast.success('Assets refreshed successfully');
+      refreshAssetsMutation.mutate(selectedCharacterId);
     }
   };
   
@@ -408,6 +449,11 @@ const Assets: React.FC = () => {
   
   const getItemIconUrl = (typeId: number, size: number = 32): string => {
     return `https://images.evetech.net/types/${typeId}/icon?size=${size}`;
+  };
+
+  const getItemIconUrlFallback = (typeId: number): string => {
+    // Try render endpoint for ships/larger items
+    return `https://images.evetech.net/types/${typeId}/render?size=64`;
   };
   
   const getItemIcon = (asset: ProcessedAsset): IconDefinition => {
@@ -454,9 +500,9 @@ const Assets: React.FC = () => {
                 variant="outline-primary" 
                 size="sm"
                 onClick={handleRefresh}
-                disabled={!selectedCharacterId || isLoadingAssets}
+                disabled={!selectedCharacterId || refreshAssetsMutation.isPending}
               >
-                <FontAwesomeIcon icon={faSync} spin={isLoadingAssets} className="me-2" />
+                <FontAwesomeIcon icon={faSync} spin={refreshAssetsMutation.isPending} className="me-2" />
                 Refresh
               </Button>
             </div>
@@ -679,9 +725,8 @@ const Assets: React.FC = () => {
                       <Table hover size="sm" className="mb-0">
                         <thead>
                           <tr>
-                            <th style={{ width: '60px' }}>Icon</th>
                             <th 
-                              style={{ cursor: 'pointer', width: '35%' }}
+                              style={{ cursor: 'pointer', width: '45%' }}
                               onClick={() => handleSort('type_name')}
                             >
                               Item
@@ -707,44 +752,51 @@ const Assets: React.FC = () => {
                                 onClick={() => asset.isShip && asset.children.length > 0 && toggleShipExpanded(asset.item_id)}
                               >
                                 <td>
-                                  <div className="d-flex align-items-center position-relative">
-                                    <img 
-                                      src={getItemIconUrl(asset.type_id, 32)}
-                                      alt={asset.type_name}
-                                      style={{ width: '32px', height: '32px' }}
-                                      className="rounded"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.style.display = 'none';
-                                        const nextSibling = target.nextElementSibling as HTMLElement;
-                                        if (nextSibling) {
-                                          nextSibling.style.display = 'inline-block';
-                                        }
-                                      }}
-                                    />
-                                    <FontAwesomeIcon 
-                                      icon={getItemIcon(asset)} 
-                                      className={`${asset.isShip ? 'text-primary' : 'text-muted'}`}
-                                      style={{ display: 'none', width: '32px', height: '32px' }}
-                                    />
-                                    {asset.isShip && asset.children.length > 0 && (
-                                      <FontAwesomeIcon 
-                                        icon={expandedShips.has(asset.item_id) ? faChevronDown : faChevronRight} 
-                                        className="text-muted position-absolute"
-                                        style={{ top: '2px', right: '2px', fontSize: '10px', backgroundColor: 'white', borderRadius: '50%', padding: '1px' }}
+                                  <div className="d-flex align-items-center">
+                                    <div className="position-relative me-2">
+                                      <img 
+                                        src={getItemIconUrl(asset.type_id, 32)}
+                                        alt={asset.type_name}
+                                        style={{ width: '32px', height: '32px' }}
+                                        className="rounded"
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement;
+                                          // Try fallback render endpoint first
+                                          if (!target.dataset.triedFallback) {
+                                            target.dataset.triedFallback = 'true';
+                                            target.src = getItemIconUrlFallback(asset.type_id);
+                                            return;
+                                          }
+                                          console.log(`Both icon endpoints failed for type_id: ${asset.type_id}, type_name: ${asset.type_name}`);
+                                          target.style.display = 'none';
+                                          const nextSibling = target.nextElementSibling as HTMLElement;
+                                          if (nextSibling) {
+                                            nextSibling.style.display = 'inline-block';
+                                          }
+                                        }}
                                       />
-                                    )}
-                                  </div>
-                                </td>
-                                <td>
-                                  <div>
-                                    <div className={`fw-semibold ${asset.isShip ? 'text-primary' : ''}`}>
-                                      {asset.type_name}
+                                      <FontAwesomeIcon 
+                                        icon={getItemIcon(asset)} 
+                                        className={`${asset.isShip ? 'text-primary' : 'text-muted'}`}
+                                        style={{ display: 'none', width: '32px', height: '32px' }}
+                                      />
                                       {asset.isShip && asset.children.length > 0 && (
-                                        <span className="text-muted ms-2 small">
-                                          ({asset.children.length} fitted)
-                                        </span>
+                                        <FontAwesomeIcon 
+                                          icon={expandedShips.has(asset.item_id) ? faChevronDown : faChevronRight} 
+                                          className="text-muted position-absolute"
+                                          style={{ top: '2px', right: '2px', fontSize: '10px', backgroundColor: 'white', borderRadius: '50%', padding: '1px' }}
+                                        />
                                       )}
+                                    </div>
+                                    <div>
+                                      <div className={`fw-semibold ${asset.isShip ? 'text-primary' : ''}`}>
+                                        {asset.type_name}
+                                        {asset.isShip && asset.children.length > 0 && (
+                                          <span className="text-muted ms-2 small">
+                                            ({asset.children.length} fitted)
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 </td>
@@ -771,11 +823,12 @@ const Assets: React.FC = () => {
                               
                               {/* Ship Fittings Rows */}
                               {showShips && asset.isShip && expandedShips.has(asset.item_id) && (
-                                Array.from(asset.fittings.entries()).map(([category, items]) => (
+                                Array.from(asset.fittings.entries())
+                                  .sort(([categoryA], [categoryB]) => getSlotCategoryOrder(categoryA) - getSlotCategoryOrder(categoryB))
+                                  .map(([category, items]) => (
                                   <React.Fragment key={`${asset.item_id}-${category}`}>
                                     {/* Category Header */}
                                     <tr className="table-light">
-                                      <td></td>
                                       <td colSpan={4}>
                                         <small className="fw-bold text-muted text-uppercase">
                                           {category} ({items.length})
@@ -786,31 +839,51 @@ const Assets: React.FC = () => {
                                     {items.map(item => (
                                       <tr key={item.item_id} className="table-light">
                                         <td>
-                                          <div className="ps-2">
-                                            <img 
-                                              src={getItemIconUrl(item.type_id, 24)}
-                                              alt={item.type_name}
-                                              style={{ width: '24px', height: '24px' }}
-                                              className="rounded"
-                                              onError={(e) => {
-                                                const target = e.target as HTMLImageElement;
-                                                target.style.display = 'none';
-                                                const nextSibling = target.nextElementSibling as HTMLElement;
-                                                if (nextSibling) {
-                                                  nextSibling.style.display = 'inline-block';
-                                                }
-                                              }}
-                                            />
-                                            <FontAwesomeIcon 
-                                              icon={faCog} 
-                                              className="text-muted"
-                                              style={{ display: 'none', width: '24px', fontSize: '18px' }}
-                                            />
-                                          </div>
-                                        </td>
-                                        <td>
-                                          <div className="ps-3">
-                                            <div className="fw-semibold small">{item.type_name}</div>
+                                          <div className="ps-3 d-flex align-items-center">
+                                            <div className="me-2">
+                                              <img 
+                                                src={getItemIconUrl(item.type_id, 32)}
+                                                alt={item.type_name}
+                                                style={{ width: '24px', height: '24px' }}
+                                                className="rounded"
+                                                onError={(e) => {
+                                                  const target = e.target as HTMLImageElement;
+                                                  // Try fallback render endpoint first
+                                                  if (!target.dataset.triedFallback) {
+                                                    target.dataset.triedFallback = 'true';
+                                                    target.src = getItemIconUrlFallback(item.type_id);
+                                                    return;
+                                                  }
+                                                  console.log(`Both icon endpoints failed for type_id: ${item.type_id}, type_name: ${item.type_name}`);
+                                                  target.style.display = 'none';
+                                                  const nextSibling = target.nextElementSibling as HTMLElement;
+                                                  if (nextSibling) {
+                                                    nextSibling.style.display = 'inline-flex';
+                                                  }
+                                                }}
+                                              />
+                                              <div
+                                                style={{ 
+                                                  display: 'none', 
+                                                  width: '24px', 
+                                                  height: '24px',
+                                                  backgroundColor: '#f8f9fa',
+                                                  border: '1px solid #dee2e6',
+                                                  borderRadius: '4px',
+                                                  alignItems: 'center',
+                                                  justifyContent: 'center'
+                                                }}
+                                              >
+                                                <FontAwesomeIcon 
+                                                  icon={faCog} 
+                                                  className="text-muted"
+                                                  style={{ fontSize: '12px' }}
+                                                />
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <div className="fw-semibold small">{item.type_name}</div>
+                                            </div>
                                           </div>
                                         </td>
                                         <td className="small">{formatQuantity(item.quantity)}</td>
