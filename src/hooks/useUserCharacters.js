@@ -197,6 +197,74 @@ export const useCharacterWallet = (characterId, options = {}) => {
   });
 };
 
+// Fetch character skills data
+const fetchCharacterSkills = async (characterId) => {
+  if (!characterId) {
+    throw new Error('Character ID is required');
+  }
+  
+  const response = await fetch(`${BASE_URL}/character/${characterId}/skills`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to fetch character skills: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
+// Hook for fetching character skills
+export const useCharacterSkills = (characterId, options = {}) => {
+  return useQuery({
+    queryKey: ['character', characterId, 'skills'],
+    queryFn: () => fetchCharacterSkills(characterId),
+    enabled: !!characterId,
+    staleTime: 1000 * 60 * 15, // Consider data fresh for 15 minutes (skills change slowly)
+    refetchOnWindowFocus: false,
+    ...options,
+  });
+};
+
+// Fetch character clones data
+const fetchCharacterClones = async (characterId) => {
+  if (!characterId) {
+    throw new Error('Character ID is required');
+  }
+  
+  const response = await fetch(`${BASE_URL}/character/${characterId}/clones`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to fetch character clones: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
+// Hook for fetching character clones
+export const useCharacterClones = (characterId, options = {}) => {
+  return useQuery({
+    queryKey: ['character', characterId, 'clones'],
+    queryFn: () => fetchCharacterClones(characterId),
+    enabled: !!characterId,
+    staleTime: 1000 * 60 * 10, // Consider data fresh for 10 minutes
+    refetchOnWindowFocus: false,
+    ...options,
+  });
+};
+
 // Hook for fetching character groups
 export const useCharacterGroups = (characterId, options = {}) => {
   return useQuery({
