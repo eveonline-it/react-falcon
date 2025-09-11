@@ -554,27 +554,15 @@ const Assets: React.FC = () => {
                 </span>
               )}
             </h2>
-            <div className="d-flex gap-2">
-              {selectedLocation && (
-                <Button 
-                  variant="outline-secondary" 
-                  size="sm"
-                  onClick={handleBackToLocations}
-                >
-                  <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
-                  Back to Locations
-                </Button>
-              )}
-              <Button 
-                variant="outline-primary" 
-                size="sm"
-                onClick={handleRefresh}
-                disabled={!selectedCharacterId || refreshAssetsMutation.isPending}
-              >
-                <FontAwesomeIcon icon={faSync} spin={refreshAssetsMutation.isPending} className="me-2" />
-                Refresh
-              </Button>
-            </div>
+            <Button 
+              variant="outline-primary" 
+              size="sm"
+              onClick={handleRefresh}
+              disabled={!selectedCharacterId || refreshAssetsMutation.isPending}
+            >
+              <FontAwesomeIcon icon={faSync} spin={refreshAssetsMutation.isPending} className="me-2" />
+              Refresh
+            </Button>
           </div>
         </Col>
       </Row>
@@ -770,6 +758,22 @@ const Assets: React.FC = () => {
             </Col>
           </Row>
           
+          {/* Back to Locations Button */}
+          {selectedLocation && (
+            <Row className="mb-3">
+              <Col className="d-flex justify-content-center">
+                <Button 
+                  variant="outline-secondary" 
+                  size="sm"
+                  onClick={handleBackToLocations}
+                >
+                  <FontAwesomeIcon icon={faArrowLeft} className="me-2" />
+                  Back to Locations
+                </Button>
+              </Col>
+            </Row>
+          )}
+          
           {/* Items Table */}
           <Row>
             <Col>
@@ -822,7 +826,14 @@ const Assets: React.FC = () => {
                               >
                                 <td>
                                   <div className="d-flex align-items-center">
-                                    <div className="position-relative me-2">
+                                    {((asset.isShip && asset.children.length > 0) || (asset.isContainer && asset.contents.length > 0)) && (
+                                      <FontAwesomeIcon 
+                                        icon={expandedItems.has(asset.item_id) ? faChevronDown : faChevronRight} 
+                                        className="text-muted me-2"
+                                        style={{ fontSize: '12px' }}
+                                      />
+                                    )}
+                                    <div className="me-2">
                                       <img 
                                         src={getItemIconUrl(asset.type_id, 32)}
                                         alt={asset.type_name}
@@ -849,13 +860,6 @@ const Assets: React.FC = () => {
                                         className={`${asset.isShip ? 'text-primary' : asset.isContainer ? 'text-warning' : 'text-muted'}`}
                                         style={{ display: 'none', width: '32px', height: '32px' }}
                                       />
-                                      {((asset.isShip && asset.children.length > 0) || (asset.isContainer && asset.contents.length > 0)) && (
-                                        <FontAwesomeIcon 
-                                          icon={expandedItems.has(asset.item_id) ? faChevronDown : faChevronRight} 
-                                          className="text-muted position-absolute"
-                                          style={{ top: '2px', right: '2px', fontSize: '10px', backgroundColor: 'white', borderRadius: '50%', padding: '1px' }}
-                                        />
-                                      )}
                                     </div>
                                     <div>
                                       <div className={`fw-semibold ${asset.isShip ? 'text-primary' : asset.isContainer ? 'text-warning' : ''}`}>

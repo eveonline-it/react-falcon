@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { 
   Container, Row, Col, Card, Button, Table, Spinner,
   Alert, Badge, Modal
@@ -258,8 +259,6 @@ const Characters = () => {
     dragOverIndex: null
   });
   const [characters, setCharacters] = useState([]);
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [showGroupsModal, setShowGroupsModal] = useState(false);
   const [selectedCharacterForGroups, setSelectedCharacterForGroups] = useState(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -360,10 +359,11 @@ const Characters = () => {
     }
   };
 
+  const navigate = useNavigate();
+  
   const handleViewDetails = useCallback((character) => {
-    setSelectedCharacter(character);
-    setShowDetailsModal(true);
-  }, []);
+    navigate(`/user/character/${character.character_id}`);
+  }, [navigate]);
 
   const handleViewGroups = useCallback((character) => {
     setSelectedCharacterForGroups(character);
@@ -551,185 +551,6 @@ const Characters = () => {
         </Col>
       </Row>
 
-      {/* Character Details Modal */}
-      <Modal show={showDetailsModal} onHide={() => setShowDetailsModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>
-            <FontAwesomeIcon icon={faUser} className="me-2" />
-            Character Details - {selectedCharacter?.character_name}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedCharacter && (
-            <>
-              <div className="text-center mb-4">
-                <div style={{ border: '3px solid #dee2e6', borderRadius: '50%', display: 'inline-block' }}>
-                  <CharacterPortrait 
-                    characterId={selectedCharacter.character_id}
-                    characterName={selectedCharacter.character_name}
-                    size={128}
-                  />
-                </div>
-                <div className="mt-2">
-                  <h5 className="mb-1">{selectedCharacter.character_name}</h5>
-                  {(selectedCharacter.corporation_name || selectedCharacter.corporation?.name) && (
-                    <div className="d-flex align-items-center justify-content-center mb-1">
-                      {(selectedCharacter.corporation_id || selectedCharacter.corporation?.corporation_id) && (
-                        <CorporationLogo 
-                          corporationId={selectedCharacter.corporation_id || selectedCharacter.corporation?.corporation_id}
-                          corporationName={selectedCharacter.corporation_name || selectedCharacter.corporation?.name}
-                          size={20}
-                        />
-                      )}
-                      <small className="text-muted ms-2">
-                        {selectedCharacter.corporation_name || selectedCharacter.corporation?.name}
-                        {(selectedCharacter.corporation_ticker || selectedCharacter.corporation?.ticker) && (
-                          <span> [{selectedCharacter.corporation_ticker || selectedCharacter.corporation?.ticker}]</span>
-                        )}
-                      </small>
-                    </div>
-                  )}
-                  {(selectedCharacter.alliance_name || selectedCharacter.alliance?.name) && (
-                    <div className="d-flex align-items-center justify-content-center">
-                      {(selectedCharacter.alliance_id || selectedCharacter.alliance?.alliance_id) && (
-                        <AllianceLogo 
-                          allianceId={selectedCharacter.alliance_id || selectedCharacter.alliance?.alliance_id}
-                          allianceName={selectedCharacter.alliance_name || selectedCharacter.alliance?.name}
-                          size={18}
-                        />
-                      )}
-                      <small className="text-muted ms-2">
-                        {selectedCharacter.alliance_name || selectedCharacter.alliance?.name}
-                        {(selectedCharacter.alliance_ticker || selectedCharacter.alliance?.ticker) && (
-                          <span> [{selectedCharacter.alliance_ticker || selectedCharacter.alliance?.ticker}]</span>
-                        )}
-                      </small>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <Row>
-                <Col md={6}>
-                  <h6>Character Information</h6>
-                  <Table borderless size="sm">
-                    <tbody>
-                      <tr>
-                        <td><strong>Character ID:</strong></td>
-                        <td>{selectedCharacter.character_id}</td>
-                      </tr>
-                      <tr>
-                        <td><strong>Corporation:</strong></td>
-                        <td>
-                          {(selectedCharacter.corporation_name || selectedCharacter.corporation?.name) ? (
-                            <div className="d-flex align-items-center">
-                              {(selectedCharacter.corporation_id || selectedCharacter.corporation?.corporation_id) && (
-                                <CorporationLogo 
-                                  corporationId={selectedCharacter.corporation_id || selectedCharacter.corporation?.corporation_id}
-                                  corporationName={selectedCharacter.corporation_name || selectedCharacter.corporation?.name}
-                                  size={16}
-                                  className="me-2"
-                                />
-                              )}
-                              <span>
-                                {selectedCharacter.corporation_name || selectedCharacter.corporation?.name}
-                                {(selectedCharacter.corporation_ticker || selectedCharacter.corporation?.ticker) && (
-                                  <small className="text-muted ms-1">[{selectedCharacter.corporation_ticker || selectedCharacter.corporation?.ticker}]</small>
-                                )}
-                              </span>
-                            </div>
-                          ) : '-'}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td><strong>Alliance:</strong></td>
-                        <td>
-                          {(selectedCharacter.alliance_name || selectedCharacter.alliance?.name) ? (
-                            <div className="d-flex align-items-center">
-                              {(selectedCharacter.alliance_id || selectedCharacter.alliance?.alliance_id) && (
-                                <AllianceLogo 
-                                  allianceId={selectedCharacter.alliance_id || selectedCharacter.alliance?.alliance_id}
-                                  allianceName={selectedCharacter.alliance_name || selectedCharacter.alliance?.name}
-                                  size={16}
-                                  className="me-2"
-                                />
-                              )}
-                              <span>
-                                {selectedCharacter.alliance_name || selectedCharacter.alliance?.name}
-                                {(selectedCharacter.alliance_ticker || selectedCharacter.alliance?.ticker) && (
-                                  <small className="text-muted ms-1">[{selectedCharacter.alliance_ticker || selectedCharacter.alliance?.ticker}]</small>
-                                )}
-                              </span>
-                            </div>
-                          ) : '-'}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td><strong>Status:</strong></td>
-                        <td>
-                          {(() => {
-                            const statusInfo = getCharacterStatus(selectedCharacter);
-                            return (
-                              <Badge bg={statusInfo.color}>
-                                <FontAwesomeIcon icon={statusInfo.icon} className="me-1" />
-                                {statusInfo.label}
-                              </Badge>
-                            );
-                          })()}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td><strong>Type:</strong></td>
-                        <td>
-                          <Badge bg={selectedCharacter.position === 1 ? 'success' : 'secondary'}>
-                            {selectedCharacter.position === 1 ? 'MAIN' : 'ALT'}
-                          </Badge>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </Table>
-                </Col>
-                <Col md={6}>
-                  <h6>Account Information</h6>
-                  <Table borderless size="sm">
-                    <tbody>
-                      <tr>
-                        <td><strong>Position:</strong></td>
-                        <td>{selectedCharacter.position || '-'}</td>
-                      </tr>
-                      <tr>
-                        <td><strong>Added:</strong></td>
-                        <td>{formatDateTime(selectedCharacter.created_at)}</td>
-                      </tr>
-                      <tr>
-                        <td><strong>Last Updated:</strong></td>
-                        <td>{formatDateTime(selectedCharacter.updated_at)}</td>
-                      </tr>
-                      <tr>
-                        <td><strong>Active:</strong></td>
-                        <td>
-                          <Badge bg={selectedCharacter.is_active ? 'success' : 'secondary'}>
-                            <FontAwesomeIcon 
-                              icon={selectedCharacter.is_active ? faCheckCircle : faTimesCircle} 
-                              className="me-1" 
-                            />
-                            {selectedCharacter.is_active ? 'Yes' : 'No'}
-                          </Badge>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </Table>
-                </Col>
-              </Row>
-            </>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDetailsModal(false)}>
-            Close
-          </Button>
-        </Modal.Footer>
-      </Modal>
 
       {/* Character Groups Modal */}
       <CharacterGroupsModal 

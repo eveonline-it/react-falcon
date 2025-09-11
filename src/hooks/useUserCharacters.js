@@ -129,6 +129,74 @@ export const useUpdateCharacterPositions = (options = {}) => {
   });
 };
 
+// Fetch individual character data
+const fetchCharacter = async (characterId) => {
+  if (!characterId) {
+    throw new Error('Character ID is required');
+  }
+  
+  const response = await fetch(`${BASE_URL}/character/${characterId}`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to fetch character: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
+// Hook for fetching individual character
+export const useCharacter = (characterId, options = {}) => {
+  return useQuery({
+    queryKey: ['character', characterId],
+    queryFn: () => fetchCharacter(characterId),
+    enabled: !!characterId,
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+    refetchOnWindowFocus: false,
+    ...options,
+  });
+};
+
+// Fetch character wallet data
+const fetchCharacterWallet = async (characterId) => {
+  if (!characterId) {
+    throw new Error('Character ID is required');
+  }
+  
+  const response = await fetch(`${BASE_URL}/character/${characterId}/wallet`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to fetch character wallet: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
+// Hook for fetching character wallet
+export const useCharacterWallet = (characterId, options = {}) => {
+  return useQuery({
+    queryKey: ['character', characterId, 'wallet'],
+    queryFn: () => fetchCharacterWallet(characterId),
+    enabled: !!characterId,
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+    refetchOnWindowFocus: false,
+    ...options,
+  });
+};
+
 // Hook for fetching character groups
 export const useCharacterGroups = (characterId, options = {}) => {
   return useQuery({
