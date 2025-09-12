@@ -299,6 +299,40 @@ export const useCharacterSkillTree = (characterId, options = {}) => {
   });
 };
 
+// Fetch character skill queue data
+const fetchCharacterSkillQueue = async (characterId) => {
+  if (!characterId) {
+    throw new Error('Character ID is required');
+  }
+  
+  const response = await fetch(`${BASE_URL}/character/${characterId}/skillqueue`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to fetch character skill queue: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
+// Hook for fetching character skill queue
+export const useCharacterSkillQueue = (characterId, options = {}) => {
+  return useQuery({
+    queryKey: ['character', characterId, 'skills', 'queue'],
+    queryFn: () => fetchCharacterSkillQueue(characterId),
+    enabled: !!characterId,
+    staleTime: 1000 * 60 * 1, // Consider data fresh for 1 minute (queue changes frequently)
+    refetchOnWindowFocus: false,
+    ...options,
+  });
+};
+
 // Hook for fetching character groups
 export const useCharacterGroups = (characterId, options = {}) => {
   return useQuery({
