@@ -265,6 +265,40 @@ export const useCharacterClones = (characterId, options = {}) => {
   });
 };
 
+// Fetch character skills tree data
+const fetchCharacterSkillTree = async (characterId) => {
+  if (!characterId) {
+    throw new Error('Character ID is required');
+  }
+  
+  const response = await fetch(`${BASE_URL}/character/${characterId}/skills/tree`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Failed to fetch character skill tree: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
+// Hook for fetching character skill tree
+export const useCharacterSkillTree = (characterId, options = {}) => {
+  return useQuery({
+    queryKey: ['character', characterId, 'skills', 'tree'],
+    queryFn: () => fetchCharacterSkillTree(characterId),
+    enabled: !!characterId,
+    staleTime: 1000 * 60 * 15, // Consider data fresh for 15 minutes (skills change slowly)
+    refetchOnWindowFocus: false,
+    ...options,
+  });
+};
+
 // Hook for fetching character groups
 export const useCharacterGroups = (characterId, options = {}) => {
   return useQuery({

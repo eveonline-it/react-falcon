@@ -21,14 +21,19 @@ import {
   faHome,
   faChevronDown,
   faChevronRight,
-  faMicrochip
+  faMicrochip,
+  faArrowUp,
+  faArrowDown
 } from '@fortawesome/free-solid-svg-icons';
 import ProfileBanner from './ProfileBanner';
+import CharacterAnalytics from './CharacterAnalytics';
+import CharacterSkills from './CharacterSkills';
 import { CharacterPortrait } from 'components/common/eve';
 import {
   useCharacter,
   useCharacterWallet,
   useCharacterSkills,
+  useCharacterSkillTree,
   useCharacterClones
 } from 'hooks/useUserCharacters';
 
@@ -100,8 +105,53 @@ const Character: React.FC = () => {
   const { data: character, isLoading, error } = useCharacter(characterId);
   const { data: wallet } = useCharacterWallet(characterId);
   const { data: skills } = useCharacterSkills(characterId);
+  const { data: skillTree } = useCharacterSkillTree(characterId);
   const { data: clones } = useCharacterClones(characterId);
   const [expandedClones, setExpandedClones] = useState<Set<string>>(new Set());
+
+  // Mock data for character analytics - in real implementation, this would come from API
+  const analyticsData = [
+    {
+      title: 'Active Logins',
+      count: 142,
+      percentage: '+12.5%',
+      color: 'success',
+      icon: faArrowUp,
+      img: 'https://images.evetech.net/types/2834/icon?size=64',
+      dataArray: [20, 40, 28, 50, 42, 55],
+      chartColor: '#00d27a'
+    },
+    {
+      title: 'ISK Earned',
+      count: '2.5B',
+      percentage: '+8.3%',
+      color: 'primary',
+      icon: faArrowUp,
+      img: 'https://images.evetech.net/types/29/icon?size=64',
+      dataArray: [15, 35, 25, 45, 38, 48],
+      chartColor: '#2c7be5'
+    },
+    {
+      title: 'Missions Complete',
+      count: 89,
+      percentage: '-2.1%',
+      color: 'danger',
+      icon: faArrowDown,
+      img: 'https://images.evetech.net/types/33328/icon?size=64',
+      dataArray: [30, 25, 35, 20, 28, 22],
+      chartColor: '#e63757'
+    },
+    {
+      title: 'Ships Lost',
+      count: 3,
+      percentage: '-15.2%',
+      color: 'warning',
+      icon: faArrowDown,
+      img: 'https://images.evetech.net/types/588/icon?size=64',
+      dataArray: [10, 15, 8, 12, 6, 4],
+      chartColor: '#f5803e'
+    }
+  ];
 
   const getLocationImageUrl = (locationTypeId: number) => {
     return `https://images.evetech.net/types/${locationTypeId}/icon?size=32`;
@@ -224,6 +274,8 @@ const Character: React.FC = () => {
       <Row className="g-3 mb-3">
         <Col lg={8}>
           <CharacterStats wallet={wallet} skills={skills} />
+          <CharacterAnalytics data={analyticsData} />
+          <CharacterSkills characterId={characterId} skillsData={skillTree} />
         </Col>
         <Col lg={4}>
           <div className="sticky-sidebar">
@@ -259,7 +311,12 @@ const Character: React.FC = () => {
               <Card.Header className="bg-body-tertiary">
                 <h5 className="mb-0">
                   <FontAwesomeIcon icon={faCopy} className="me-2" />
-                  Clones
+                  {clones
+                    ? `${
+                        (clones.home_location ? 1 : 0) +
+                        (clones.jump_clones ? clones.jump_clones.length : 0)
+                      } Clones`
+                    : 'Clones'}
                 </h5>
               </Card.Header>
               <Card.Body>
@@ -329,7 +386,7 @@ const Character: React.FC = () => {
                               </div>
 
                               <Collapse in={isExpanded}>
-                                <div className="ms-4 mt-1 mb-2">
+                                <div className="ms-3 mt-1 mb-2">
                                   {clone.implants &&
                                   clone.implants.length > 0 ? (
                                     <>
@@ -347,7 +404,7 @@ const Character: React.FC = () => {
                                         ) => (
                                           <div
                                             key={implantIndex}
-                                            className="ms-3 d-flex align-items-center mb-1"
+                                            className="ms-1 d-flex align-items-center mb-1"
                                           >
                                             <ImplantIcon
                                               typeId={implant.type_id}
